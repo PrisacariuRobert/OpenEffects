@@ -625,6 +625,76 @@ function drawText(ctx: CanvasRenderingContext2D, frame: Frame, layer: TextLayer,
   ctx.globalAlpha = baseAlpha;
 }
 
+export interface LayerGeometry {
+  /** Corners of the layer's content box in composition coordinates (clockwise from top-left). */
+  quad: [number, number][];
+  /** The layer's pivot (its position) in composition coordinates. */
+  pivot: [number, number];
+  /** Layer → composition matrix. */
+  world: Mat;
+  /** Parent space → composition matrix (identity without a parent). */
+  parentWorld: Mat;
+}
+
+/** Where a layer is on screen at time t: used for selection, hit-testing and handles. */
+export function layerGeometry(
+  ctx: CanvasRenderingContext2D,
+  project: Project,
+  env: RenderEnv,
+  opts: { compId?: string; time: number },
+  layerId: string,
+): LayerGeometry | null {
+  const comp = getComp(project, opts.compId);
+  const byId = new Map(comp.layers.map((l) => [l.id, l]));
+  const layer = byId.get(layerId);
+  if (!layer) return null;
+  const chain = (l: Layer | undefined, depth = 0): Mat =>
+    !l || depth > 32 ? IDENTITY : mul(chain(l.parent ? byId.get(l.parent) : undefined, depth + 1), localMatrix(l, comp, opts.time));
+  const parentWorld = chain(layer.parent ? byId.get(layer.parent) : undefined);
+  const world = mul(parentWorld, localMatrix(layer, comp, opts.time));
+  let pool = pools.get(env);
+  if (!pool) pools.set(env, (pool = new SurfacePool(env)));
+  const frame: Frame = { project, env, pool, depth: 0 };
+  let b = contentBounds(ctx, frame, layer, opts.time);
+  if (b === "unknown") b = layer.type === "solid" ? { x0: -comp.width / 2, y0: -comp.height / 2, x1: comp.width / 2, y1: comp.height / 2 } : { x0: -50, y0: -50, x1: 50, y1: 50 };
+  if (b === "empty") b = { x0: -12, y0: -12, x1: 12, y1: 12 };
+  if (layer.type === "text") {
+    // contentBounds pads text generously for effects; tighten it for handles.
+    const layout = layoutText(ctx, layer, opts.time);
+    b = { x0: -layout.width / 2, y0: -layout.height / 2, x1: layout.width / 2, y1: layout.height / 2 };
+  }
+  const apply = (m: Mat, x: number, y: number): [number, number] => [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]];
+  const tr = layer.transform ?? {};
+  const pos = sample(tr.position, opts.time, defaultPosition(layer, comp));
+  return {
+    quad: [apply(world, b.x0, b.y0), apply(world, b.x1, b.y0), apply(world, b.x1, b.y1), apply(world, b.x0, b.y1)],
+    pivot: apply(parentWorld, pos[0], pos[1]),
+    world,
+    parentWorld,
+  };
+}
+
+/** Point-in-convex-quad test. */
+export function pointInQuad(quad: [number, number][], x: number, y: number): boolean {
+  let sign = 0;
+  for (let i = 0; i < quad.length; i++) {
+    const [ax, ay] = quad[i];
+    const [bx, by] = quad[(i + 1) % quad.length];
+    const cross = (bx - ax) * (y - ay) - (by - ay) * (x - ax);
+    if (cross !== 0) {
+      if (sign === 0) sign = Math.sign(cross);
+      else if (Math.sign(cross) !== sign) return false;
+    }
+  }
+  return true;
+}
+
+/** Inverse of an affine matrix. */
+export function invert(m: Mat): Mat {
+  const det = m[0] * m[3] - m[1] * m[2] || 1e-12;
+  return [m[3] / det, -m[1] / det, -m[2] / det, m[0] / det, (m[2] * m[5] - m[3] * m[4]) / det, (m[1] * m[4] - m[0] * m[5]) / det];
+}
+
 /** Image sources referenced anywhere in the project (for preloading). */
 export function collectImages(project: Project): string[] {
   const srcs = new Set<string>();

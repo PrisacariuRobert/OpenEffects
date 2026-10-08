@@ -42,6 +42,9 @@ describe("OpenEffects MCP server", () => {
       arguments: { layerId: "dot", property: "transform.opacity", keyframes: [{ t: 0, v: 0 }, { t: 1, v: 100 }] },
     });
     expect(read().compositions[0].layers[1].transform.opacity.keyframes).toHaveLength(2);
+    // `id` works as an alias, matching the other layer tools.
+    const alias = await client.callTool({ name: "oe_set_keyframes", arguments: { id: "dot", property: "transform.rotation", keyframes: [{ t: 0, v: 0 }, { t: 1, v: 90 }] } });
+    expect(alias.isError).toBeFalsy();
   });
 
   it("rejects invalid edits with a precise error and leaves the file untouched", async () => {

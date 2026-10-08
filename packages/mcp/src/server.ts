@@ -162,7 +162,8 @@ export function createMcpServer(projectFile: string): McpServer {
       description:
         'Replace the keyframes of one property. property is a dotted path such as "transform.position", "transform.opacity", "font.size", "fill", "trim.end".',
       inputSchema: {
-        layerId: z.string(),
+        layerId: z.string().optional().describe("Layer id (`id` is accepted too)"),
+        id: z.string().optional().describe("Alias of layerId"),
         property: z.string(),
         keyframes: z
           .array(z.object({ t: z.number(), v: z.unknown(), ease: z.unknown().optional() }))
@@ -171,11 +172,14 @@ export function createMcpServer(projectFile: string): McpServer {
         compId,
       },
     },
-    async ({ layerId, property, keyframes, compId }) =>
-      edit(
-        (p) => setKeyframes(p, layerId, property, keyframes as Keyframe<unknown>[], { compId }),
-        () => `Set ${keyframes.length} keyframe(s) on ${layerId}.${property}.`,
-      ),
+    async ({ layerId, id, property, keyframes, compId }) => {
+      const target = layerId ?? id;
+      if (!target) return fail("Pass the layer id as layerId.");
+      return edit(
+        (p) => setKeyframes(p, target, property, keyframes as Keyframe<unknown>[], { compId }),
+        () => `Set ${keyframes.length} keyframe(s) on ${target}.${property}.`,
+      );
+    },
   );
 
   server.registerTool(

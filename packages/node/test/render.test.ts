@@ -104,3 +104,22 @@ describe.skipIf(!hasFfmpeg)("exportVideo", () => {
     expect(fs.statSync(out).size).toBeGreaterThan(0);
   });
 });
+
+describe("layerGeometry", () => {
+  it("returns the on-screen quad and pivot, including parents", async () => {
+    const { layerGeometry, pointInQuad } = await import("@openeffects/engine");
+    const { createNodeEnv } = await import("../src/index.ts");
+    const p = project([
+      { id: "cam", type: "null", transform: { position: [50, 50], anchor: [50, 50], scale: 200 } },
+      { id: "box", type: "rect", size: [10, 10], parent: "cam", transform: { position: [60, 50] } },
+    ]);
+    const env = await createNodeEnv(p, dir);
+    const ctx = createCanvas(10, 10).getContext("2d") as unknown as CanvasRenderingContext2D;
+    const g = layerGeometry(ctx, p, env, { time: 0 }, "box")!;
+    expect(g.pivot).toEqual([70, 50]); // 10px right of center, doubled by the camera
+    expect(g.quad[0]).toEqual([60, 40]);
+    expect(g.quad[2]).toEqual([80, 60]);
+    expect(pointInQuad(g.quad, 70, 50)).toBe(true);
+    expect(pointInQuad(g.quad, 59, 50)).toBe(false);
+  });
+});

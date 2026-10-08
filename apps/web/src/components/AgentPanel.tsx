@@ -3,11 +3,30 @@ import type { AgentEvent, ProviderStatus } from "@openeffects/schema";
 import { api } from "../api.ts";
 import { Markdown } from "./Markdown.tsx";
 
+export interface Selection {
+  layerId: string;
+  label: string;
+  type: string;
+  compId: string;
+  time: number;
+}
+
 interface Props {
   events: AgentEvent[];
   running: boolean;
   providers: ProviderStatus[];
+  selection: Selection | null;
   onError(message: string): void;
+}
+
+const LAYER_ASKS = ["Make it bouncier", "Animate it in nicely", "Animate it out at the end", "Add a soft glow", "Make it pop more", "Try a different color"];
+const SCENE_ASKS = ["Polish the timing and easing", "Improve the color palette", "Add a subtle animated background", "Make the ending stronger"];
+
+/** Prompts carry editor context as a first line; the chat shows it as a chip instead. */
+const CONTEXT_RE = /^\[Editor context: ([^\]]*)\]\n\n/;
+function withContext(prompt: string, sel: Selection | null): string {
+  if (!sel) return prompt;
+  return `[Editor context: the user selected layer "${sel.layerId}" (${sel.type}) in composition "${sel.compId}"; the playhead is at ${sel.time.toFixed(2)}s. Apply the request to that layer unless they say otherwise.]\n\n${prompt}`;
 }
 
 const EXAMPLES = [
@@ -62,8 +81,11 @@ function groupTurns(events: AgentEvent[]): Turn[] {
   return [...turns.values()];
 }
 
-export function AgentPanel({ events, running, providers, onError }: Props) {
+export function AgentPanel({ events, running, providers, selection, onError }: Props) {
   const [prompt, setPrompt] = useState("");
+  const [useSelection, setUseSelection] = useState(true);
+  const sel = useSelection ? selection : null;
+  useEffect(() => setUseSelection(true), [selection?.layerId]);
   const [provider, setProviderState] = useState(() => readPref("oe.provider") || "claude");
   const [models, setModels] = useState<Record<string, string>>(() => {
     try {
@@ -92,7 +114,7 @@ export function AgentPanel({ events, running, providers, onError }: Props) {
   const send = async (text = prompt) => {
     if (!text.trim() || running) return;
     try {
-      await api("/api/agent/turn", { provider, prompt: text, model: model || undefined });
+      await api("/api/agent/turn", { provider, prompt: withContext(text, sel), model: model || undefined });
       setPrompt("");
     } catch (e) {
       onError((e as Error).message);
@@ -159,7 +181,12 @@ export function AgentPanel({ events, running, providers, onError }: Props) {
         )}
         {turns.map((turn, i) => (
           <div className="turn" key={turn.start?.turnId ?? i}>
-            {turn.start && <div className="msg user">{turn.start.prompt}</div>}
+            {turn.start && (
+              <div className="msg user">
+                {CONTEXT_RE.test(turn.start.prompt) && <div className="ctx-chip in-msg">◎ {/"([^"]+)"/.exec(turn.start.prompt)?.[1] ?? "selection"}</div>}
+                {turn.start.prompt.replace(CONTEXT_RE, "")}
+              </div>
+            )}
             {turn.start && (
               <div className="status-line right">
                 {providers.find((p) => p.id === turn.start?.provider)?.label ?? turn.start.provider}
@@ -209,10 +236,25 @@ export function AgentPanel({ events, running, providers, onError }: Props) {
         ))}
       </div>
 
+      <div className="quick-asks">
+        {sel && (
+          <span className="ctx-chip" title="Your request applies to this layer">
+            ◎ {sel.label} · {sel.time.toFixed(2)}s
+            <button className="tiny" onClick={() => setUseSelection(false)} title="Ask about the whole scene instead">
+              ×
+            </button>
+          </span>
+        )}
+        {(sel ? LAYER_ASKS : SCENE_ASKS).map((q) => (
+          <button key={q} className="quick" disabled={running || !status?.available} onClick={() => send(q)}>
+            {q}
+          </button>
+        ))}
+      </div>
       <div className="composer">
         <textarea
           value={prompt}
-          placeholder={running ? "The agent is working…" : "Ask for an animation or a change… (Enter to send)"}
+          placeholder={running ? "The agent is working…" : sel ? `Change ${sel.label}… (Enter to send)` : "Ask for an animation or a change… (Enter to send)"}
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {

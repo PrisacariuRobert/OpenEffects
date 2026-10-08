@@ -22,6 +22,23 @@ The prompts are in [examples/](examples).
 | ![Kinetic typography](docs/media/gallery/kinetic-type.gif)<br>Kinetic typography · 29 s · $0.014 | ![Lower third](docs/media/gallery/lower-third.gif)<br>Broadcast lower third · 53 s · $0.018 | ![Summer sale vertical ad](docs/media/gallery/summer-sale.gif)<br>Vertical social ad · 45 s · $0.013 |
 | ![Bar chart](docs/media/gallery/bar-chart.gif)<br>Animated chart · 50 s · $0.015 | ![Loader](docs/media/gallery/loader.gif)<br>Seamless loop · 21 s · $0.007 | [examples/showreel](examples/showreel) nests all of them as precomps into a 40 s reel, built in OpenEffects itself |
 
+## You stay in control
+
+The agent does the heavy lifting; you direct and fine-tune it like in any motion design tool.
+
+![Editing in OpenEffects: direct manipulation, keyframes and easing](docs/media/editor-control.png)
+
+- **Direct manipulation:** click a layer in the viewer to select it, drag to move, corners to scale, the top handle
+  to rotate (Shift snaps, layers snap to the center lines). On animated properties this sets a keyframe at the playhead.
+- **Properties panel:** every property has a real control: drag-to-scrub numbers, color pickers, gradients, fonts,
+  effects, text animators, parenting and mattes. ◷ animates a property, ◆ adds a keyframe, ‹ › jumps between keyframes.
+- **Timeline:** drag layers in time, trim their in/out points, reorder by dragging, hide/show, twirl down to see each
+  animated property, drag keyframes to retime them and pick an easing with a curve preview.
+- **Ask the AI about the selection:** with a layer selected, requests apply to it ("make it bouncier") and one-click
+  quick asks are offered. The agent only touches what you pointed at.
+- **Undo everything:** Ctrl+Z / Ctrl+Shift+Z for your edits *and* the agent's; per-turn checkpoints in History.
+- **Start fast:** a template gallery with live previews, drag & drop images onto the viewer, `?` for all shortcuts.
+
 ## Why OpenEffects
 
 - **Bring your own agent.** Like [T3 Code](https://github.com/pingdotgg/t3code), OpenEffects runs the agent
@@ -140,7 +157,8 @@ This is an early prototype (Phase 0 of the [plan](docs/PLAN.md)). Next up:
 - [x] Claude Code, Codex and OpenCode adapters, model picker (cheap models by default), `oe ask`
 - [ ] Gemini CLI adapter; a Codex `app-server` adapter for live streaming
 - [ ] Desktop app (Electron/Tauri) and `npx openeffects` packaging
-- [ ] Direct manipulation in the viewport, graph editor, video layers, audio
+- [x] Direct manipulation, visual properties panel, keyframe/easing editing, undo/redo, templates, image drop
+- [ ] Graph editor for custom bezier easing, video layers, audio
 - [ ] WebGPU renderer, shader effect plugins, Lottie import/export
 - [ ] Template gallery
 

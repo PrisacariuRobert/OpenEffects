@@ -26,6 +26,8 @@ export interface ServerOptions {
   webDir?: string;
   /** Override the agent providers (tests). */
   providers?: AgentProvider[];
+  /** Folder of template projects (default: the repo's examples/). */
+  templatesDir?: string;
 }
 
 const MIME: Record<string, string> = {
@@ -189,6 +191,34 @@ export async function startServer(opts: ServerOptions): Promise<{ url: string; c
       await startExport(format, compId);
       return sendJson(res, 202, { ok: true });
     }
+    if (route === "POST /api/assets") {
+      // Raw file upload (the editor's drag & drop). Saved under assets/ with a safe name.
+      const original = url.searchParams.get("name") ?? "upload";
+      const ext = path.extname(original).toLowerCase();
+      if (![".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"].includes(ext)) throw new HttpError(415, "Only PNG, JPG, WebP, GIF and SVG images are supported");
+      const base = path.basename(original, path.extname(original)).replace(/[^A-Za-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "image";
+      const dir = path.join(projectDir, "assets");
+      fs.mkdirSync(dir, { recursive: true });
+      let name = `${base}${ext}`;
+      for (let n = 2; fs.existsSync(path.join(dir, name)); n++) name = `${base}-${n}${ext}`;
+      const body = await readBody(req, 50 * 1024 * 1024);
+      fs.writeFileSync(path.join(dir, name), body);
+      return sendJson(res, 201, { src: `assets/${name}` });
+    }
+    if (route === "GET /api/templates") {
+      // Starting points: the bundled examples (each a complete project).
+      const dir = opts.templatesDir ?? fileURLToPath(new URL("../../../examples", import.meta.url));
+      const templates = (fs.existsSync(dir) ? fs.readdirSync(dir) : [])
+        .map((name) => ({ name, r: readProject(path.join(dir, name, "project.oe.json")) }))
+        .filter((t) => t.r.ok && !/showreel/.test(t.name))
+        .map((t) => ({ name: t.name, project: (t.r as { project: unknown }).project }));
+      return sendJson(res, 200, { templates });
+    }
+    if (route === "GET /api/assets") {
+      const dir = path.join(projectDir, "assets");
+      const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => /\.(png|jpe?g|webp|gif|svg)$/i.test(f)) : [];
+      return sendJson(res, 200, { assets: files.map((f) => `assets/${f}`) });
+    }
     if (req.method === "GET" && url.pathname.startsWith("/api/assets/")) {
       return serveStatic(res, projectDir, decodeURIComponent(url.pathname.slice("/api/assets/".length)));
     }
@@ -248,7 +278,9 @@ function checkRequestOrigin(req: http.IncomingMessage): void {
   }
   const origin = req.headers.origin;
   if (origin && origin !== `http://${host}`) throw new HttpError(403, "Forbidden origin");
-  if ((req.method === "POST" || req.method === "PUT") && !String(req.headers["content-type"] ?? "").includes("application/json")) {
+  // Both types force a CORS preflight, which this server never answers.
+  const type = String(req.headers["content-type"] ?? "");
+  if ((req.method === "POST" || req.method === "PUT") && !type.includes("application/json") && !type.includes("application/octet-stream")) {
     throw new HttpError(415, "Expected application/json");
   }
 }
@@ -275,16 +307,21 @@ function sendJson(res: http.ServerResponse, status: number, body: unknown): void
   res.end(JSON.stringify(body));
 }
 
-async function readJson(req: http.IncomingMessage): Promise<unknown> {
+async function readBody(req: http.IncomingMessage, limit: number): Promise<Buffer> {
   const chunks: Buffer[] = [];
   let size = 0;
   for await (const chunk of req) {
     size += chunk.length;
-    if (size > 20 * 1024 * 1024) throw new HttpError(413, "Request too large");
+    if (size > limit) throw new HttpError(413, "Request too large");
     chunks.push(chunk);
   }
+  return Buffer.concat(chunks);
+}
+
+async function readJson(req: http.IncomingMessage): Promise<unknown> {
+  const body = await readBody(req, 20 * 1024 * 1024);
   try {
-    return JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
+    return JSON.parse(body.toString("utf8") || "{}");
   } catch {
     throw new HttpError(400, "Invalid JSON");
   }
