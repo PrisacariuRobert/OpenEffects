@@ -7,7 +7,7 @@ import type { Project } from "./schema.ts";
 
 /** Provider-neutral agent events, the same idea as T3 Code's orchestration events. */
 export type AgentEvent =
-  | { type: "turn-start"; turnId: string; provider: string; prompt: string; checkpointBefore?: string }
+  | { type: "turn-start"; turnId: string; provider: string; model?: string; prompt: string; checkpointBefore?: string }
   | { type: "status"; turnId: string; text: string }
   | { type: "text"; turnId: string; text: string }
   | { type: "tool-call"; turnId: string; id: string; name: string; input: unknown }
@@ -19,15 +19,25 @@ export type AgentEvent =
       error?: string;
       costUsd?: number;
       durationMs?: number;
+      tokens?: { input: number; output: number };
       checkpointBefore?: string;
       checkpointAfter?: string;
     };
+
+export interface ModelOption {
+  id: string;
+  label: string;
+}
 
 export interface ProviderStatus {
   id: string;
   label: string;
   available: boolean;
   detail: string;
+  /** Suggested models; users may also type any model id the CLI accepts. */
+  models: ModelOption[];
+  /** Model used when the user doesn't pick one ("" = the CLI's own default). */
+  defaultModel: string;
 }
 
 export interface Checkpoint {

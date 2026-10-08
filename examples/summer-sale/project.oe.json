@@ -1,0 +1,393 @@
+{
+  "$schema": "https://raw.githubusercontent.com/PrisacariuRobert/OpenEffects/main/schema/project.schema.json",
+  "version": 1,
+  "name": "summer-sale",
+  "compositions": [
+    {
+      "id": "main",
+      "name": "Main",
+      "width": 1080,
+      "height": 1920,
+      "fps": 30,
+      "duration": 5,
+      "background": "#ff8a1f",
+      "layers": [
+        {
+          "id": "bg",
+          "type": "solid",
+          "color": {
+            "type": "linear",
+            "stops": [
+              [
+                0,
+                "#ff9a1f"
+              ],
+              [
+                1,
+                "#d1264f"
+              ]
+            ],
+            "from": [
+              0,
+              -960
+            ],
+            "to": [
+              0,
+              960
+            ]
+          }
+        },
+        {
+          "id": "sun",
+          "type": "ellipse",
+          "size": [
+            880,
+            880
+          ],
+          "fill": "#ffd23f",
+          "transform": {
+            "position": [
+              540,
+              960
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 0,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 0.6,
+                  "v": 100,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 1.2,
+                  "v": 106,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 1.8,
+                  "v": 100,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 2.4,
+                  "v": 106,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 3,
+                  "v": 100,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 3.6,
+                  "v": 106,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 4.2,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "pink-dot",
+          "type": "ellipse",
+          "size": [
+            170,
+            170
+          ],
+          "fill": "#ff3d7f",
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0.1,
+                  "v": [
+                    220,
+                    -120
+                  ],
+                  "ease": "easeOutBounce"
+                },
+                {
+                  "t": 1.1,
+                  "v": [
+                    220,
+                    520
+                  ],
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 2,
+                  "v": [
+                    220,
+                    470
+                  ],
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 2.8,
+                  "v": [
+                    220,
+                    520
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cream-square",
+          "type": "rect",
+          "size": [
+            230,
+            230
+          ],
+          "radius": 42,
+          "fill": "#fff6e0",
+          "transform": {
+            "position": [
+              870,
+              1250
+            ],
+            "rotation": {
+              "keyframes": [
+                {
+                  "t": 0.3,
+                  "v": -60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 1,
+                  "v": 0,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 2,
+                  "v": 25,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 3,
+                  "v": 0
+                }
+              ]
+            },
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0.3,
+                  "v": 0,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 0.8,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "teal-ring",
+          "type": "ellipse",
+          "size": [
+            130,
+            130
+          ],
+          "fill": "#fff6e0",
+          "transform": {
+            "position": [
+              190,
+              1280
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0.5,
+                  "v": 0,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 1,
+                  "v": 100,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 1.6,
+                  "v": 112,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 2.2,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "title",
+          "type": "text",
+          "text": "SUMMER SALE",
+          "font": {
+            "weight": 900,
+            "size": 112
+          },
+          "fill": "#fff6e0",
+          "align": "center",
+          "animator": {
+            "by": "character",
+            "stagger": 0.04,
+            "duration": 0.5,
+            "ease": "easeOutBack",
+            "from": {
+              "opacity": 0,
+              "offset": [
+                0,
+                60
+              ],
+              "scale": 40
+            }
+          },
+          "transform": {
+            "position": [
+              540,
+              330
+            ]
+          },
+          "effects": [
+            {
+              "type": "dropShadow",
+              "distance": 8,
+              "softness": 16,
+              "color": "rgba(90,0,20,0.45)"
+            }
+          ]
+        },
+        {
+          "id": "discount",
+          "type": "text",
+          "text": "-50%",
+          "font": {
+            "weight": 900,
+            "size": 290
+          },
+          "fill": "#b5123b",
+          "align": "center",
+          "transform": {
+            "position": [
+              540,
+              960
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0.2,
+                  "v": 0,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 0.8,
+                  "v": 100
+                }
+              ]
+            },
+            "rotation": {
+              "keyframes": [
+                {
+                  "t": 0.8,
+                  "v": -6,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 1.6,
+                  "v": 3,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 2.4,
+                  "v": -6,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 3.2,
+                  "v": 3,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 4,
+                  "v": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "btn",
+          "type": "rect",
+          "size": [
+            600,
+            160
+          ],
+          "radius": 80,
+          "fill": "#2b0a3d",
+          "transform": {
+            "position": [
+              540,
+              1600
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 3.4,
+                  "v": 0,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 3.9,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "btn-text",
+          "type": "text",
+          "text": "Shop now",
+          "font": {
+            "weight": 800,
+            "size": 68
+          },
+          "fill": "#fff6e0",
+          "align": "center",
+          "transform": {
+            "position": [
+              540,
+              1600
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 3.4,
+                  "v": 0,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 3.9,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

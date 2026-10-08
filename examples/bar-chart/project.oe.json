@@ -1,0 +1,906 @@
+{
+  "version": 1,
+  "name": "bar-chart",
+  "compositions": [
+    {
+      "id": "main",
+      "name": "Main",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "duration": 6,
+      "background": "#0b0d17",
+      "layers": [
+        {
+          "id": "title",
+          "type": "text",
+          "name": "Title",
+          "text": "Monthly active users, 2026",
+          "font": {
+            "size": 64,
+            "weight": 700
+          },
+          "fill": "#eef1ff",
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    960,
+                    170
+                  ],
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 0.8,
+                  "v": [
+                    960,
+                    150
+                  ]
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 0.8,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "baseline",
+          "type": "rect",
+          "name": "Baseline",
+          "size": [
+            1380,
+            2
+          ],
+          "fill": "#2a3150",
+          "transform": {
+            "position": [
+              960,
+              900
+            ]
+          }
+        },
+        {
+          "id": "bar_jan",
+          "type": "rect",
+          "name": "Bar Jan",
+          "size": {
+            "keyframes": [
+              {
+                "t": 0,
+                "v": [
+                  180,
+                  0
+                ],
+                "ease": "hold"
+              },
+              {
+                "t": 0.9,
+                "v": [
+                  180,
+                  0
+                ],
+                "ease": "easeOutCubic"
+              },
+              {
+                "t": 1.8,
+                "v": [
+                  180,
+                  120
+                ]
+              }
+            ]
+          },
+          "radius": 8,
+          "fill": "#4f6bff",
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    360,
+                    900
+                  ],
+                  "ease": "hold"
+                },
+                {
+                  "t": 0.9,
+                  "v": [
+                    360,
+                    900
+                  ],
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 1.8,
+                  "v": [
+                    360,
+                    840
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "bar_feb",
+          "type": "rect",
+          "name": "Bar Feb",
+          "size": {
+            "keyframes": [
+              {
+                "t": 0,
+                "v": [
+                  180,
+                  0
+                ],
+                "ease": "hold"
+              },
+              {
+                "t": 1.3,
+                "v": [
+                  180,
+                  0
+                ],
+                "ease": "easeOutCubic"
+              },
+              {
+                "t": 2.2,
+                "v": [
+                  180,
+                  180
+                ]
+              }
+            ]
+          },
+          "radius": 8,
+          "fill": "#4f6bff",
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    600,
+                    900
+                  ],
+                  "ease": "hold"
+                },
+                {
+                  "t": 1.3,
+                  "v": [
+                    600,
+                    900
+                  ],
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 2.2,
+                  "v": [
+                    600,
+                    810
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "bar_mar",
+          "type": "rect",
+          "name": "Bar Mar",
+          "size": {
+            "keyframes": [
+              {
+                "t": 0,
+                "v": [
+                  180,
+                  0
+                ],
+                "ease": "hold"
+              },
+              {
+                "t": 1.7,
+                "v": [
+                  180,
+                  0
+                ],
+                "ease": "easeOutCubic"
+              },
+              {
+                "t": 2.6,
+                "v": [
+                  180,
+                  250
+                ]
+              }
+            ]
+          },
+          "radius": 8,
+          "fill": "#4f6bff",
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    840,
+                    900
+                  ],
+                  "ease": "hold"
+                },
+                {
+                  "t": 1.7,
+                  "v": [
+                    840,
+                    900
+                  ],
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 2.6,
+                  "v": [
+                    840,
+                    775
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "bar_apr",
+          "type": "rect",
+          "name": "Bar Apr",
+          "size": {
+            "keyframes": [
+              {
+                "t": 0,
+                "v": [
+                  180,
+                  0
+                ],
+                "ease": "hold"
+              },
+              {
+                "t": 2.1,
+                "v": [
+                  180,
+                  0
+                ],
+                "ease": "easeOutCubic"
+              },
+              {
+                "t": 3,
+                "v": [
+                  180,
+                  310
+                ]
+              }
+            ]
+          },
+          "radius": 8,
+          "fill": "#4f6bff",
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    1080,
+                    900
+                  ],
+                  "ease": "hold"
+                },
+                {
+                  "t": 2.1,
+                  "v": [
+                    1080,
+                    900
+                  ],
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 3,
+                  "v": [
+                    1080,
+                    745
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "bar_may",
+          "type": "rect",
+          "name": "Bar May",
+          "size": {
+            "keyframes": [
+              {
+                "t": 0,
+                "v": [
+                  180,
+                  0
+                ],
+                "ease": "hold"
+              },
+              {
+                "t": 2.5,
+                "v": [
+                  180,
+                  0
+                ],
+                "ease": "easeOutCubic"
+              },
+              {
+                "t": 3.4,
+                "v": [
+                  180,
+                  440
+                ]
+              }
+            ]
+          },
+          "radius": 8,
+          "fill": "#4f6bff",
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    1320,
+                    900
+                  ],
+                  "ease": "hold"
+                },
+                {
+                  "t": 2.5,
+                  "v": [
+                    1320,
+                    900
+                  ],
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 3.4,
+                  "v": [
+                    1320,
+                    680
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "bar_jun",
+          "type": "rect",
+          "name": "Bar Jun",
+          "size": {
+            "keyframes": [
+              {
+                "t": 0,
+                "v": [
+                  180,
+                  0
+                ],
+                "ease": "hold"
+              },
+              {
+                "t": 2.9,
+                "v": [
+                  180,
+                  0
+                ],
+                "ease": "easeOutCubic"
+              },
+              {
+                "t": 3.8,
+                "v": [
+                  180,
+                  610
+                ]
+              }
+            ]
+          },
+          "radius": 8,
+          "fill": "#9fb4ff",
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    1560,
+                    900
+                  ],
+                  "ease": "hold"
+                },
+                {
+                  "t": 2.9,
+                  "v": [
+                    1560,
+                    900
+                  ],
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 3.8,
+                  "v": [
+                    1560,
+                    595
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "val_jan",
+          "type": "text",
+          "name": "Value Jan",
+          "text": "12k",
+          "font": {
+            "size": 40,
+            "weight": 700
+          },
+          "fill": "#ffffff",
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    360,
+                    860
+                  ],
+                  "ease": "hold"
+                },
+                {
+                  "t": 0.9,
+                  "v": [
+                    360,
+                    860
+                  ],
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 1.8,
+                  "v": [
+                    360,
+                    740
+                  ]
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 0,
+                  "ease": "hold"
+                },
+                {
+                  "t": 1.1,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 1.4,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "val_feb",
+          "type": "text",
+          "name": "Value Feb",
+          "text": "18k",
+          "font": {
+            "size": 40,
+            "weight": 700
+          },
+          "fill": "#ffffff",
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    600,
+                    860
+                  ],
+                  "ease": "hold"
+                },
+                {
+                  "t": 1.3,
+                  "v": [
+                    600,
+                    860
+                  ],
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 2.2,
+                  "v": [
+                    600,
+                    680
+                  ]
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 0,
+                  "ease": "hold"
+                },
+                {
+                  "t": 1.5,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 1.8,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "val_mar",
+          "type": "text",
+          "name": "Value Mar",
+          "text": "25k",
+          "font": {
+            "size": 40,
+            "weight": 700
+          },
+          "fill": "#ffffff",
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    840,
+                    860
+                  ],
+                  "ease": "hold"
+                },
+                {
+                  "t": 1.7,
+                  "v": [
+                    840,
+                    860
+                  ],
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 2.6,
+                  "v": [
+                    840,
+                    610
+                  ]
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 0,
+                  "ease": "hold"
+                },
+                {
+                  "t": 1.9,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 2.2,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "val_apr",
+          "type": "text",
+          "name": "Value Apr",
+          "text": "31k",
+          "font": {
+            "size": 40,
+            "weight": 700
+          },
+          "fill": "#ffffff",
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    1080,
+                    860
+                  ],
+                  "ease": "hold"
+                },
+                {
+                  "t": 2.1,
+                  "v": [
+                    1080,
+                    860
+                  ],
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 3,
+                  "v": [
+                    1080,
+                    550
+                  ]
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 0,
+                  "ease": "hold"
+                },
+                {
+                  "t": 2.3,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 2.6,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "val_may",
+          "type": "text",
+          "name": "Value May",
+          "text": "44k",
+          "font": {
+            "size": 40,
+            "weight": 700
+          },
+          "fill": "#ffffff",
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    1320,
+                    860
+                  ],
+                  "ease": "hold"
+                },
+                {
+                  "t": 2.5,
+                  "v": [
+                    1320,
+                    860
+                  ],
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 3.4,
+                  "v": [
+                    1320,
+                    420
+                  ]
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 0,
+                  "ease": "hold"
+                },
+                {
+                  "t": 2.7,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 3,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "val_jun",
+          "type": "text",
+          "name": "Value Jun",
+          "text": "61k",
+          "font": {
+            "size": 40,
+            "weight": 700
+          },
+          "fill": "#ffffff",
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    1560,
+                    860
+                  ],
+                  "ease": "hold"
+                },
+                {
+                  "t": 2.9,
+                  "v": [
+                    1560,
+                    860
+                  ],
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 3.8,
+                  "v": [
+                    1560,
+                    250
+                  ]
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 0,
+                  "ease": "hold"
+                },
+                {
+                  "t": 3.1,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 3.4,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "m_jan",
+          "type": "text",
+          "name": "Month Jan",
+          "text": "Jan",
+          "font": {
+            "size": 30,
+            "weight": 500
+          },
+          "fill": "#8a93b8",
+          "transform": {
+            "position": [
+              360,
+              955
+            ]
+          }
+        },
+        {
+          "id": "m_feb",
+          "type": "text",
+          "name": "Month Feb",
+          "text": "Feb",
+          "font": {
+            "size": 30,
+            "weight": 500
+          },
+          "fill": "#8a93b8",
+          "transform": {
+            "position": [
+              600,
+              955
+            ]
+          }
+        },
+        {
+          "id": "m_mar",
+          "type": "text",
+          "name": "Month Mar",
+          "text": "Mar",
+          "font": {
+            "size": 30,
+            "weight": 500
+          },
+          "fill": "#8a93b8",
+          "transform": {
+            "position": [
+              840,
+              955
+            ]
+          }
+        },
+        {
+          "id": "m_apr",
+          "type": "text",
+          "name": "Month Apr",
+          "text": "Apr",
+          "font": {
+            "size": 30,
+            "weight": 500
+          },
+          "fill": "#8a93b8",
+          "transform": {
+            "position": [
+              1080,
+              955
+            ]
+          }
+        },
+        {
+          "id": "m_may",
+          "type": "text",
+          "name": "Month May",
+          "text": "May",
+          "font": {
+            "size": 30,
+            "weight": 500
+          },
+          "fill": "#8a93b8",
+          "transform": {
+            "position": [
+              1320,
+              955
+            ]
+          }
+        },
+        {
+          "id": "m_jun",
+          "type": "text",
+          "name": "Month Jun",
+          "text": "Jun",
+          "font": {
+            "size": 30,
+            "weight": 500
+          },
+          "fill": "#8a93b8",
+          "transform": {
+            "position": [
+              1560,
+              955
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

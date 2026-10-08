@@ -1,7 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import {
   exportVideo,
@@ -11,8 +9,8 @@ import {
   renderFramePng,
   resolveProjectFile,
   type ExportFormat,
-  type McpLaunch,
 } from "@openeffects/node";
+import { mcpLaunch } from "./mcp-launch.ts";
 import { getComp } from "@openeffects/schema";
 
 const HELP = `OpenEffects: open-source motion graphics, driven by your AI agent
@@ -22,6 +20,9 @@ Usage: oe <command> [project] [options]
 Commands:
   init [dir]                 Create a new project (project.oe.json, AGENTS.md, .mcp.json, git repo)
   dev [dir]                  Open the editor (preview, timeline, agent panel)  --port 4310
+  ask [dir] "<prompt>"       Let an agent edit the project from the terminal
+                             --agent claude|codex|opencode  --model <id> (Claude default: claude-haiku-5-5)
+                             --new (start a fresh conversation)
   render [dir]               Export video   --out file --format mp4|webm|gif|mov|png --comp id --scale 1
   frame [dir]                Render one frame to PNG   --time 1.5 --out frame.png --width 1920
   sheet [dir]                Render a contact sheet PNG   --count 8 --out sheet.png
@@ -29,16 +30,6 @@ Commands:
   mcp [dir]                  Run the OpenEffects MCP server on stdio (for agents)
 
 [dir] defaults to the current folder.`;
-
-const require = createRequire(import.meta.url);
-
-/** How agents should launch this CLI's MCP server for a project. */
-export function mcpLaunch(projectDir: string): McpLaunch {
-  return {
-    command: process.execPath,
-    args: [require.resolve("tsx/cli"), fileURLToPath(import.meta.url), "mcp", path.resolve(projectDir)],
-  };
-}
 
 function fail(message: string): never {
   console.error(`error: ${message}`);
@@ -69,6 +60,9 @@ async function main(): Promise<void> {
       port: { type: "string", short: "p" },
       host: { type: "string" },
       name: { type: "string" },
+      agent: { type: "string", short: "a" },
+      model: { type: "string", short: "m" },
+      new: { type: "boolean" },
     },
   });
   const target = positionals[0];
@@ -97,6 +91,36 @@ async function main(): Promise<void> {
       process.on("SIGINT", stop);
       process.on("SIGTERM", stop);
       return;
+    }
+    case "ask": {
+      // `oe ask "prompt"` (current folder) or `oe ask dir "prompt"`.
+      const [dirArg, ...words] = positionals.length > 1 ? positionals : [".", ...positionals];
+      const prompt = words.join(" ").trim();
+      if (!prompt) fail('Usage: oe ask [dir] "<prompt>"');
+      const { dir } = load(dirArg);
+      const { AgentSession } = await import("@openeffects/server");
+      const dim = (s: string) => (process.stderr.isTTY ? `\x1b[2m${s}\x1b[0m` : s);
+      const session = new AgentSession({
+        projectDir: dir,
+        mcp: mcpLaunch(dir),
+        onEvent: (e) => {
+          if (e.type === "status") process.stderr.write(dim(`· ${e.text}\n`));
+          if (e.type === "tool-call") process.stderr.write(dim(`→ ${e.name.replace(/^mcp__openeffects__/, "")}\n`));
+          if (e.type === "tool-result" && !e.ok) process.stderr.write(`  ✗ ${e.summary.split("\n").slice(0, 3).join("\n    ")}\n`);
+          if (e.type === "text") process.stdout.write(`${e.text.trim()}\n`);
+        },
+      });
+      if (values.new) session.reset();
+      const { done } = await session.start(values.agent ?? "claude", prompt, values.model);
+      process.on("SIGINT", () => session.stop());
+      const r = await done;
+      const meta = [
+        r.durationMs ? `${(r.durationMs / 1000).toFixed(0)}s` : "",
+        r.costUsd ? `$${r.costUsd.toFixed(3)}` : "",
+        r.tokens ? `${r.tokens.input + r.tokens.output} tokens` : "",
+      ].filter(Boolean);
+      process.stderr.write(`${r.ok ? "✓ done" : `✗ ${r.error}`}${meta.length ? ` (${meta.join(", ")})` : ""}\n`);
+      process.exit(r.ok ? 0 : 1);
     }
     case "render": {
       const { dir, project } = load(target);

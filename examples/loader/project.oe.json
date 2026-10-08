@@ -1,0 +1,312 @@
+{
+  "$schema": "https://raw.githubusercontent.com/PrisacariuRobert/OpenEffects/main/schema/project.schema.json",
+  "version": 1,
+  "name": "loader",
+  "compositions": [
+    {
+      "id": "main",
+      "name": "Main",
+      "width": 1080,
+      "height": 1080,
+      "fps": 30,
+      "duration": 3,
+      "background": "#0b0d17",
+      "layers": [
+        {
+          "id": "orbit",
+          "type": "null",
+          "name": "Orbit",
+          "transform": {
+            "position": [
+              540,
+              540
+            ],
+            "anchor": [
+              540,
+              540
+            ],
+            "rotation": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 0,
+                  "ease": "linear"
+                },
+                {
+                  "t": 3,
+                  "v": 360
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "core",
+          "type": "ellipse",
+          "name": "Core",
+          "size": [
+            160,
+            160
+          ],
+          "fill": "#7aa2ff",
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 40,
+              "intensity": 1.2,
+              "color": "#7aa2ff"
+            }
+          ],
+          "transform": {
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 100,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 1.5,
+                  "v": 120,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 3,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "dot0",
+          "type": "ellipse",
+          "name": "Dot 0",
+          "parent": "orbit",
+          "size": [
+            28,
+            28
+          ],
+          "fill": "#9fb4ff",
+          "transform": {
+            "position": [
+              800,
+              540
+            ],
+            "opacity": 100
+          },
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 20,
+              "intensity": 1,
+              "color": "#9fb4ff"
+            }
+          ]
+        },
+        {
+          "id": "dot1",
+          "type": "ellipse",
+          "name": "Dot 1",
+          "parent": "orbit",
+          "size": [
+            28,
+            28
+          ],
+          "fill": "#9fb4ff",
+          "transform": {
+            "position": [
+              724,
+              724
+            ],
+            "opacity": 90
+          },
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 20,
+              "intensity": 1,
+              "color": "#9fb4ff"
+            }
+          ]
+        },
+        {
+          "id": "dot2",
+          "type": "ellipse",
+          "name": "Dot 2",
+          "parent": "orbit",
+          "size": [
+            28,
+            28
+          ],
+          "fill": "#9fb4ff",
+          "transform": {
+            "position": [
+              540,
+              800
+            ],
+            "opacity": 78
+          },
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 20,
+              "intensity": 1,
+              "color": "#9fb4ff"
+            }
+          ]
+        },
+        {
+          "id": "dot3",
+          "type": "ellipse",
+          "name": "Dot 3",
+          "parent": "orbit",
+          "size": [
+            28,
+            28
+          ],
+          "fill": "#9fb4ff",
+          "transform": {
+            "position": [
+              356,
+              724
+            ],
+            "opacity": 66
+          },
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 20,
+              "intensity": 1,
+              "color": "#9fb4ff"
+            }
+          ]
+        },
+        {
+          "id": "dot4",
+          "type": "ellipse",
+          "name": "Dot 4",
+          "parent": "orbit",
+          "size": [
+            28,
+            28
+          ],
+          "fill": "#9fb4ff",
+          "transform": {
+            "position": [
+              280,
+              540
+            ],
+            "opacity": 55
+          },
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 20,
+              "intensity": 1,
+              "color": "#9fb4ff"
+            }
+          ]
+        },
+        {
+          "id": "dot5",
+          "type": "ellipse",
+          "name": "Dot 5",
+          "parent": "orbit",
+          "size": [
+            28,
+            28
+          ],
+          "fill": "#9fb4ff",
+          "transform": {
+            "position": [
+              356,
+              356
+            ],
+            "opacity": 44
+          },
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 20,
+              "intensity": 1,
+              "color": "#9fb4ff"
+            }
+          ]
+        },
+        {
+          "id": "dot6",
+          "type": "ellipse",
+          "name": "Dot 6",
+          "parent": "orbit",
+          "size": [
+            28,
+            28
+          ],
+          "fill": "#9fb4ff",
+          "transform": {
+            "position": [
+              540,
+              280
+            ],
+            "opacity": 33
+          },
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 20,
+              "intensity": 1,
+              "color": "#9fb4ff"
+            }
+          ]
+        },
+        {
+          "id": "dot7",
+          "type": "ellipse",
+          "name": "Dot 7",
+          "parent": "orbit",
+          "size": [
+            28,
+            28
+          ],
+          "fill": "#9fb4ff",
+          "transform": {
+            "position": [
+              724,
+              356
+            ],
+            "opacity": 22
+          },
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 20,
+              "intensity": 1,
+              "color": "#9fb4ff"
+            }
+          ]
+        },
+        {
+          "id": "label",
+          "type": "text",
+          "name": "Label",
+          "text": "Loading…",
+          "font": {
+            "family": "Inter",
+            "weight": 500,
+            "size": 48
+          },
+          "fill": "#c9d1ff",
+          "align": "center",
+          "letterSpacing": 2,
+          "transform": {
+            "position": [
+              540,
+              900
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

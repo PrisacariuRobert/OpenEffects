@@ -1,0 +1,146 @@
+{
+  "$schema": "https://raw.githubusercontent.com/PrisacariuRobert/OpenEffects/main/schema/project.schema.json",
+  "version": 1,
+  "name": "kinetic-type",
+  "compositions": [
+    {
+      "id": "main",
+      "name": "Main",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "duration": 6,
+      "background": "#0b0d17",
+      "layers": [
+        {
+          "id": "word-ship",
+          "type": "text",
+          "text": "SHIP",
+          "font": { "family": "Inter", "weight": 900, "size": 210 },
+          "fill": "#ffffff",
+          "transform": {
+            "position": {
+              "keyframes": [
+                { "t": 0.2, "v": [960, 340], "ease": "easeOutCubic" },
+                { "t": 0.6, "v": [960, 270] }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                { "t": 0.2, "v": 0, "ease": "easeOutCubic" },
+                { "t": 0.55, "v": 100 }
+              ]
+            },
+            "scale": {
+              "keyframes": [
+                { "t": 0.2, "v": 85, "ease": "easeOutBack" },
+                { "t": 0.6, "v": 100, "ease": "easeInOutSine" },
+                { "t": 6, "v": 103 }
+              ]
+            }
+          }
+        },
+        {
+          "id": "word-faster",
+          "type": "text",
+          "text": "FASTER.",
+          "font": { "family": "Inter", "weight": 900, "size": 210 },
+          "fill": "#ff5c7a",
+          "transform": {
+            "position": {
+              "keyframes": [
+                { "t": 0.55, "v": [960, 520], "ease": "easeOutCubic" },
+                { "t": 0.95, "v": [960, 450] }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                { "t": 0.55, "v": 0, "ease": "easeOutCubic" },
+                { "t": 0.9, "v": 100 }
+              ]
+            },
+            "scale": {
+              "keyframes": [
+                { "t": 0.55, "v": 85, "ease": "easeOutBack" },
+                { "t": 0.95, "v": 100, "ease": "easeInOutSine" },
+                { "t": 6, "v": 103 }
+              ]
+            }
+          }
+        },
+        {
+          "id": "word-sleep",
+          "type": "text",
+          "text": "SLEEP",
+          "font": { "family": "Inter", "weight": 900, "size": 210 },
+          "fill": "#ffffff",
+          "transform": {
+            "position": {
+              "keyframes": [
+                { "t": 1.25, "v": [960, 700], "ease": "easeOutCubic" },
+                { "t": 1.65, "v": [960, 630] }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                { "t": 1.25, "v": 0, "ease": "easeOutCubic" },
+                { "t": 1.6, "v": 100 }
+              ]
+            },
+            "scale": {
+              "keyframes": [
+                { "t": 1.25, "v": 85, "ease": "easeOutBack" },
+                { "t": 1.65, "v": 100, "ease": "easeInOutSine" },
+                { "t": 6, "v": 103 }
+              ]
+            }
+          }
+        },
+        {
+          "id": "word-better",
+          "type": "text",
+          "text": "BETTER.",
+          "font": { "family": "Inter", "weight": 900, "size": 210 },
+          "fill": "#5ef2d0",
+          "transform": {
+            "position": {
+              "keyframes": [
+                { "t": 1.6, "v": [960, 880], "ease": "easeOutCubic" },
+                { "t": 2.0, "v": [960, 810] }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                { "t": 1.6, "v": 0, "ease": "easeOutCubic" },
+                { "t": 1.95, "v": 100 }
+              ]
+            },
+            "scale": {
+              "keyframes": [
+                { "t": 1.6, "v": 85, "ease": "easeOutBack" },
+                { "t": 2.0, "v": 100, "ease": "easeInOutSine" },
+                { "t": 6, "v": 103 }
+              ]
+            }
+          }
+        },
+        {
+          "id": "accent-bar",
+          "type": "rect",
+          "size": [320, 12],
+          "radius": 6,
+          "fill": "#ff5c7a",
+          "transform": {
+            "position": [960, 960],
+            "scale": {
+              "keyframes": [
+                { "t": 2.1, "v": 0, "ease": "easeOutCubic" },
+                { "t": 2.6, "v": 100 }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

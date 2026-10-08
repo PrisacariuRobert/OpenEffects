@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { WebSocketServer, WebSocket } from "ws";
 import {
@@ -14,9 +13,8 @@ import {
   type McpLaunch,
 } from "@openeffects/node";
 import { getComp, type ServerMessage, type StateResponse } from "@openeffects/schema";
-import { Checkpoints, type Checkpoint } from "./checkpoints.ts";
-import { ClaudeCodeProvider } from "./agents/claude.ts";
-import type { AgentEvent, AgentProvider, ProviderStatus, RunningTurn } from "./agents/types.ts";
+import { AgentError, AgentSession } from "./agents/session.ts";
+import type { AgentProvider } from "./agents/types.ts";
 
 export interface ServerOptions {
   projectFile: string;
@@ -26,6 +24,8 @@ export interface ServerOptions {
   mcp: McpLaunch;
   /** Directory of the web app (source for Vite dev mode, or containing dist/). */
   webDir?: string;
+  /** Override the agent providers (tests). */
+  providers?: AgentProvider[];
 }
 
 const MIME: Record<string, string> = {
@@ -49,40 +49,13 @@ export async function startServer(opts: ServerOptions): Promise<{ url: string; c
   const projectFile = path.resolve(opts.projectFile);
   const projectDir = path.dirname(projectFile);
   const webDir = opts.webDir ?? fileURLToPath(new URL("../../web", import.meta.url));
-  const stateDir = path.join(projectDir, ".openeffects");
-  fs.mkdirSync(stateDir, { recursive: true });
 
-  // MCP config handed to agents. Also refresh AGENTS.md/CLAUDE.md/.mcp.json so the
-  // folder works with any agent started from a terminal.
-  const mcpConfigPath = path.join(stateDir, "mcp.json");
-  fs.writeFileSync(mcpConfigPath, JSON.stringify({ mcpServers: { openeffects: opts.mcp } }, null, 2));
+  // Refresh AGENTS.md/CLAUDE.md/.mcp.json so the folder also works with any agent started
+  // from a terminal.
   writeAgentFiles(projectDir, opts.mcp);
 
-  const providers: AgentProvider[] = [new ClaudeCodeProvider()];
-  const checkpoints = new Checkpoints(projectDir);
   const clients = new Set<WebSocket>();
-  // The conversation survives restarts: provider session id + event history.
-  const sessionFile = path.join(stateDir, "session.json");
-  const saved = loadSession(sessionFile);
-  const history: AgentEvent[] = saved.history;
-  let sessionId: string | undefined = saved.sessionId;
-  // Close turns that were cut off by a crash or restart, so the UI doesn't spin forever.
-  const openTurns = new Set<string>();
-  for (const e of history) {
-    if (e.type === "turn-start") openTurns.add(e.turnId);
-    if (e.type === "turn-end") openTurns.delete(e.turnId);
-  }
-  for (const turnId of openTurns) history.push({ type: "turn-end", turnId, ok: false, error: "Interrupted (server restarted)" });
-  let running: { turn: RunningTurn; turnId: string } | undefined;
-  const persistSession = () => {
-    try {
-      fs.writeFileSync(sessionFile, JSON.stringify({ sessionId, history }));
-    } catch {
-      // best effort
-    }
-  };
   let exporting: AbortController | undefined;
-
   let current = readProject(projectFile);
   let lastText = safeRead(projectFile);
 
@@ -92,12 +65,17 @@ export async function startServer(opts: ServerOptions): Promise<{ url: string; c
   };
   const projectMessage = (): Extract<ServerMessage, { type: "project" }> =>
     current.ok ? { type: "project", project: current.project, errors: [] } : { type: "project", project: null, errors: current.errors };
+
+  const agent: AgentSession = new AgentSession({
+    projectDir,
+    mcp: opts.mcp,
+    providers: opts.providers,
+    onEvent: (event) => broadcast({ type: "agent", event }),
+    onRunningChange: (running) => broadcast({ type: "agent-state", running }),
+    onCheckpointsChange: () => void pushCheckpoints(),
+  });
+  const checkpoints = agent.checkpoints;
   const pushCheckpoints = async () => broadcast({ type: "checkpoints", checkpoints: await checkpoints.list() });
-  const emit = (event: AgentEvent) => {
-    history.push(event);
-    if (history.length > 2000) history.splice(0, history.length - 2000);
-    broadcast({ type: "agent", event });
-  };
 
   // Hot reload: watch the project folder and push changes made by agents or editors.
   let debounce: NodeJS.Timeout | undefined;
@@ -112,45 +90,6 @@ export async function startServer(opts: ServerOptions): Promise<{ url: string; c
       broadcast(projectMessage());
     }, 40);
   });
-
-  const statuses = async (): Promise<ProviderStatus[]> => Promise.all(providers.map((p) => p.status()));
-
-  async function runTurn(providerId: string, prompt: string, model?: string): Promise<void> {
-    const provider = providers.find((p) => p.id === providerId);
-    if (!provider) throw new HttpError(400, `Unknown provider "${providerId}"`);
-    if (running) throw new HttpError(409, "The agent is already working");
-    const turnId = randomUUID();
-    const before = await checkpoints.create(`Before: ${prompt}`);
-    emit({ type: "turn-start", turnId, provider: provider.id, prompt, checkpointBefore: before?.id });
-    const turn = provider.startTurn({
-      prompt,
-      cwd: projectDir,
-      mcpConfigPath,
-      sessionId,
-      model,
-      onEvent: (e) => emit({ ...e, turnId } as AgentEvent),
-    });
-    running = { turn, turnId };
-    broadcast({ type: "agent-state", running: true, sessionId });
-    turn.done.then(async (r) => {
-      if (r.sessionId) sessionId = r.sessionId;
-      const after = await checkpoints.create(`After: ${prompt}`);
-      running = undefined;
-      emit({
-        type: "turn-end",
-        turnId,
-        ok: r.ok,
-        error: r.error,
-        costUsd: r.costUsd,
-        durationMs: r.durationMs,
-        checkpointBefore: before?.id,
-        checkpointAfter: after?.id,
-      });
-      broadcast({ type: "agent-state", running: false, sessionId });
-      persistSession();
-      await pushCheckpoints();
-    });
-  }
 
   async function startExport(format: ExportFormat, compId?: string): Promise<void> {
     if (exporting) throw new HttpError(409, "An export is already running");
@@ -196,7 +135,7 @@ export async function startServer(opts: ServerOptions): Promise<{ url: string; c
       if (vite) return vite.middlewares(req, res);
       return serveStatic(res, distDir, url.pathname === "/" ? "index.html" : url.pathname, path.join(distDir, "index.html"));
     } catch (e) {
-      const status = e instanceof HttpError ? e.status : 500;
+      const status = e instanceof HttpError || e instanceof AgentError ? e.status : 500;
       sendJson(res, status, { error: (e as Error).message, errors: e instanceof ProjectValidationError ? e.errors : undefined });
     }
   });
@@ -207,10 +146,10 @@ export async function startServer(opts: ServerOptions): Promise<{ url: string; c
       const state: StateResponse = {
         file: projectFile,
         ...projectMessage(),
-        providers: await statuses(),
+        providers: await agent.statuses(),
         checkpoints: await checkpoints.list(),
-        history,
-        running: !!running,
+        history: agent.history,
+        running: agent.isRunning,
       };
       return sendJson(res, 200, state);
     }
@@ -225,23 +164,20 @@ export async function startServer(opts: ServerOptions): Promise<{ url: string; c
     if (route === "POST /api/agent/turn") {
       const body = (await readJson(req)) as { provider?: string; prompt?: string; model?: string };
       if (!body.prompt?.trim()) throw new HttpError(400, "Empty prompt");
-      await runTurn(body.provider ?? "claude", body.prompt.trim(), body.model);
+      await agent.start(body.provider ?? "claude", body.prompt.trim(), body.model);
       return sendJson(res, 202, { ok: true });
     }
     if (route === "POST /api/agent/stop") {
-      running?.turn.stop();
+      agent.stop();
       return sendJson(res, 200, { ok: true });
     }
     if (route === "POST /api/agent/new") {
-      if (running) throw new HttpError(409, "Stop the running turn first");
-      sessionId = undefined;
-      history.length = 0;
-      persistSession();
+      agent.reset();
       broadcast({ type: "agent-reset" });
       return sendJson(res, 200, { ok: true });
     }
     if (route === "POST /api/checkpoints/restore") {
-      if (running) throw new HttpError(409, "Stop the agent before restoring");
+      if (agent.isRunning) throw new HttpError(409, "Stop the agent before restoring");
       const { id } = (await readJson(req)) as { id: string };
       await checkpoints.restore(id);
       await pushCheckpoints();
@@ -288,7 +224,7 @@ export async function startServer(opts: ServerOptions): Promise<{ url: string; c
   return {
     url: `http://${host === "0.0.0.0" ? "localhost" : host}:${port}`,
     async close() {
-      running?.turn.stop();
+      agent.stop();
       exporting?.abort();
       watcher.close();
       for (const ws of clients) ws.terminate();
@@ -323,15 +259,6 @@ class HttpError extends Error {
     message: string,
   ) {
     super(message);
-  }
-}
-
-function loadSession(file: string): { sessionId?: string; history: AgentEvent[] } {
-  try {
-    const data = JSON.parse(fs.readFileSync(file, "utf8"));
-    return { sessionId: typeof data.sessionId === "string" ? data.sessionId : undefined, history: Array.isArray(data.history) ? data.history : [] };
-  } catch {
-    return { history: [] };
   }
 }
 

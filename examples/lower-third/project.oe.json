@@ -1,0 +1,275 @@
+{
+  "$schema": "https://raw.githubusercontent.com/PrisacariuRobert/OpenEffects/main/schema/project.schema.json",
+  "version": 1,
+  "name": "lower-third",
+  "compositions": [
+    {
+      "id": "main",
+      "name": "Main",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "duration": 6,
+      "background": "#0b0d17",
+      "layers": [
+        {
+          "id": "bg",
+          "type": "solid",
+          "color": {
+            "type": "linear",
+            "stops": [
+              [
+                0,
+                "#14234a"
+              ],
+              [
+                1,
+                "#0d5552"
+              ]
+            ],
+            "from": [
+              -960,
+              -540
+            ],
+            "to": [
+              960,
+              540
+            ]
+          }
+        },
+        {
+          "id": "blob1",
+          "type": "ellipse",
+          "size": [
+            900,
+            900
+          ],
+          "fill": "#4fa3ff",
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    1500,
+                    250
+                  ],
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 3,
+                  "v": [
+                    1350,
+                    420
+                  ],
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 6,
+                  "v": [
+                    1500,
+                    250
+                  ]
+                }
+              ]
+            },
+            "opacity": 60
+          },
+          "effects": [
+            {
+              "type": "blur",
+              "radius": 160
+            }
+          ]
+        },
+        {
+          "id": "blob2",
+          "type": "ellipse",
+          "size": [
+            700,
+            700
+          ],
+          "fill": "#4fd1c5",
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    350,
+                    200
+                  ],
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 3,
+                  "v": [
+                    500,
+                    120
+                  ],
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 6,
+                  "v": [
+                    350,
+                    200
+                  ]
+                }
+              ]
+            },
+            "opacity": 45
+          },
+          "effects": [
+            {
+              "type": "blur",
+              "radius": 140
+            }
+          ]
+        },
+        {
+          "id": "lt",
+          "type": "null",
+          "transform": {
+            "anchor": [
+              0,
+              0
+            ],
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    -900,
+                    0
+                  ],
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 0.6,
+                  "v": [
+                    0,
+                    0
+                  ],
+                  "ease": "easeInOutCubic"
+                },
+                {
+                  "t": 5,
+                  "v": [
+                    0,
+                    0
+                  ],
+                  "ease": "easeInCubic"
+                },
+                {
+                  "t": 5.6,
+                  "v": [
+                    -900,
+                    0
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "panel",
+          "type": "rect",
+          "parent": "lt",
+          "size": [
+            480,
+            170
+          ],
+          "radius": 6,
+          "fill": "rgba(8,12,28,0.8)",
+          "transform": {
+            "position": [
+              240,
+              880
+            ]
+          }
+        },
+        {
+          "id": "bar",
+          "type": "rect",
+          "parent": "lt",
+          "size": [
+            10,
+            170
+          ],
+          "fill": "#4fd1c5",
+          "transform": {
+            "position": [
+              5,
+              880
+            ]
+          }
+        },
+        {
+          "id": "name",
+          "type": "text",
+          "parent": "lt",
+          "text": "Ana Ruiz",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 64
+          },
+          "fill": "#ffffff",
+          "align": "left",
+          "animator": {
+            "by": "character",
+            "stagger": 0.03,
+            "duration": 0.6,
+            "ease": "easeOutCubic",
+            "from": {
+              "opacity": 0,
+              "offset": [
+                0,
+                30
+              ]
+            }
+          },
+          "transform": {
+            "position": [
+              208,
+              852
+            ]
+          }
+        },
+        {
+          "id": "sub",
+          "type": "text",
+          "parent": "lt",
+          "text": "Product Designer",
+          "font": {
+            "family": "Inter",
+            "weight": 500,
+            "size": 36
+          },
+          "fill": "#a9c7ff",
+          "align": "left",
+          "transform": {
+            "position": [
+              218,
+              914
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0.3,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 0.8,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

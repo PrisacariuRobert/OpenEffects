@@ -18,8 +18,10 @@ pnpm dev            # editor on examples/logo-reveal (Vite dev mode when apps/we
 - **A new easing.** `packages/schema/src/easing.ts`.
 - **An example or template.** Add a folder under `examples/` with a `project.oe.json`. Every example is
   validated by the test suite. If an agent made it, include the prompt.
-- **An agent adapter** (Codex, OpenCode, Gemini CLI…). Implement `AgentProvider` from
-  `apps/server/src/agents/types.ts` (see `claude.ts`) and register it in `apps/server/src/server.ts`.
+- **An agent adapter** (Gemini CLI, Aider…). Implement `AgentProvider` from
+  `apps/server/src/agents/types.ts` (see `claude.ts`, `codex.ts`, `opencode.ts`; `process.ts` handles
+  spawning and JSONL), register it in `defaultProviders()` in `apps/server/src/agents/session.ts`, and add
+  parser fixtures plus a fake-CLI test to `apps/server/test/agents.test.ts`.
   Adapters must run the user's own CLI and never handle their credentials.
 
 ## Rules of thumb

@@ -30,6 +30,24 @@ function toolDetail(input: unknown): string {
   return parts.filter(Boolean).map(String).join(" · ");
 }
 
+function readPref(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writePref(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // storage unavailable (private mode etc.)
+  }
+}
+
+const formatTokens = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n));
+
 type Turn = { start?: Extract<AgentEvent, { type: "turn-start" }>; items: AgentEvent[]; end?: Extract<AgentEvent, { type: "turn-end" }> };
 
 function groupTurns(events: AgentEvent[]): Turn[] {
@@ -46,9 +64,26 @@ function groupTurns(events: AgentEvent[]): Turn[] {
 
 export function AgentPanel({ events, running, providers, onError }: Props) {
   const [prompt, setPrompt] = useState("");
-  const [provider, setProvider] = useState("claude");
+  const [provider, setProviderState] = useState(() => readPref("oe.provider") || "claude");
+  const [models, setModels] = useState<Record<string, string>>(() => {
+    try {
+      return JSON.parse(readPref("oe.models") || "{}");
+    } catch {
+      return {};
+    }
+  });
+  const setProvider = (id: string) => {
+    setProviderState(id);
+    writePref("oe.provider", id);
+  };
+  const setModel = (value: string) => {
+    const next = { ...models, [provider]: value };
+    setModels(next);
+    writePref("oe.models", JSON.stringify(next));
+  };
   const listRef = useRef<HTMLDivElement>(null);
   const status = providers.find((p) => p.id === provider);
+  const model = models[provider] ?? status?.defaultModel ?? "";
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
@@ -57,7 +92,7 @@ export function AgentPanel({ events, running, providers, onError }: Props) {
   const send = async (text = prompt) => {
     if (!text.trim() || running) return;
     try {
-      await api("/api/agent/turn", { provider, prompt: text });
+      await api("/api/agent/turn", { provider, prompt: text, model: model || undefined });
       setPrompt("");
     } catch (e) {
       onError((e as Error).message);
@@ -80,21 +115,36 @@ export function AgentPanel({ events, running, providers, onError }: Props) {
   return (
     <div className="agent">
       <div className="agent-head">
-        <select value={provider} onChange={(e) => setProvider(e.target.value)} disabled={running}>
+        <select value={provider} onChange={(e) => setProvider(e.target.value)} disabled={running} title={status?.detail}>
           {providers.map((p) => (
-            <option key={p.id} value={p.id} disabled={!p.available}>
+            <option key={p.id} value={p.id}>
               {p.label}
+              {p.available ? "" : " (not set up)"}
             </option>
           ))}
-          <option disabled>Codex (coming soon)</option>
-          <option disabled>OpenCode (coming soon)</option>
         </select>
+        <input
+          className="model"
+          list={`models-${provider}`}
+          value={model}
+          onChange={(e) => setModel(e.target.value)}
+          placeholder="default model"
+          disabled={running}
+          title="Model id. Pick a suggestion or type any model your CLI supports."
+        />
+        <datalist id={`models-${provider}`}>
+          {status?.models.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.label}
+            </option>
+          ))}
+        </datalist>
         <span className={`dot ${status?.available ? "ok" : "bad"}`} title={status?.detail} />
-        <span className="muted small grow">{status ? (status.available ? status.detail : "not installed") : "…"}</span>
         <button className="ghost small" disabled={running || events.length === 0} onClick={() => api("/api/agent/new", {}).catch((e) => onError(e.message))}>
           New chat
         </button>
       </div>
+      {status && !status.available && <div className="setup-hint">{status.detail}</div>}
 
       <div className="agent-log" ref={listRef}>
         {turns.length === 0 && (
@@ -105,12 +155,17 @@ export function AgentPanel({ events, running, providers, onError }: Props) {
                 {ex}
               </button>
             ))}
-            {status && !status.available && <p className="warn">{status.detail}</p>}
           </div>
         )}
         {turns.map((turn, i) => (
           <div className="turn" key={turn.start?.turnId ?? i}>
             {turn.start && <div className="msg user">{turn.start.prompt}</div>}
+            {turn.start && (
+              <div className="status-line right">
+                {providers.find((p) => p.id === turn.start?.provider)?.label ?? turn.start.provider}
+                {turn.start.model ? ` · ${turn.start.model}` : ""}
+              </div>
+            )}
             {turn.items.map((e, j) => {
               if (e.type === "text")
                 return (
@@ -137,6 +192,7 @@ export function AgentPanel({ events, running, providers, onError }: Props) {
                   {turn.end.ok ? "Done" : turn.end.error === "Stopped" ? "Stopped" : `Failed: ${turn.end.error}`}
                   {turn.end.durationMs ? ` · ${(turn.end.durationMs / 1000).toFixed(0)}s` : ""}
                   {turn.end.costUsd ? ` · $${turn.end.costUsd.toFixed(3)}` : ""}
+                  {!turn.end.costUsd && turn.end.tokens ? ` · ${formatTokens(turn.end.tokens.input + turn.end.tokens.output)} tokens` : ""}
                 </span>
                 {turn.end.checkpointBefore && (
                   <button className="ghost small" onClick={() => undo(turn.end?.checkpointBefore)} disabled={running} title="Restore the project to how it was before this turn">

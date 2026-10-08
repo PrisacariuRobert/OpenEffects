@@ -3,8 +3,9 @@
 > **Status (Oct 2026):** Phase 0 is built. The schema, renderer, MCP server (with visual feedback), Claude Code
 > adapter, per-turn checkpoints, editor UI, CLI and ffmpeg export all work, and Claude Code made
 > [`examples/nebula`](../examples/nebula) from one prompt. Differences from the plan below: the prototype
-> renders with Canvas 2D (one engine for preview and export, in browser and Node) and keeps WebGPU for later;
-> Codex/OpenCode adapters and the desktop app are the next steps.
+> renders with Canvas 2D (one engine for preview and export, in browser and Node) and keeps WebGPU for later.
+> Codex and OpenCode adapters, a model picker (Claude Haiku 5.5 by default) and `oe ask` followed; five more
+> examples were made on Haiku 5.5 for about $0.07 in total. Next: desktop app and npm packaging.
 
 ## 1. Is it possible?
 

@@ -1,25 +1,48 @@
-import { spawn, execFile } from "node:child_process";
-import { createInterface } from "node:readline";
-import type { AgentProvider, ProviderStatus, RunningTurn, TurnRequest, TurnResult } from "./types.ts";
+import { run, runJsonlProcess, stderrTail, summarizeContent } from "./process.ts";
+import { AGENT_INSTRUCTIONS, type AdapterEvent, type AgentProvider, type ProviderStatus, type RunningTurn, type TurnRequest, type TurnResult } from "./types.ts";
 
-const SYSTEM_PROMPT = [
-  "You are the AI motion designer inside OpenEffects, an open-source motion graphics app.",
-  "The user watches a live preview of project.oe.json while you work, so every saved edit appears immediately.",
-  "Edit the animation with the openeffects MCP tools (or by editing project.oe.json), then check it visually with",
-  "mcp__openeffects__oe_render_contact_sheet / oe_render_frame and fix what looks wrong before you finish.",
-  "Reply briefly: what you made or changed, in 1-3 sentences.",
-].join(" ");
+export const CLAUDE_MODELS = [
+  { id: "claude-haiku-5-5", label: "Haiku 5.5 (fastest, cheapest)" },
+  { id: "claude-sonnet-5-5", label: "Sonnet 5.5 (balanced)" },
+  { id: "claude-opus-5-5", label: "Opus 5.5 (most capable)" },
+];
 
-/** Summarise a tool_result content block for the UI. */
-function summarizeResult(content: unknown): string {
-  if (typeof content === "string") return content.slice(0, 400);
-  if (Array.isArray(content)) {
-    return content
-      .map((c: { type?: string; text?: string }) => (c.type === "text" ? (c.text ?? "") : c.type === "image" ? "[image]" : ""))
-      .join(" ")
-      .slice(0, 400);
-  }
-  return "";
+/** Translates Claude Code `--output-format stream-json` messages into adapter events. */
+export function createClaudeParser(emit: (e: AdapterEvent) => void) {
+  const state: { sessionId?: string; result?: TurnResult } = {};
+  return {
+    state,
+    onMessage(msg: Record<string, any>) {
+      if (typeof msg.session_id === "string") state.sessionId = msg.session_id;
+      switch (msg.type) {
+        case "system":
+          if (msg.subtype === "init") emit({ type: "status", text: `Connected to Claude Code${msg.model ? ` (${msg.model})` : ""}` });
+          break;
+        case "assistant":
+          for (const block of msg.message?.content ?? []) {
+            if (block.type === "text" && block.text?.trim()) emit({ type: "text", text: block.text });
+            if (block.type === "tool_use") emit({ type: "tool-call", id: block.id, name: block.name, input: block.input });
+          }
+          break;
+        case "user":
+          for (const block of Array.isArray(msg.message?.content) ? msg.message.content : []) {
+            if (block.type === "tool_result") emit({ type: "tool-result", id: block.tool_use_id, ok: !block.is_error, summary: summarizeContent(block.content) });
+          }
+          break;
+        case "result": {
+          const failed = msg.is_error || msg.subtype !== "success";
+          state.result = {
+            ok: !failed,
+            error: failed ? String(msg.result || msg.subtype || "Claude Code reported an error") : undefined,
+            costUsd: typeof msg.total_cost_usd === "number" ? msg.total_cost_usd : undefined,
+            durationMs: typeof msg.duration_ms === "number" ? msg.duration_ms : undefined,
+            tokens: msg.usage ? { input: (msg.usage.input_tokens ?? 0) + (msg.usage.cache_read_input_tokens ?? 0) + (msg.usage.cache_creation_input_tokens ?? 0), output: msg.usage.output_tokens ?? 0 } : undefined,
+          };
+          break;
+        }
+      }
+    },
+  };
 }
 
 /**
@@ -33,26 +56,27 @@ export class ClaudeCodeProvider implements AgentProvider {
 
   constructor(private bin = process.env.OE_CLAUDE_BIN || "claude") {}
 
-  status(): Promise<ProviderStatus> {
-    return new Promise((resolve) => {
-      execFile(this.bin, ["--version"], { timeout: 10_000 }, (err, stdout) => {
-        resolve(
-          err
-            ? { id: this.id, label: this.label, available: false, detail: "Not found. Install Claude Code and run `claude` once to log in." }
-            : { id: this.id, label: this.label, available: true, detail: stdout.trim() },
-        );
-      });
-    });
+  async status(): Promise<ProviderStatus> {
+    const r = await run(this.bin, ["--version"]);
+    return {
+      id: this.id,
+      label: this.label,
+      available: r.ok,
+      detail: r.ok ? r.stdout.trim() : "Not found. Install Claude Code and run `claude` once to log in.",
+      models: CLAUDE_MODELS,
+      defaultModel: "claude-haiku-5-5",
+    };
   }
 
   startTurn(req: TurnRequest): RunningTurn {
+    const mcpConfig = JSON.stringify({ mcpServers: { openeffects: { command: req.mcp.command, args: req.mcp.args } } });
     const args = [
       "-p",
       "--output-format",
       "stream-json",
       "--verbose",
       "--mcp-config",
-      req.mcpConfigPath,
+      mcpConfig,
       "--strict-mcp-config",
       "--permission-mode",
       "acceptEdits",
@@ -64,75 +88,23 @@ export class ClaudeCodeProvider implements AgentProvider {
       "Glob",
       "Grep",
       "--append-system-prompt",
-      SYSTEM_PROMPT,
+      AGENT_INSTRUCTIONS,
     ];
     if (req.sessionId) args.push("--resume", req.sessionId);
     if (req.model) args.push("--model", req.model);
 
-    const child = spawn(this.bin, args, { cwd: req.cwd, env: process.env, stdio: ["pipe", "pipe", "pipe"] });
-    child.stdin.end(req.prompt);
-
-    let stderr = "";
-    let sessionId = req.sessionId;
-    let result: TurnResult | undefined;
-    child.stderr.on("data", (d) => (stderr += d));
-
-    const lines = createInterface({ input: child.stdout });
-    lines.on("line", (line) => {
-      let msg: Record<string, any>;
-      try {
-        msg = JSON.parse(line);
-      } catch {
-        return;
-      }
-      if (msg.session_id) sessionId = msg.session_id;
-      switch (msg.type) {
-        case "system":
-          if (msg.subtype === "init") req.onEvent({ type: "status", text: `Connected to Claude Code${msg.model ? ` (${msg.model})` : ""}` });
-          break;
-        case "assistant":
-          for (const block of msg.message?.content ?? []) {
-            if (block.type === "text" && block.text?.trim()) req.onEvent({ type: "text", text: block.text });
-            if (block.type === "tool_use") req.onEvent({ type: "tool-call", id: block.id, name: block.name, input: block.input });
-          }
-          break;
-        case "user":
-          for (const block of Array.isArray(msg.message?.content) ? msg.message.content : []) {
-            if (block.type === "tool_result")
-              req.onEvent({ type: "tool-result", id: block.tool_use_id, ok: !block.is_error, summary: summarizeResult(block.content) });
-          }
-          break;
-        case "result":
-          result = {
-            ok: !msg.is_error && msg.subtype === "success",
-            error: msg.is_error || msg.subtype !== "success" ? String(msg.result ?? msg.subtype ?? "Claude Code reported an error") : undefined,
-            sessionId,
-            costUsd: typeof msg.total_cost_usd === "number" ? msg.total_cost_usd : undefined,
-            durationMs: typeof msg.duration_ms === "number" ? msg.duration_ms : undefined,
-          };
-          break;
-      }
+    const parser = createClaudeParser(req.onEvent);
+    return runJsonlProcess({
+      bin: this.bin,
+      args,
+      cwd: req.cwd,
+      stdin: req.prompt,
+      onMessage: parser.onMessage,
+      notFound: "Claude Code CLI not found (`claude`).",
+      finish: ({ code, stderr }) =>
+        parser.state.result
+          ? { ...parser.state.result, sessionId: parser.state.sessionId }
+          : { ok: false, sessionId: parser.state.sessionId, error: stderrTail(stderr) || `claude exited with code ${code}` },
     });
-
-    let stopped = false;
-    const done = new Promise<TurnResult>((resolve) => {
-      child.on("error", (e: NodeJS.ErrnoException) =>
-        resolve({ ok: false, error: e.code === "ENOENT" ? "Claude Code CLI not found (`claude`)." : e.message, sessionId }),
-      );
-      child.on("close", (code) => {
-        if (stopped) return resolve({ ok: false, error: "Stopped", sessionId });
-        if (result) return resolve({ ...result, sessionId: result.sessionId ?? sessionId });
-        resolve({ ok: false, error: stderr.trim().split("\n").slice(-5).join("\n") || `claude exited with code ${code}`, sessionId });
-      });
-    });
-
-    return {
-      stop: () => {
-        stopped = true;
-        child.kill("SIGINT");
-        setTimeout(() => child.kill("SIGKILL"), 3000).unref();
-      },
-      done,
-    };
   }
 }
