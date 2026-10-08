@@ -1,0 +1,477 @@
+{
+  "version": 1,
+  "name": "nebula",
+  "compositions": [
+    {
+      "id": "main",
+      "name": "Main",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "duration": 5,
+      "background": "#05060f",
+      "layers": [
+        {
+          "id": "bg",
+          "type": "rect",
+          "size": [
+            1920,
+            1080
+          ],
+          "fill": {
+            "type": "radial",
+            "stops": [
+              [
+                0,
+                "#1a1440"
+              ],
+              [
+                1,
+                "#05060f"
+              ]
+            ],
+            "radius": 1100
+          }
+        },
+        {
+          "id": "cloud1",
+          "type": "ellipse",
+          "size": [
+            900,
+            500
+          ],
+          "fill": "#5b3bd6",
+          "blend": "screen",
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    700,
+                    500
+                  ],
+                  "ease": "linear"
+                },
+                {
+                  "t": 5,
+                  "v": [
+                    800,
+                    460
+                  ]
+                }
+              ]
+            },
+            "opacity": 30,
+            "rotation": -20
+          },
+          "effects": [
+            {
+              "type": "blur",
+              "radius": 160
+            }
+          ]
+        },
+        {
+          "id": "cloud2",
+          "type": "ellipse",
+          "size": [
+            800,
+            420
+          ],
+          "fill": "#1fb5d8",
+          "blend": "screen",
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    1250,
+                    620
+                  ],
+                  "ease": "linear"
+                },
+                {
+                  "t": 5,
+                  "v": [
+                    1150,
+                    660
+                  ]
+                }
+              ]
+            },
+            "opacity": 22,
+            "rotation": 25
+          },
+          "effects": [
+            {
+              "type": "blur",
+              "radius": 170
+            }
+          ]
+        },
+        {
+          "id": "s1",
+          "type": "ellipse",
+          "size": [
+            4,
+            4
+          ],
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              300,
+              200
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 20
+                },
+                {
+                  "t": 2,
+                  "v": 90
+                },
+                {
+                  "t": 4,
+                  "v": 30
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "s2",
+          "type": "ellipse",
+          "size": [
+            3,
+            3
+          ],
+          "fill": "#cfd8ff",
+          "transform": {
+            "position": [
+              1620,
+              260
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 80
+                },
+                {
+                  "t": 2.5,
+                  "v": 25
+                },
+                {
+                  "t": 5,
+                  "v": 85
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "s3",
+          "type": "ellipse",
+          "size": [
+            5,
+            5
+          ],
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              1480,
+              900
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 30
+                },
+                {
+                  "t": 1.5,
+                  "v": 95
+                },
+                {
+                  "t": 3.5,
+                  "v": 30
+                },
+                {
+                  "t": 5,
+                  "v": 70
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "s4",
+          "type": "ellipse",
+          "size": [
+            3,
+            3
+          ],
+          "fill": "#cfd8ff",
+          "transform": {
+            "position": [
+              420,
+              860
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 60
+                },
+                {
+                  "t": 3,
+                  "v": 20
+                },
+                {
+                  "t": 5,
+                  "v": 70
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "s5",
+          "type": "ellipse",
+          "size": [
+            3,
+            3
+          ],
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              1100,
+              110
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 25
+                },
+                {
+                  "t": 2,
+                  "v": 85
+                },
+                {
+                  "t": 5,
+                  "v": 30
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "ring",
+          "type": "path",
+          "d": "M 1110 400 A 150 150 0 1 1 810 400 A 150 150 0 1 1 1110 400",
+          "stroke": {
+            "color": "#9fb4ff",
+            "width": 10,
+            "cap": "round"
+          },
+          "trim": {
+            "end": {
+              "keyframes": [
+                {
+                  "t": 0.2,
+                  "v": 0,
+                  "ease": "easeInOutCubic"
+                },
+                {
+                  "t": 1.9,
+                  "v": 100
+                }
+              ]
+            }
+          },
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 36,
+              "intensity": 1.6,
+              "color": "#7a8cff"
+            }
+          ]
+        },
+        {
+          "id": "core",
+          "type": "ellipse",
+          "size": [
+            60,
+            60
+          ],
+          "fill": {
+            "type": "radial",
+            "stops": [
+              [
+                0,
+                "#ffffff"
+              ],
+              [
+                1,
+                "#7a8cff00"
+              ]
+            ],
+            "radius": 30
+          },
+          "transform": {
+            "position": [
+              960,
+              400
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 1.6,
+                  "v": 0,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 2.4,
+                  "v": 100,
+                  "ease": "easeInOut"
+                },
+                {
+                  "t": 3.5,
+                  "v": 130,
+                  "ease": "easeInOut"
+                },
+                {
+                  "t": 5,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 1.6,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 2.2,
+                  "v": 100
+                }
+              ]
+            }
+          },
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 40,
+              "intensity": 1.2,
+              "color": "#9fb4ff"
+            }
+          ]
+        },
+        {
+          "id": "title",
+          "type": "text",
+          "text": "NEBULA",
+          "align": "center",
+          "letterSpacing": 24,
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 150
+          },
+          "fill": {
+            "type": "linear",
+            "stops": [
+              [
+                0,
+                "#ffffff"
+              ],
+              [
+                1,
+                "#a9b8ff"
+              ]
+            ],
+            "from": [
+              0,
+              -75
+            ],
+            "to": [
+              0,
+              75
+            ]
+          },
+          "transform": {
+            "position": [
+              960,
+              712
+            ]
+          },
+          "animator": {
+            "by": "character",
+            "stagger": 0.1,
+            "duration": 0.7,
+            "ease": "easeOutCubic",
+            "from": {
+              "opacity": 0,
+              "offset": [
+                0,
+                50
+              ],
+              "scale": 80,
+              "blur": 12
+            }
+          },
+          "in": 1.7,
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 24,
+              "intensity": 0.6,
+              "color": "#7a8cff"
+            }
+          ]
+        },
+        {
+          "id": "tagline",
+          "type": "text",
+          "text": "Explore further",
+          "align": "center",
+          "letterSpacing": 10,
+          "font": {
+            "family": "Inter",
+            "weight": 300,
+            "size": 44
+          },
+          "fill": "#a5b0e6",
+          "in": 3.1,
+          "transform": {
+            "position": [
+              960,
+              850
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 3.1,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 3.9,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

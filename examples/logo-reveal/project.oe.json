@@ -1,0 +1,207 @@
+{
+  "$schema": "https://raw.githubusercontent.com/PrisacariuRobert/OpenEffects/main/schema/project.schema.json",
+  "version": 1,
+  "name": "Logo reveal",
+  "compositions": [
+    {
+      "id": "main",
+      "name": "Logo reveal",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "duration": 5,
+      "background": "#07080f",
+      "layers": [
+        {
+          "id": "bg-glow",
+          "type": "ellipse",
+          "size": [
+            1400,
+            1400
+          ],
+          "fill": {
+            "type": "radial",
+            "stops": [
+              [
+                0,
+                "#3b2bff55"
+              ],
+              [
+                1,
+                "#3b2bff00"
+              ]
+            ],
+            "radius": 700
+          },
+          "transform": {
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 40,
+                  "ease": "easeOutExpo"
+                },
+                {
+                  "t": 2,
+                  "v": 110
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 1.2,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "ring",
+          "type": "path",
+          "d": "M 960 290 A 250 250 0 1 1 959.9 290",
+          "stroke": {
+            "color": "#8f7bff",
+            "width": 6,
+            "cap": "round"
+          },
+          "trim": {
+            "end": {
+              "keyframes": [
+                {
+                  "t": 0.2,
+                  "v": 0,
+                  "ease": "easeInOutCubic"
+                },
+                {
+                  "t": 1.4,
+                  "v": 100
+                }
+              ]
+            }
+          },
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 18,
+              "intensity": 1.2
+            }
+          ]
+        },
+        {
+          "id": "wipe",
+          "type": "rect",
+          "visible": false,
+          "size": [
+            1000,
+            700
+          ],
+          "fill": "#fff",
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 1.0,
+                  "v": [
+                    -600,
+                    540
+                  ],
+                  "ease": "easeOutQuart"
+                },
+                {
+                  "t": 1.9,
+                  "v": [
+                    960,
+                    540
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "logo",
+          "type": "text",
+          "text": "OpenEffects",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 150
+          },
+          "letterSpacing": -4,
+          "fill": {
+            "type": "linear",
+            "stops": [
+              [
+                0,
+                "#ffffff"
+              ],
+              [
+                1,
+                "#b8acff"
+              ]
+            ],
+            "from": [
+              0,
+              -70
+            ],
+            "to": [
+              0,
+              70
+            ]
+          },
+          "matte": {
+            "layer": "wipe"
+          },
+          "effects": [
+            {
+              "type": "dropShadow",
+              "distance": 0,
+              "softness": 40,
+              "color": "rgba(80,60,255,0.6)"
+            }
+          ]
+        },
+        {
+          "id": "tagline",
+          "type": "text",
+          "text": "motion graphics, driven by your AI agent",
+          "in": 1.8,
+          "font": {
+            "family": "Inter",
+            "weight": 500,
+            "size": 40
+          },
+          "fill": "#a9aec8",
+          "letterSpacing": 2,
+          "transform": {
+            "position": [
+              960,
+              680
+            ]
+          },
+          "animator": {
+            "by": "word",
+            "stagger": 0.08,
+            "duration": 0.7,
+            "ease": "easeOutCubic",
+            "from": {
+              "opacity": 0,
+              "offset": [
+                0,
+                24
+              ],
+              "blur": 6
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

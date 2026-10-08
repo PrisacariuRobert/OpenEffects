@@ -1,5 +1,11 @@
 # OpenEffects: Feasibility, Architecture & Zero-Budget Launch Plan
 
+> **Status (Oct 2026):** Phase 0 is built. The schema, renderer, MCP server (with visual feedback), Claude Code
+> adapter, per-turn checkpoints, editor UI, CLI and ffmpeg export all work, and Claude Code made
+> [`examples/nebula`](../examples/nebula) from one prompt. Differences from the plan below: the prototype
+> renders with Canvas 2D (one engine for preview and export, in browser and Node) and keeps WebGPU for later;
+> Codex/OpenCode adapters and the desktop app are the next steps.
+
 ## 1. Is it possible?
 
 **Yes, if the goal is "open-source motion graphics app that AI agents can drive," not "clone every After Effects feature."**

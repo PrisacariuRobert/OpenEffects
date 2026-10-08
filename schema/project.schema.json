@@ -1,0 +1,1342 @@
+{
+  "title": "OpenEffects project",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "$ref": "#/$defs/__schema0"
+    },
+    "version": {
+      "$ref": "#/$defs/__schema1"
+    },
+    "name": {
+      "$ref": "#/$defs/__schema2"
+    },
+    "compositions": {
+      "$ref": "#/$defs/__schema3"
+    }
+  },
+  "required": [
+    "version",
+    "compositions"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "__schema0": {
+      "type": "string"
+    },
+    "__schema1": {
+      "type": "number",
+      "const": 1
+    },
+    "__schema2": {
+      "type": "string"
+    },
+    "__schema3": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/__schema4"
+      },
+      "description": "The first composition is the main one"
+    },
+    "__schema4": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "Composition id",
+          "$ref": "#/$defs/__schema5"
+        },
+        "name": {
+          "type": "string"
+        },
+        "width": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 8192
+        },
+        "height": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 8192
+        },
+        "fps": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 240
+        },
+        "duration": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Seconds"
+        },
+        "background": {
+          "description": "Default: transparent (black in video exports)",
+          "$ref": "#/$defs/__schema6"
+        },
+        "layers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/__schema7"
+          },
+          "description": "Rendered in order: the LAST layer is drawn on top"
+        }
+      },
+      "required": [
+        "id",
+        "width",
+        "height",
+        "fps",
+        "duration",
+        "layers"
+      ],
+      "additionalProperties": false
+    },
+    "__schema5": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "description": "Unique id within the composition"
+    },
+    "__schema6": {
+      "type": "string",
+      "description": "Color: #rgb, #rrggbb, #rrggbbaa, rgb()/rgba() or a basic name"
+    },
+    "__schema7": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/__schema5"
+            },
+            "name": {
+              "$ref": "#/$defs/__schema8"
+            },
+            "in": {
+              "$ref": "#/$defs/__schema9"
+            },
+            "out": {
+              "$ref": "#/$defs/__schema11"
+            },
+            "visible": {
+              "$ref": "#/$defs/__schema13"
+            },
+            "parent": {
+              "$ref": "#/$defs/__schema15"
+            },
+            "transform": {
+              "$ref": "#/$defs/__schema17"
+            },
+            "effects": {
+              "$ref": "#/$defs/__schema33"
+            },
+            "blend": {
+              "$ref": "#/$defs/__schema36"
+            },
+            "matte": {
+              "$ref": "#/$defs/__schema37"
+            },
+            "type": {
+              "type": "string",
+              "const": "solid"
+            },
+            "color": {
+              "description": "A color or a gradient",
+              "$ref": "#/$defs/__schema42"
+            },
+            "size": {
+              "description": "Default: composition size",
+              "$ref": "#/$defs/__schema18"
+            }
+          },
+          "required": [
+            "id",
+            "type",
+            "color"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/__schema5"
+            },
+            "name": {
+              "$ref": "#/$defs/__schema8"
+            },
+            "in": {
+              "$ref": "#/$defs/__schema9"
+            },
+            "out": {
+              "$ref": "#/$defs/__schema11"
+            },
+            "visible": {
+              "$ref": "#/$defs/__schema13"
+            },
+            "parent": {
+              "$ref": "#/$defs/__schema15"
+            },
+            "transform": {
+              "$ref": "#/$defs/__schema17"
+            },
+            "effects": {
+              "$ref": "#/$defs/__schema33"
+            },
+            "blend": {
+              "$ref": "#/$defs/__schema36"
+            },
+            "matte": {
+              "$ref": "#/$defs/__schema37"
+            },
+            "type": {
+              "type": "string",
+              "const": "rect"
+            },
+            "size": {
+              "$ref": "#/$defs/__schema18"
+            },
+            "radius": {
+              "$ref": "#/$defs/__schema30"
+            },
+            "fill": {
+              "$ref": "#/$defs/__schema42"
+            },
+            "stroke": {
+              "$ref": "#/$defs/__schema43"
+            }
+          },
+          "required": [
+            "id",
+            "type",
+            "size"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/__schema5"
+            },
+            "name": {
+              "$ref": "#/$defs/__schema8"
+            },
+            "in": {
+              "$ref": "#/$defs/__schema9"
+            },
+            "out": {
+              "$ref": "#/$defs/__schema11"
+            },
+            "visible": {
+              "$ref": "#/$defs/__schema13"
+            },
+            "parent": {
+              "$ref": "#/$defs/__schema15"
+            },
+            "transform": {
+              "$ref": "#/$defs/__schema17"
+            },
+            "effects": {
+              "$ref": "#/$defs/__schema33"
+            },
+            "blend": {
+              "$ref": "#/$defs/__schema36"
+            },
+            "matte": {
+              "$ref": "#/$defs/__schema37"
+            },
+            "type": {
+              "type": "string",
+              "const": "ellipse"
+            },
+            "size": {
+              "$ref": "#/$defs/__schema18"
+            },
+            "fill": {
+              "$ref": "#/$defs/__schema42"
+            },
+            "stroke": {
+              "$ref": "#/$defs/__schema43"
+            }
+          },
+          "required": [
+            "id",
+            "type",
+            "size"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/__schema5"
+            },
+            "name": {
+              "$ref": "#/$defs/__schema8"
+            },
+            "in": {
+              "$ref": "#/$defs/__schema9"
+            },
+            "out": {
+              "$ref": "#/$defs/__schema11"
+            },
+            "visible": {
+              "$ref": "#/$defs/__schema13"
+            },
+            "parent": {
+              "$ref": "#/$defs/__schema15"
+            },
+            "transform": {
+              "$ref": "#/$defs/__schema17"
+            },
+            "effects": {
+              "$ref": "#/$defs/__schema33"
+            },
+            "blend": {
+              "$ref": "#/$defs/__schema36"
+            },
+            "matte": {
+              "$ref": "#/$defs/__schema37"
+            },
+            "type": {
+              "type": "string",
+              "const": "path"
+            },
+            "d": {
+              "type": "string",
+              "minLength": 1,
+              "description": "SVG path data, in layer coordinates"
+            },
+            "fill": {
+              "$ref": "#/$defs/__schema42"
+            },
+            "stroke": {
+              "$ref": "#/$defs/__schema43"
+            },
+            "trim": {
+              "description": "Animate end 0→100 to draw a line on",
+              "$ref": "#/$defs/__schema44"
+            }
+          },
+          "required": [
+            "id",
+            "type",
+            "d"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/__schema5"
+            },
+            "name": {
+              "$ref": "#/$defs/__schema8"
+            },
+            "in": {
+              "$ref": "#/$defs/__schema9"
+            },
+            "out": {
+              "$ref": "#/$defs/__schema11"
+            },
+            "visible": {
+              "$ref": "#/$defs/__schema13"
+            },
+            "parent": {
+              "$ref": "#/$defs/__schema15"
+            },
+            "transform": {
+              "$ref": "#/$defs/__schema17"
+            },
+            "effects": {
+              "$ref": "#/$defs/__schema33"
+            },
+            "blend": {
+              "$ref": "#/$defs/__schema36"
+            },
+            "matte": {
+              "$ref": "#/$defs/__schema37"
+            },
+            "type": {
+              "type": "string",
+              "const": "text"
+            },
+            "text": {
+              "type": "string",
+              "description": "Use \\n for line breaks"
+            },
+            "font": {
+              "type": "object",
+              "properties": {
+                "family": {
+                  "description": "Default Inter",
+                  "$ref": "#/$defs/__schema45"
+                },
+                "weight": {
+                  "description": "100-900. Default 700",
+                  "$ref": "#/$defs/__schema46"
+                },
+                "style": {
+                  "type": "string",
+                  "enum": [
+                    "normal",
+                    "italic"
+                  ]
+                },
+                "size": {
+                  "description": "px. Default 96",
+                  "$ref": "#/$defs/__schema30"
+                }
+              },
+              "additionalProperties": false
+            },
+            "fill": {
+              "description": "Default white",
+              "$ref": "#/$defs/__schema42"
+            },
+            "stroke": {
+              "$ref": "#/$defs/__schema43"
+            },
+            "align": {
+              "description": "Default center",
+              "$ref": "#/$defs/__schema47"
+            },
+            "letterSpacing": {
+              "description": "px. Default 0",
+              "$ref": "#/$defs/__schema30"
+            },
+            "lineHeight": {
+              "description": "Multiple of font size. Default 1.2",
+              "$ref": "#/$defs/__schema48"
+            },
+            "animator": {
+              "type": "object",
+              "properties": {
+                "by": {
+                  "$ref": "#/$defs/__schema49"
+                },
+                "order": {
+                  "$ref": "#/$defs/__schema51"
+                },
+                "delay": {
+                  "$ref": "#/$defs/__schema53"
+                },
+                "stagger": {
+                  "$ref": "#/$defs/__schema55"
+                },
+                "duration": {
+                  "$ref": "#/$defs/__schema57"
+                },
+                "ease": {
+                  "$ref": "#/$defs/__schema59"
+                },
+                "from": {
+                  "$ref": "#/$defs/__schema60"
+                }
+              },
+              "required": [
+                "from"
+              ],
+              "additionalProperties": false,
+              "description": "Build-in animation applied per character/word/line"
+            }
+          },
+          "required": [
+            "id",
+            "type",
+            "text"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/__schema5"
+            },
+            "name": {
+              "$ref": "#/$defs/__schema8"
+            },
+            "in": {
+              "$ref": "#/$defs/__schema9"
+            },
+            "out": {
+              "$ref": "#/$defs/__schema11"
+            },
+            "visible": {
+              "$ref": "#/$defs/__schema13"
+            },
+            "parent": {
+              "$ref": "#/$defs/__schema15"
+            },
+            "transform": {
+              "$ref": "#/$defs/__schema17"
+            },
+            "effects": {
+              "$ref": "#/$defs/__schema33"
+            },
+            "blend": {
+              "$ref": "#/$defs/__schema36"
+            },
+            "matte": {
+              "$ref": "#/$defs/__schema37"
+            },
+            "type": {
+              "type": "string",
+              "const": "image"
+            },
+            "src": {
+              "type": "string",
+              "description": "Path relative to the project folder, e.g. assets/logo.png"
+            },
+            "size": {
+              "description": "Default: natural image size",
+              "$ref": "#/$defs/__schema18"
+            }
+          },
+          "required": [
+            "id",
+            "type",
+            "src"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/__schema5"
+            },
+            "name": {
+              "$ref": "#/$defs/__schema8"
+            },
+            "in": {
+              "$ref": "#/$defs/__schema9"
+            },
+            "out": {
+              "$ref": "#/$defs/__schema11"
+            },
+            "visible": {
+              "$ref": "#/$defs/__schema13"
+            },
+            "parent": {
+              "$ref": "#/$defs/__schema15"
+            },
+            "transform": {
+              "$ref": "#/$defs/__schema17"
+            },
+            "effects": {
+              "$ref": "#/$defs/__schema33"
+            },
+            "blend": {
+              "$ref": "#/$defs/__schema36"
+            },
+            "matte": {
+              "$ref": "#/$defs/__schema37"
+            },
+            "type": {
+              "type": "string",
+              "const": "null"
+            }
+          },
+          "required": [
+            "id",
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/__schema5"
+            },
+            "name": {
+              "$ref": "#/$defs/__schema8"
+            },
+            "in": {
+              "$ref": "#/$defs/__schema9"
+            },
+            "out": {
+              "$ref": "#/$defs/__schema11"
+            },
+            "visible": {
+              "$ref": "#/$defs/__schema13"
+            },
+            "parent": {
+              "$ref": "#/$defs/__schema15"
+            },
+            "transform": {
+              "$ref": "#/$defs/__schema17"
+            },
+            "effects": {
+              "$ref": "#/$defs/__schema33"
+            },
+            "blend": {
+              "$ref": "#/$defs/__schema36"
+            },
+            "matte": {
+              "$ref": "#/$defs/__schema37"
+            },
+            "type": {
+              "type": "string",
+              "const": "comp"
+            },
+            "comp": {
+              "type": "string",
+              "description": "Id of another composition to nest (precomp)"
+            },
+            "timeOffset": {
+              "description": "Seconds. Nested time = time - in + timeOffset",
+              "$ref": "#/$defs/__schema69"
+            }
+          },
+          "required": [
+            "id",
+            "type",
+            "comp"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "__schema8": {
+      "type": "string"
+    },
+    "__schema9": {
+      "description": "Seconds when the layer appears. Default 0",
+      "$ref": "#/$defs/__schema10"
+    },
+    "__schema10": {
+      "type": "number",
+      "minimum": 0
+    },
+    "__schema11": {
+      "description": "Seconds when the layer disappears. Default: composition end",
+      "$ref": "#/$defs/__schema12"
+    },
+    "__schema12": {
+      "type": "number",
+      "minimum": 0
+    },
+    "__schema13": {
+      "description": "false hides the layer (it can still be used as a matte or parent)",
+      "$ref": "#/$defs/__schema14"
+    },
+    "__schema14": {
+      "type": "boolean"
+    },
+    "__schema15": {
+      "description": "Id of a layer whose transform this layer inherits",
+      "$ref": "#/$defs/__schema16"
+    },
+    "__schema16": {
+      "type": "string"
+    },
+    "__schema17": {
+      "type": "object",
+      "properties": {
+        "position": {
+          "description": "Pixels in the parent's (or composition's) space. Default: composition center ([0,0] for path layers)",
+          "$ref": "#/$defs/__schema18"
+        },
+        "anchor": {
+          "description": "Offset of the layer's pivot from its content origin. Default [0,0]",
+          "$ref": "#/$defs/__schema18"
+        },
+        "scale": {
+          "description": "Percent. Default 100",
+          "$ref": "#/$defs/__schema26"
+        },
+        "rotation": {
+          "description": "Degrees, clockwise. Default 0",
+          "$ref": "#/$defs/__schema30"
+        },
+        "opacity": {
+          "description": "0-100. Default 100",
+          "$ref": "#/$defs/__schema30"
+        }
+      },
+      "additionalProperties": false
+    },
+    "__schema18": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/__schema19"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "keyframes": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/__schema22"
+              },
+              "description": "Keyframes, sorted by t"
+            }
+          },
+          "required": [
+            "keyframes"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "__schema19": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/__schema20"
+        },
+        {
+          "$ref": "#/$defs/__schema21"
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "[x, y]"
+    },
+    "__schema20": {
+      "type": "number"
+    },
+    "__schema21": {
+      "type": "number"
+    },
+    "__schema22": {
+      "type": "object",
+      "properties": {
+        "t": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Time in seconds (composition time)"
+        },
+        "v": {
+          "$ref": "#/$defs/__schema19"
+        },
+        "ease": {
+          "description": "Easing used from this keyframe to the next. Default easeInOut",
+          "$ref": "#/$defs/__schema23"
+        }
+      },
+      "required": [
+        "t",
+        "v"
+      ],
+      "additionalProperties": false
+    },
+    "__schema23": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/__schema24"
+        },
+        {
+          "$ref": "#/$defs/__schema25"
+        }
+      ],
+      "description": "Named easing (e.g. easeOutCubic, easeOutBack, linear, hold) or cubic-bezier [x1, y1, x2, y2]"
+    },
+    "__schema24": {
+      "type": "string",
+      "enum": [
+        "linear",
+        "hold",
+        "easeIn",
+        "easeOut",
+        "easeInOut",
+        "easeInSine",
+        "easeOutSine",
+        "easeInOutSine",
+        "easeInQuad",
+        "easeOutQuad",
+        "easeInOutQuad",
+        "easeInCubic",
+        "easeOutCubic",
+        "easeInOutCubic",
+        "easeInQuart",
+        "easeOutQuart",
+        "easeInOutQuart",
+        "easeInQuint",
+        "easeOutQuint",
+        "easeInOutQuint",
+        "easeInExpo",
+        "easeOutExpo",
+        "easeInOutExpo",
+        "easeInCirc",
+        "easeOutCirc",
+        "easeInOutCirc",
+        "easeInBack",
+        "easeOutBack",
+        "easeInOutBack",
+        "easeInElastic",
+        "easeOutElastic",
+        "easeInOutElastic",
+        "easeInBounce",
+        "easeOutBounce",
+        "easeInOutBounce"
+      ]
+    },
+    "__schema25": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "items": false,
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "__schema26": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/__schema27"
+        },
+        {
+          "$ref": "#/$defs/__schema28"
+        }
+      ],
+      "description": "Percent. Number = uniform, [x, y] = per-axis"
+    },
+    "__schema27": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "$ref": "#/$defs/__schema19"
+        }
+      ]
+    },
+    "__schema28": {
+      "type": "object",
+      "properties": {
+        "keyframes": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/__schema29"
+          },
+          "description": "Keyframes, sorted by t"
+        }
+      },
+      "required": [
+        "keyframes"
+      ],
+      "additionalProperties": false
+    },
+    "__schema29": {
+      "type": "object",
+      "properties": {
+        "t": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Time in seconds (composition time)"
+        },
+        "v": {
+          "$ref": "#/$defs/__schema27"
+        },
+        "ease": {
+          "description": "Easing used from this keyframe to the next. Default easeInOut",
+          "$ref": "#/$defs/__schema23"
+        }
+      },
+      "required": [
+        "t",
+        "v"
+      ],
+      "additionalProperties": false
+    },
+    "__schema30": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/__schema31"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "keyframes": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/__schema32"
+              },
+              "description": "Keyframes, sorted by t"
+            }
+          },
+          "required": [
+            "keyframes"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "__schema31": {
+      "type": "number"
+    },
+    "__schema32": {
+      "type": "object",
+      "properties": {
+        "t": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Time in seconds (composition time)"
+        },
+        "v": {
+          "$ref": "#/$defs/__schema31"
+        },
+        "ease": {
+          "description": "Easing used from this keyframe to the next. Default easeInOut",
+          "$ref": "#/$defs/__schema23"
+        }
+      },
+      "required": [
+        "t",
+        "v"
+      ],
+      "additionalProperties": false
+    },
+    "__schema33": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "blur"
+              },
+              "radius": {
+                "$ref": "#/$defs/__schema30"
+              }
+            },
+            "required": [
+              "type",
+              "radius"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "glow"
+              },
+              "radius": {
+                "description": "Default 20",
+                "$ref": "#/$defs/__schema30"
+              },
+              "intensity": {
+                "description": "Default 1. 0-4 is a useful range",
+                "$ref": "#/$defs/__schema30"
+              },
+              "color": {
+                "description": "Default: the layer's own colors",
+                "$ref": "#/$defs/__schema34"
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "dropShadow"
+              },
+              "color": {
+                "description": "Default rgba(0,0,0,0.5)",
+                "$ref": "#/$defs/__schema34"
+              },
+              "distance": {
+                "description": "Default 10",
+                "$ref": "#/$defs/__schema30"
+              },
+              "angle": {
+                "description": "Degrees. Default 135 (down-right)",
+                "$ref": "#/$defs/__schema30"
+              },
+              "softness": {
+                "description": "Blur radius. Default 20",
+                "$ref": "#/$defs/__schema30"
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "colorAdjust"
+              },
+              "brightness": {
+                "description": "Percent. Default 100",
+                "$ref": "#/$defs/__schema30"
+              },
+              "contrast": {
+                "description": "Percent. Default 100",
+                "$ref": "#/$defs/__schema30"
+              },
+              "saturation": {
+                "description": "Percent. Default 100",
+                "$ref": "#/$defs/__schema30"
+              },
+              "hue": {
+                "description": "Degrees of hue rotation. Default 0",
+                "$ref": "#/$defs/__schema30"
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "__schema34": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/__schema6"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "keyframes": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/__schema35"
+              },
+              "description": "Keyframes, sorted by t"
+            }
+          },
+          "required": [
+            "keyframes"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "__schema35": {
+      "type": "object",
+      "properties": {
+        "t": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Time in seconds (composition time)"
+        },
+        "v": {
+          "$ref": "#/$defs/__schema6"
+        },
+        "ease": {
+          "description": "Easing used from this keyframe to the next. Default easeInOut",
+          "$ref": "#/$defs/__schema23"
+        }
+      },
+      "required": [
+        "t",
+        "v"
+      ],
+      "additionalProperties": false
+    },
+    "__schema36": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "add",
+        "screen",
+        "multiply",
+        "overlay",
+        "lighten",
+        "darken",
+        "difference"
+      ]
+    },
+    "__schema37": {
+      "description": "Track matte: only show this layer where the matte layer is opaque",
+      "$ref": "#/$defs/__schema38"
+    },
+    "__schema38": {
+      "type": "object",
+      "properties": {
+        "layer": {
+          "type": "string",
+          "description": "Id of the matte layer (usually with visible: false)"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "alpha",
+            "alphaInverted"
+          ]
+        }
+      },
+      "required": [
+        "layer"
+      ],
+      "additionalProperties": false
+    },
+    "__schema39": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "linear",
+            "radial"
+          ]
+        },
+        "stops": {
+          "minItems": 2,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/__schema40"
+          }
+        },
+        "from": {
+          "description": "linear: start point in layer space",
+          "$ref": "#/$defs/__schema19"
+        },
+        "to": {
+          "description": "linear: end point in layer space",
+          "$ref": "#/$defs/__schema19"
+        },
+        "center": {
+          "description": "radial: center in layer space. Default [0,0]",
+          "$ref": "#/$defs/__schema19"
+        },
+        "radius": {
+          "description": "radial: radius in px",
+          "$ref": "#/$defs/__schema41"
+        }
+      },
+      "required": [
+        "type",
+        "stops"
+      ],
+      "additionalProperties": false
+    },
+    "__schema40": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        {
+          "$ref": "#/$defs/__schema6"
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "__schema41": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "__schema42": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/__schema34"
+        },
+        {
+          "$ref": "#/$defs/__schema39"
+        }
+      ]
+    },
+    "__schema43": {
+      "type": "object",
+      "properties": {
+        "color": {
+          "$ref": "#/$defs/__schema34"
+        },
+        "width": {
+          "description": "Default 4",
+          "$ref": "#/$defs/__schema30"
+        },
+        "cap": {
+          "type": "string",
+          "enum": [
+            "butt",
+            "round",
+            "square"
+          ]
+        },
+        "join": {
+          "type": "string",
+          "enum": [
+            "miter",
+            "round",
+            "bevel"
+          ]
+        }
+      },
+      "required": [
+        "color"
+      ],
+      "additionalProperties": false
+    },
+    "__schema44": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "description": "0-100 percent of path length. Default 0",
+          "$ref": "#/$defs/__schema30"
+        },
+        "end": {
+          "description": "0-100 percent of path length. Default 100",
+          "$ref": "#/$defs/__schema30"
+        }
+      },
+      "additionalProperties": false
+    },
+    "__schema45": {
+      "type": "string"
+    },
+    "__schema46": {
+      "type": "number"
+    },
+    "__schema47": {
+      "type": "string",
+      "enum": [
+        "left",
+        "center",
+        "right"
+      ]
+    },
+    "__schema48": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "__schema49": {
+      "description": "Default character",
+      "$ref": "#/$defs/__schema50"
+    },
+    "__schema50": {
+      "type": "string",
+      "enum": [
+        "character",
+        "word",
+        "line"
+      ]
+    },
+    "__schema51": {
+      "description": "Default forward",
+      "$ref": "#/$defs/__schema52"
+    },
+    "__schema52": {
+      "type": "string",
+      "enum": [
+        "forward",
+        "reverse",
+        "center",
+        "random"
+      ]
+    },
+    "__schema53": {
+      "description": "Seconds after the layer's in point. Default 0",
+      "$ref": "#/$defs/__schema54"
+    },
+    "__schema54": {
+      "type": "number"
+    },
+    "__schema55": {
+      "description": "Seconds between units. Default 0.04",
+      "$ref": "#/$defs/__schema56"
+    },
+    "__schema56": {
+      "type": "number",
+      "minimum": 0
+    },
+    "__schema57": {
+      "description": "Seconds each unit takes. Default 0.6",
+      "$ref": "#/$defs/__schema58"
+    },
+    "__schema58": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "__schema59": {
+      "description": "Default easeOutCubic",
+      "$ref": "#/$defs/__schema23"
+    },
+    "__schema60": {
+      "type": "object",
+      "properties": {
+        "opacity": {
+          "$ref": "#/$defs/__schema61"
+        },
+        "offset": {
+          "$ref": "#/$defs/__schema62"
+        },
+        "scale": {
+          "$ref": "#/$defs/__schema63"
+        },
+        "rotation": {
+          "$ref": "#/$defs/__schema65"
+        },
+        "blur": {
+          "$ref": "#/$defs/__schema67"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Start state of each unit; units animate to their normal state"
+    },
+    "__schema61": {
+      "type": "number"
+    },
+    "__schema62": {
+      "description": "Pixels each unit starts away from its rest position",
+      "$ref": "#/$defs/__schema19"
+    },
+    "__schema63": {
+      "description": "Percent",
+      "$ref": "#/$defs/__schema64"
+    },
+    "__schema64": {
+      "type": "number"
+    },
+    "__schema65": {
+      "description": "Degrees",
+      "$ref": "#/$defs/__schema66"
+    },
+    "__schema66": {
+      "type": "number"
+    },
+    "__schema67": {
+      "description": "px",
+      "$ref": "#/$defs/__schema68"
+    },
+    "__schema68": {
+      "type": "number"
+    },
+    "__schema69": {
+      "type": "number"
+    }
+  }
+}

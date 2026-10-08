@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+renders/
+.openeffects/
+examples/*/renders/
+# generated when running `oe dev` on an example
+examples/*/.mcp.json
+examples/*/AGENTS.md
+examples/*/CLAUDE.md

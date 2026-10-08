@@ -1,0 +1,14 @@
+{
+  "name": "openeffects",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "bin": { "openeffects": "./src/index.ts", "oe": "./src/index.ts" },
+  "dependencies": {
+    "@openeffects/mcp": "workspace:*",
+    "@openeffects/node": "workspace:*",
+    "@openeffects/schema": "workspace:*",
+    "@openeffects/server": "workspace:*",
+    "tsx": "^4.23.15"
+  }
+}

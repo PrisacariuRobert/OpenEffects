@@ -1,0 +1,13 @@
+{
+  "name": "@openeffects/mcp",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "@openeffects/node": "workspace:*",
+    "@openeffects/schema": "workspace:*",
+    "zod": "^4.1.0"
+  }
+}

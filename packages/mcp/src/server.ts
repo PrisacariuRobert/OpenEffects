@@ -1,0 +1,293 @@
+import fs from "node:fs";
+import path from "node:path";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { z } from "zod";
+import {
+  AGENT_GUIDE,
+  EditError,
+  addLayer,
+  deleteLayer,
+  getComp,
+  moveLayer,
+  setKeyframes,
+  updateComposition,
+  updateLayer,
+  type Composition,
+  type Keyframe,
+  type Layer,
+  type Project,
+} from "@openeffects/schema";
+import {
+  ProjectValidationError,
+  exportVideo,
+  loadProject,
+  missingAssets,
+  renderContactSheet,
+  renderFramePng,
+  saveProject,
+  type ExportFormat,
+} from "@openeffects/node";
+
+const text = (t: string): CallToolResult => ({ content: [{ type: "text", text: t }] });
+const fail = (t: string): CallToolResult => ({ content: [{ type: "text", text: t }], isError: true });
+const image = (png: Buffer, caption: string): CallToolResult => ({
+  content: [
+    { type: "image", data: png.toString("base64"), mimeType: "image/png" },
+    { type: "text", text: caption },
+  ],
+});
+
+function describeError(e: unknown): string {
+  if (e instanceof ProjectValidationError) return `Edit rejected, the project would be invalid:\n- ${e.errors.join("\n- ")}`;
+  if (e instanceof EditError) return e.message;
+  return `Error: ${(e as Error).message ?? String(e)}`;
+}
+
+export function summarize(project: Project): string {
+  return project.compositions
+    .map((c) => `${c.id}: ${c.width}x${c.height} @${c.fps}fps, ${c.duration}s, ${c.layers.length} layers [${c.layers.map((l) => `${l.id}:${l.type}`).join(", ")}]`)
+    .join("\n");
+}
+
+const compId = z.string().optional().describe("Composition id. Default: the main (first) composition");
+
+/**
+ * The OpenEffects MCP server. Every tool reads the project from disk, applies the edit,
+ * validates and writes it back, so it composes safely with the app and with agents
+ * that edit project.oe.json directly.
+ */
+export function createMcpServer(projectFile: string): McpServer {
+  const projectDir = path.dirname(projectFile);
+  const server = new McpServer(
+    { name: "openeffects", version: "0.1.0" },
+    {
+      instructions:
+        "OpenEffects is a motion graphics editor. Use these tools to build and edit animations in project.oe.json. " +
+        "Call oe_get_guide once if you have not read AGENTS.md, then oe_get_project. After editing, verify visually with oe_render_contact_sheet.",
+    },
+  );
+
+  const edit = (fn: (p: Project) => Project, done: (p: Project) => string): CallToolResult => {
+    try {
+      const next = saveProject(projectFile, fn(loadProject(projectFile)));
+      const missing = missingAssets(next, projectDir);
+      return text(done(next) + (missing.length ? `\nWarning: missing image files: ${missing.join(", ")}` : ""));
+    } catch (e) {
+      return fail(describeError(e));
+    }
+  };
+
+  server.registerTool(
+    "oe_get_guide",
+    { title: "Format guide", description: "The OpenEffects project format reference and motion design tips. Read before your first edit.", annotations: { readOnlyHint: true } },
+    async () => text(AGENT_GUIDE),
+  );
+
+  server.registerTool(
+    "oe_get_project",
+    {
+      title: "Read project",
+      description: "Returns the full project JSON (or one composition) plus a short summary.",
+      inputSchema: { compId },
+      annotations: { readOnlyHint: true },
+    },
+    async ({ compId }) => {
+      try {
+        const project = loadProject(projectFile);
+        const body = compId ? getComp(project, compId) : project;
+        return text(`${summarize(project)}\n\n${JSON.stringify(body, null, 1)}`);
+      } catch (e) {
+        return fail(describeError(e));
+      }
+    },
+  );
+
+  server.registerTool(
+    "oe_write_project",
+    {
+      title: "Replace project",
+      description: "Replace the whole project with new JSON. Best for building a new animation from scratch in one step.",
+      inputSchema: { project: z.record(z.string(), z.unknown()).describe("A complete project object (version: 1, compositions: [...])") },
+    },
+    async ({ project }) => edit(() => project as unknown as Project, (p) => `Project saved.\n${summarize(p)}`),
+  );
+
+  server.registerTool(
+    "oe_add_layer",
+    {
+      title: "Add layer",
+      description: "Add a layer. Layers render in array order, so by default the new layer goes on top.",
+      inputSchema: {
+        layer: z.record(z.string(), z.unknown()).describe("Layer object with a unique id and a type (solid|rect|ellipse|path|text|image|null|comp)"),
+        index: z.number().int().optional().describe("Insert position (0 = bottom). Default: top"),
+        compId,
+      },
+    },
+    async ({ layer, index, compId }) =>
+      edit((p) => addLayer(p, layer as unknown as Layer, { compId, index }), () => `Added layer "${String(layer.id)}".`),
+  );
+
+  server.registerTool(
+    "oe_update_layer",
+    {
+      title: "Update layer",
+      description: "Deep-merge a patch into a layer. Nested objects merge, arrays and keyframed values are replaced, null deletes a key.",
+      inputSchema: { id: z.string(), patch: z.record(z.string(), z.unknown()), compId },
+    },
+    async ({ id, patch, compId }) => edit((p) => updateLayer(p, id, patch, { compId }), () => `Updated layer "${id}".`),
+  );
+
+  server.registerTool(
+    "oe_delete_layer",
+    { title: "Delete layer", description: "Remove a layer.", inputSchema: { id: z.string(), compId }, annotations: { destructiveHint: true } },
+    async ({ id, compId }) => edit((p) => deleteLayer(p, id, { compId }), () => `Deleted layer "${id}".`),
+  );
+
+  server.registerTool(
+    "oe_move_layer",
+    {
+      title: "Reorder layer",
+      description: "Move a layer to a new stacking index (0 = bottom, last = top).",
+      inputSchema: { id: z.string(), index: z.number().int(), compId },
+    },
+    async ({ id, index, compId }) => edit((p) => moveLayer(p, id, index, { compId }), () => `Moved layer "${id}" to index ${index}.`),
+  );
+
+  server.registerTool(
+    "oe_set_keyframes",
+    {
+      title: "Set keyframes",
+      description:
+        'Replace the keyframes of one property. property is a dotted path such as "transform.position", "transform.opacity", "font.size", "fill", "trim.end".',
+      inputSchema: {
+        layerId: z.string(),
+        property: z.string(),
+        keyframes: z
+          .array(z.object({ t: z.number(), v: z.unknown(), ease: z.unknown().optional() }))
+          .min(1)
+          .describe("[{ t: seconds, v: value, ease?: easing toward the next keyframe }]"),
+        compId,
+      },
+    },
+    async ({ layerId, property, keyframes, compId }) =>
+      edit(
+        (p) => setKeyframes(p, layerId, property, keyframes as Keyframe<unknown>[], { compId }),
+        () => `Set ${keyframes.length} keyframe(s) on ${layerId}.${property}.`,
+      ),
+  );
+
+  server.registerTool(
+    "oe_update_composition",
+    {
+      title: "Update composition",
+      description: "Change composition settings (width, height, fps, duration, background, name).",
+      inputSchema: { patch: z.record(z.string(), z.unknown()), compId },
+    },
+    async ({ patch, compId }) => edit((p) => updateComposition(p, patch, { compId }), (p) => `Composition updated.\n${summarize(p)}`),
+  );
+
+  server.registerTool(
+    "oe_add_composition",
+    {
+      title: "Add composition",
+      description: "Add a composition, e.g. to nest it into another one with a layer of type 'comp' (precomp).",
+      inputSchema: { composition: z.record(z.string(), z.unknown()) },
+    },
+    async ({ composition }) =>
+      edit(
+        (p) => ({ ...p, compositions: [...p.compositions, composition as unknown as Composition] }),
+        () => `Added composition "${String(composition.id)}".`,
+      ),
+  );
+
+  server.registerTool(
+    "oe_render_frame",
+    {
+      title: "Render frame",
+      description: "Render one frame to an image so you can see the result. Use it to check details at key moments.",
+      inputSchema: {
+        time: z.number().min(0).describe("Seconds"),
+        width: z.number().int().min(64).max(1920).optional().describe("Image width in px. Default 960"),
+        compId,
+      },
+      annotations: { readOnlyHint: true },
+    },
+    async ({ time, width, compId }) => {
+      try {
+        const project = loadProject(projectFile);
+        const png = await renderFramePng(project, projectDir, { time, compId, width: width ?? 960 });
+        return image(png, `Frame at t=${time}s`);
+      } catch (e) {
+        return fail(describeError(e));
+      }
+    },
+  );
+
+  server.registerTool(
+    "oe_render_contact_sheet",
+    {
+      title: "Render contact sheet",
+      description: "Render a grid of frames spread across the timeline (or at the given times). The fastest way to review the whole animation.",
+      inputSchema: {
+        count: z.number().int().min(1).max(24).optional().describe("Number of evenly spaced frames. Default 8"),
+        times: z.array(z.number().min(0)).max(24).optional().describe("Explicit times in seconds instead of count"),
+        compId,
+      },
+      annotations: { readOnlyHint: true },
+    },
+    async ({ count, times, compId }) => {
+      try {
+        const project = loadProject(projectFile);
+        const png = await renderContactSheet(project, projectDir, { count, times, compId, cellWidth: 360 });
+        return image(png, "Contact sheet (each cell is labelled with its time)");
+      } catch (e) {
+        return fail(describeError(e));
+      }
+    },
+  );
+
+  server.registerTool(
+    "oe_export",
+    {
+      title: "Export video",
+      description: "Render the composition to a file in renders/. Only export when the user asks for it.",
+      inputSchema: {
+        format: z.enum(["mp4", "webm", "gif", "mov"]).optional().describe("Default mp4. webm/mov keep transparency"),
+        scale: z.number().min(0.1).max(2).optional().describe("Resolution multiplier. Default 1 (0.5 for gif)"),
+        compId,
+      },
+    },
+    async ({ format, scale, compId }) => {
+      try {
+        const project = loadProject(projectFile);
+        const comp = getComp(project, compId);
+        const fmt: ExportFormat = format ?? "mp4";
+        const out = path.join(projectDir, "renders", `${comp.id}-${new Date().toISOString().replace(/[:.]/g, "-")}.${fmt}`);
+        fs.mkdirSync(path.dirname(out), { recursive: true });
+        const r = await exportVideo(project, projectDir, { out, format: fmt, compId, scale: scale ?? (fmt === "gif" ? 0.5 : 1) });
+        return text(`Exported ${r.frames} frames to ${path.relative(projectDir, r.file)}`);
+      } catch (e) {
+        return fail(describeError(e));
+      }
+    },
+  );
+
+  server.registerTool(
+    "oe_list_assets",
+    { title: "List assets", description: "List files in the project's assets/ folder (usable as image layer src).", annotations: { readOnlyHint: true } },
+    async () => {
+      const dir = path.join(projectDir, "assets");
+      const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => !f.startsWith(".")) : [];
+      return text(files.length ? files.map((f) => `assets/${f}`).join("\n") : "No assets yet. The user can drop images into the assets/ folder.");
+    },
+  );
+
+  return server;
+}
+
+export async function runStdioServer(projectFile: string): Promise<void> {
+  const server = createMcpServer(projectFile);
+  await server.connect(new StdioServerTransport());
+}

@@ -1,0 +1,11 @@
+{
+  "name": "@openeffects/engine",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": {
+    "@openeffects/schema": "workspace:*",
+    "svg-path-properties": "^2.1.0"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "openeffects-monorepo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "oe": "tsx apps/cli/src/index.ts",
+    "dev": "tsx apps/cli/src/index.ts dev examples/logo-reveal",
+    "build:web": "pnpm --filter @openeffects/web build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "schema:json": "tsx packages/schema/scripts/emit-json-schema.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.23.15",
+    "typescript": "~5.9.3",
+    "vitest": "^3.2.7"
+  }
+}
