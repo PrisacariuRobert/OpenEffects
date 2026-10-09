@@ -1,0 +1,305 @@
+{
+  "version": 1,
+  "name": "Field Notes title",
+  "compositions": [
+    {
+      "id": "main",
+      "name": "Main",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "duration": 6,
+      "background": "#efe8da",
+      "layers": [
+        {
+          "id": "circle",
+          "type": "ellipse",
+          "size": [
+            640,
+            640
+          ],
+          "fill": "#e5342b",
+          "transform": {
+            "position": [
+              1380,
+              440
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0.5,
+                  "v": 0,
+                  "ease": "easeOutExpo"
+                },
+                {
+                  "t": 1.7,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "rule-top",
+          "type": "path",
+          "d": "M760 100 L1800 100",
+          "stroke": {
+            "color": "#14130e",
+            "width": 8
+          },
+          "trim": {
+            "end": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 0,
+                  "ease": "easeInOutCubic"
+                },
+                {
+                  "t": 1,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "rule-left",
+          "type": "path",
+          "d": "M104 200 L104 880",
+          "stroke": {
+            "color": "#14130e",
+            "width": 16
+          },
+          "trim": {
+            "end": {
+              "keyframes": [
+                {
+                  "t": 0.2,
+                  "v": 0,
+                  "ease": "easeInOutCubic"
+                },
+                {
+                  "t": 1.2,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "rule-bottom",
+          "type": "path",
+          "d": "M104 880 L1800 880",
+          "stroke": {
+            "color": "#14130e",
+            "width": 8
+          },
+          "trim": {
+            "end": {
+              "keyframes": [
+                {
+                  "t": 0.4,
+                  "v": 0,
+                  "ease": "easeInOutCubic"
+                },
+                {
+                  "t": 1.5,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "no",
+          "type": "text",
+          "text": "NO. 04",
+          "font": {
+            "weight": 700,
+            "size": 34
+          },
+          "fill": "#14130e",
+          "transform": {
+            "position": [
+              255,
+              100
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0.8,
+                  "v": 0
+                },
+                {
+                  "t": 1.2,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "m1",
+          "type": "rect",
+          "size": [
+            1300,
+            200
+          ],
+          "fill": "#fff",
+          "visible": false,
+          "transform": {
+            "position": [
+              860,
+              555
+            ]
+          }
+        },
+        {
+          "id": "m2",
+          "type": "rect",
+          "size": [
+            1300,
+            200
+          ],
+          "fill": "#fff",
+          "visible": false,
+          "transform": {
+            "position": [
+              860,
+              740
+            ]
+          }
+        },
+        {
+          "id": "l1",
+          "type": "text",
+          "text": "FIELD",
+          "font": {
+            "weight": 800,
+            "size": 210
+          },
+          "letterSpacing": -6,
+          "fill": "#14130e",
+          "matte": {
+            "layer": "m1"
+          },
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 1.3,
+                  "v": [
+                    470,
+                    735
+                  ],
+                  "ease": "easeOutExpo"
+                },
+                {
+                  "t": 2.1,
+                  "v": [
+                    470,
+                    555
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "l2",
+          "type": "text",
+          "text": "NOTES",
+          "font": {
+            "weight": 800,
+            "size": 210
+          },
+          "letterSpacing": -6,
+          "fill": "#14130e",
+          "matte": {
+            "layer": "m2"
+          },
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 1.5,
+                  "v": [
+                    545,
+                    920
+                  ],
+                  "ease": "easeOutExpo"
+                },
+                {
+                  "t": 2.3,
+                  "v": [
+                    545,
+                    740
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "s1",
+          "type": "text",
+          "text": "EPISODE 04 \u2014 THE QUIET CITY",
+          "font": {
+            "weight": 400,
+            "size": 36
+          },
+          "fill": "#14130e",
+          "transform": {
+            "position": [
+              480,
+              945
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 2.4,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 2.9,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "s2",
+          "type": "text",
+          "text": "A PODCAST ABOUT PLACES",
+          "font": {
+            "weight": 400,
+            "size": 36
+          },
+          "fill": "#14130e",
+          "transform": {
+            "position": [
+              445,
+              998
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 2.6,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 3.1,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

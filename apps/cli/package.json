@@ -14,5 +14,11 @@
     "@openeffects/schema": "workspace:*",
     "@openeffects/server": "workspace:*",
     "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  },
+  "scripts": {
+    "build:package": "tsx scripts/build-package.mts"
   }
 }

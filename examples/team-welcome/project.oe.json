@@ -1,0 +1,351 @@
+{
+  "version": 1,
+  "name": "Team welcome card",
+  "compositions": [
+    {
+      "id": "main",
+      "name": "Welcome card",
+      "width": 1080,
+      "height": 1080,
+      "fps": 30,
+      "duration": 6,
+      "background": "#0d1117",
+      "layers": [
+        {
+          "id": "glow",
+          "type": "ellipse",
+          "size": [
+            900,
+            900
+          ],
+          "fill": {
+            "type": "radial",
+            "stops": [
+              [
+                0,
+                "#1f6feb55"
+              ],
+              [
+                1,
+                "#1f6feb00"
+              ]
+            ],
+            "radius": 450
+          },
+          "transform": {
+            "position": [
+              540,
+              430
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 1.5,
+                  "v": 100
+                }
+              ]
+            },
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 80,
+                  "ease": "easeOutSine"
+                },
+                {
+                  "t": 6,
+                  "v": 115
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "panel",
+          "type": "rect",
+          "size": [
+            900,
+            900
+          ],
+          "radius": 40,
+          "fill": "#161b22",
+          "transform": {
+            "position": [
+              540,
+              540
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 0.6,
+                  "v": 100
+                }
+              ]
+            },
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 94,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 0.8,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "logo",
+          "type": "image",
+          "src": "assets/logo.svg",
+          "size": [
+            120,
+            120
+          ],
+          "transform": {
+            "position": [
+              540,
+              215
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0.2,
+                  "v": 40,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 0.9,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0.2,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 0.6,
+                  "v": 100
+                }
+              ]
+            }
+          },
+          "behaviors": [
+            {
+              "type": "oscillate",
+              "property": "transform.position",
+              "amplitude": [
+                0,
+                4
+              ],
+              "frequency": 0.4,
+              "start": 1.2,
+              "fadeIn": 0.8
+            }
+          ]
+        },
+        {
+          "id": "welcome",
+          "type": "text",
+          "text": "Welcome to the team",
+          "font": {
+            "family": "Inter",
+            "weight": 500,
+            "size": 38
+          },
+          "fill": "#ffb000",
+          "letterSpacing": 4,
+          "transform": {
+            "position": [
+              540,
+              350
+            ]
+          },
+          "animator": {
+            "by": "word",
+            "stagger": 0.12,
+            "duration": 0.6,
+            "ease": "easeOutCubic",
+            "from": {
+              "opacity": 0,
+              "offset": [
+                0,
+                20
+              ]
+            }
+          },
+          "in": 0.9
+        },
+        {
+          "id": "name",
+          "type": "text",
+          "text": "{{name}}",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 88
+          },
+          "fill": "#f0f6fc",
+          "align": "center",
+          "transform": {
+            "position": [
+              540,
+              520
+            ]
+          },
+          "animator": {
+            "by": "character",
+            "stagger": 0.04,
+            "duration": 0.7,
+            "ease": "easeOutBack",
+            "from": {
+              "opacity": 0,
+              "offset": [
+                0,
+                50
+              ],
+              "blur": 8
+            }
+          },
+          "in": 1.4
+        },
+        {
+          "id": "bar",
+          "type": "rect",
+          "size": [
+            160,
+            6
+          ],
+          "radius": 3,
+          "fill": "#ffb000",
+          "transform": {
+            "position": [
+              540,
+              610
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 2.2,
+                  "v": 0,
+                  "ease": "easeOutExpo"
+                },
+                {
+                  "t": 2.9,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "role",
+          "type": "text",
+          "text": "{{role}}",
+          "font": {
+            "family": "Inter",
+            "weight": 500,
+            "size": 46
+          },
+          "fill": "#f0f6fc",
+          "align": "center",
+          "transform": {
+            "position": [
+              540,
+              690
+            ]
+          },
+          "animator": {
+            "by": "word",
+            "stagger": 0.1,
+            "duration": 0.6,
+            "ease": "easeOutCubic",
+            "from": {
+              "opacity": 0,
+              "offset": [
+                0,
+                30
+              ]
+            }
+          },
+          "in": 2.4
+        },
+        {
+          "id": "city",
+          "type": "text",
+          "text": "{{city}}",
+          "font": {
+            "family": "Inter",
+            "weight": 500,
+            "size": 34
+          },
+          "fill": "#8b98a9",
+          "align": "center",
+          "transform": {
+            "position": [
+              540,
+              770
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 3,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 3.6,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "line",
+          "type": "path",
+          "d": "M120 960 H960",
+          "stroke": {
+            "color": "#1f6feb",
+            "width": 4
+          },
+          "trim": {
+            "end": {
+              "keyframes": [
+                {
+                  "t": 3.2,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 4.4,
+                  "v": 100
+                }
+              ]
+            }
+          },
+          "transform": {
+            "opacity": 60
+          }
+        }
+      ]
+    }
+  ]
+}

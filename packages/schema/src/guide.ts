@@ -50,6 +50,8 @@ in the user's preview immediately.
 | null | (invisible) used as a parent to move several layers together |
 | comp | comp (id of another composition), timeOffset?, timeRemap? (animatable seconds of the nested comp: freeze, slow-mo, reverse) |
 
+Text layers are centered on their position: the whole block's center sits there, and \`align\` only lines up multi-line text inside the block. To put a text's left edge at x, set position x to x + half its width, then check the edge with oe_render_frame.
+
 Common to every layer: id (unique), name?, in?, out?, visible?, parent?, transform
 { position, anchor, scale, rotation, opacity }, effects[], blend
 (normal|add|screen|multiply|overlay|lighten|darken|difference), matte { layer, mode: alpha|alphaInverted }.

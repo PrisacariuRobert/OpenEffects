@@ -1,0 +1,453 @@
+{
+  "version": 1,
+  "name": "lumen-v4",
+  "compositions": [
+    {
+      "id": "main",
+      "name": "Main",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "duration": 4,
+      "background": "#05060d",
+      "layers": [
+        {
+          "id": "bg",
+          "type": "solid",
+          "color": {
+            "type": "radial",
+            "stops": [
+              [
+                0,
+                "#141a33"
+              ],
+              [
+                1,
+                "#05060d"
+              ]
+            ],
+            "radius": 1200
+          }
+        },
+        {
+          "id": "haze-far",
+          "type": "ellipse",
+          "size": [
+            1300,
+            700
+          ],
+          "fill": {
+            "type": "radial",
+            "stops": [
+              [
+                0,
+                "#3b4cc055"
+              ],
+              [
+                1,
+                "#3b4cc000"
+              ]
+            ],
+            "radius": 650
+          },
+          "transform": {
+            "position": [
+              860,
+              500
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 2,
+                  "v": 100
+                }
+              ]
+            }
+          },
+          "behaviors": [
+            {
+              "type": "drift",
+              "property": "transform.position",
+              "speed": 0
+            }
+          ],
+          "effects": [
+            {
+              "type": "blur",
+              "radius": 40
+            }
+          ]
+        },
+        {
+          "id": "haze-near",
+          "type": "ellipse",
+          "size": [
+            900,
+            500
+          ],
+          "fill": {
+            "type": "radial",
+            "stops": [
+              [
+                0,
+                "#ffcf8a40"
+              ],
+              [
+                1,
+                "#ffcf8a00"
+              ]
+            ],
+            "radius": 450
+          },
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    1150,
+                    640
+                  ],
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 4,
+                  "v": [
+                    900,
+                    600
+                  ]
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0.5,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 2.2,
+                  "v": 100
+                }
+              ]
+            }
+          },
+          "effects": [
+            {
+              "type": "blur",
+              "radius": 50
+            }
+          ]
+        },
+        {
+          "id": "cam",
+          "type": "null",
+          "transform": {
+            "anchor": [
+              960,
+              540
+            ],
+            "position": [
+              960,
+              540
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 100,
+                  "ease": "easeOutSine"
+                },
+                {
+                  "t": 4,
+                  "v": 112
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "halo",
+          "type": "ellipse",
+          "parent": "cam",
+          "size": [
+            420,
+            420
+          ],
+          "fill": {
+            "type": "radial",
+            "stops": [
+              [
+                0,
+                "#ffd9a0aa"
+              ],
+              [
+                1,
+                "#ffd9a000"
+              ]
+            ],
+            "radius": 210
+          },
+          "transform": {
+            "position": [
+              960,
+              440
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0.4,
+                  "v": 30,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 2.2,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0.4,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 2,
+                  "v": 100
+                }
+              ]
+            }
+          },
+          "behaviors": [
+            {
+              "type": "oscillate",
+              "property": "transform.scale",
+              "amplitude": 4,
+              "frequency": 0.5
+            }
+          ],
+          "effects": [
+            {
+              "type": "blur",
+              "radius": 20
+            }
+          ]
+        },
+        {
+          "id": "ring",
+          "type": "ellipse",
+          "parent": "cam",
+          "size": [
+            220,
+            220
+          ],
+          "stroke": {
+            "color": "#ffe7c2",
+            "width": 5
+          },
+          "transform": {
+            "position": [
+              960,
+              440
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0.3,
+                  "v": 70,
+                  "ease": "easeOutExpo"
+                },
+                {
+                  "t": 2.2,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0.3,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 1.4,
+                  "v": 100
+                }
+              ]
+            }
+          },
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 30,
+              "intensity": 1.2,
+              "color": "#ffcf8a"
+            }
+          ]
+        },
+        {
+          "id": "core",
+          "type": "ellipse",
+          "parent": "cam",
+          "size": [
+            84,
+            84
+          ],
+          "fill": {
+            "type": "radial",
+            "stops": [
+              [
+                0,
+                "#ffffff"
+              ],
+              [
+                1,
+                "#ffd9a0"
+              ]
+            ],
+            "radius": 42
+          },
+          "transform": {
+            "position": [
+              960,
+              440
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0.8,
+                  "v": 0,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 1.8,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0.8,
+                  "v": 0,
+                  "ease": "hold"
+                },
+                {
+                  "t": 0.81,
+                  "v": 100
+                }
+              ]
+            }
+          },
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 50,
+              "intensity": 1.6,
+              "color": "#ffb866"
+            }
+          ]
+        },
+        {
+          "id": "word",
+          "type": "text",
+          "parent": "cam",
+          "text": "Lumen",
+          "font": {
+            "family": "Inter",
+            "weight": 300,
+            "size": 120
+          },
+          "fill": "#f3ece0",
+          "align": "center",
+          "letterSpacing": 18,
+          "transform": {
+            "position": [
+              960,
+              690
+            ]
+          },
+          "animator": {
+            "by": "character",
+            "stagger": 0.12,
+            "duration": 1.2,
+            "ease": "easeOutCubic",
+            "from": {
+              "opacity": 0,
+              "offset": [
+                0,
+                24
+              ],
+              "blur": 16
+            }
+          },
+          "in": 1.5,
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 24,
+              "intensity": 0.5,
+              "color": "#ffcf8a"
+            }
+          ]
+        },
+        {
+          "id": "vignette",
+          "type": "solid",
+          "color": {
+            "type": "radial",
+            "stops": [
+              [
+                0.55,
+                "#05060d00"
+              ],
+              [
+                1,
+                "#05060dee"
+              ]
+            ],
+            "radius": 1150
+          }
+        },
+        {
+          "id": "fade",
+          "type": "solid",
+          "color": "#05060d",
+          "transform": {
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 100,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 0.6,
+                  "v": 0
+                },
+                {
+                  "t": 3.6,
+                  "v": 0,
+                  "ease": "easeInCubic"
+                },
+                {
+                  "t": 4,
+                  "v": 60
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

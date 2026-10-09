@@ -1,0 +1,242 @@
+{
+  "version": 1,
+  "name": "Lumen sting",
+  "compositions": [
+    {
+      "id": "main",
+      "name": "Main",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "duration": 4,
+      "background": "#0e121c",
+      "layers": [
+        {
+          "id": "bg",
+          "type": "solid",
+          "color": {
+            "type": "radial",
+            "stops": [
+              [
+                0,
+                "#1e2536"
+              ],
+              [
+                1,
+                "#0e121c"
+              ]
+            ],
+            "radius": 1200
+          }
+        },
+        {
+          "id": "halo",
+          "type": "ellipse",
+          "size": [
+            360,
+            360
+          ],
+          "fill": {
+            "type": "radial",
+            "stops": [
+              [
+                0,
+                "#f3e3c366"
+              ],
+              [
+                1,
+                "#f3e3c300"
+              ]
+            ],
+            "radius": 180
+          },
+          "transform": {
+            "position": [
+              960,
+              430
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0.6,
+                  "v": 0,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 2.2,
+                  "v": 100
+                }
+              ]
+            },
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0.6,
+                  "v": 70,
+                  "ease": "easeOutQuint"
+                },
+                {
+                  "t": 3,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "ring",
+          "type": "path",
+          "d": "M60 0 A60 60 0 1 1 -60 0 A60 60 0 1 1 60 0",
+          "stroke": {
+            "color": "#e9d9b8",
+            "width": 3
+          },
+          "trim": {
+            "end": {
+              "keyframes": [
+                {
+                  "t": 0.3,
+                  "v": 0,
+                  "ease": "easeInOutCubic"
+                },
+                {
+                  "t": 2,
+                  "v": 100
+                }
+              ]
+            }
+          },
+          "transform": {
+            "position": [
+              960,
+              430
+            ],
+            "rotation": {
+              "keyframes": [
+                {
+                  "t": 0.3,
+                  "v": -90,
+                  "ease": "easeOutQuint"
+                },
+                {
+                  "t": 2,
+                  "v": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "dot",
+          "type": "ellipse",
+          "size": [
+            26,
+            26
+          ],
+          "fill": "#f3e3c3",
+          "transform": {
+            "position": [
+              960,
+              430
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 1.2,
+                  "v": 0,
+                  "ease": "easeOutQuint"
+                },
+                {
+                  "t": 2.3,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 1.2,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 1.8,
+                  "v": 100
+                }
+              ]
+            }
+          },
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 24,
+              "intensity": 0.8,
+              "color": "#f3e3c3"
+            }
+          ]
+        },
+        {
+          "id": "word",
+          "type": "text",
+          "text": "Lumen",
+          "font": {
+            "weight": 300,
+            "size": 104
+          },
+          "fill": "#ece6d8",
+          "letterSpacing": 18,
+          "transform": {
+            "position": [
+              970,
+              620
+            ]
+          },
+          "animator": {
+            "by": "character",
+            "stagger": 0.12,
+            "duration": 1.2,
+            "ease": "easeOutCubic",
+            "from": {
+              "opacity": 0,
+              "offset": [
+                0,
+                14
+              ],
+              "blur": 6
+            }
+          },
+          "in": 1.4
+        },
+        {
+          "id": "line",
+          "type": "rect",
+          "size": [
+            60,
+            2
+          ],
+          "fill": "#e9d9b8",
+          "transform": {
+            "position": [
+              960,
+              740
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 2.3,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 3.2,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": 60
+          }
+        }
+      ]
+    }
+  ]
+}

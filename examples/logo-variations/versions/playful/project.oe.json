@@ -1,0 +1,308 @@
+{
+  "version": 1,
+  "name": "Lumen sting v3",
+  "compositions": [
+    {
+      "id": "main",
+      "name": "Main",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "duration": 4,
+      "background": "#4a22e0",
+      "layers": [
+        {
+          "id": "blob",
+          "type": "ellipse",
+          "size": [
+            900,
+            900
+          ],
+          "fill": {
+            "type": "radial",
+            "stops": [
+              [
+                0,
+                "#8a5cff"
+              ],
+              [
+                1,
+                "#4a22e000"
+              ]
+            ],
+            "radius": 450
+          },
+          "transform": {
+            "position": [
+              960,
+              430
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 0,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 1,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "tile",
+          "type": "rect",
+          "size": [
+            260,
+            260
+          ],
+          "radius": 88,
+          "fill": "#ffd21f",
+          "transform": {
+            "position": [
+              960,
+              420
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0.1,
+                  "v": 0,
+                  "ease": "easeOutElastic"
+                },
+                {
+                  "t": 1,
+                  "v": 100
+                }
+              ]
+            },
+            "rotation": {
+              "keyframes": [
+                {
+                  "t": 0.1,
+                  "v": -40,
+                  "ease": "easeOutElastic"
+                },
+                {
+                  "t": 1.1,
+                  "v": 0,
+                  "ease": "easeInOut"
+                },
+                {
+                  "t": 2.4,
+                  "v": 0,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 2.7,
+                  "v": -6,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 3,
+                  "v": 5,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 3.3,
+                  "v": 0
+                }
+              ]
+            }
+          },
+          "effects": [
+            {
+              "type": "dropShadow",
+              "distance": 16,
+              "softness": 0,
+              "color": "#ff3d81"
+            }
+          ]
+        },
+        {
+          "id": "dot",
+          "type": "ellipse",
+          "size": [
+            120,
+            120
+          ],
+          "fill": "#ff3d81",
+          "transform": {
+            "position": [
+              960,
+              420
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0.5,
+                  "v": 0,
+                  "ease": "easeOutElastic"
+                },
+                {
+                  "t": 1.4,
+                  "v": 100,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 2.4,
+                  "v": 100,
+                  "ease": "easeInOutSine"
+                },
+                {
+                  "t": 2.7,
+                  "v": 125,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 3.1,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "sp1",
+          "type": "ellipse",
+          "size": [
+            40,
+            40
+          ],
+          "fill": "#2ee6c8",
+          "transform": {
+            "position": [
+              1160,
+              300
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0.9,
+                  "v": 0,
+                  "ease": "easeOutElastic"
+                },
+                {
+                  "t": 1.6,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "sp2",
+          "type": "ellipse",
+          "size": [
+            28,
+            28
+          ],
+          "fill": "#ff8a1f",
+          "transform": {
+            "position": [
+              750,
+              540
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 1,
+                  "v": 0,
+                  "ease": "easeOutElastic"
+                },
+                {
+                  "t": 1.7,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "sp3",
+          "type": "ellipse",
+          "size": [
+            20,
+            20
+          ],
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              1190,
+              560
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 1.1,
+                  "v": 0,
+                  "ease": "easeOutElastic"
+                },
+                {
+                  "t": 1.8,
+                  "v": 100
+                }
+              ]
+            }
+          },
+          "behaviors": [
+            {
+              "type": "oscillate",
+              "property": "transform.position",
+              "amplitude": [
+                0,
+                8
+              ],
+              "frequency": 1.2,
+              "wave": "sine"
+            }
+          ]
+        },
+        {
+          "id": "word",
+          "type": "text",
+          "text": "Lumen",
+          "font": {
+            "family": "Inter",
+            "weight": 900,
+            "size": 200
+          },
+          "fill": "#ffffff",
+          "letterSpacing": 4,
+          "transform": {
+            "position": [
+              960,
+              720
+            ]
+          },
+          "animator": {
+            "by": "character",
+            "stagger": 0.08,
+            "duration": 0.7,
+            "ease": "easeOutBack",
+            "from": {
+              "opacity": 0,
+              "offset": [
+                0,
+                120
+              ],
+              "scale": 40
+            }
+          },
+          "in": 1,
+          "effects": [
+            {
+              "type": "dropShadow",
+              "distance": 10,
+              "softness": 0,
+              "color": "#2a0f9e"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

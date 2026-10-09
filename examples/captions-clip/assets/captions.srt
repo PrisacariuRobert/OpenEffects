@@ -1,0 +1,15 @@
+1
+00:00:00,400 --> 00:00:02,000
+Stop fighting your animation tool.
+
+2
+00:00:02,300 --> 00:00:04,300
+Describe what you want in plain words.
+
+3
+00:00:04,600 --> 00:00:06,600
+Your agent builds it on a real timeline.
+
+4
+00:00:06,900 --> 00:00:08,600
+Then you finish it by hand.

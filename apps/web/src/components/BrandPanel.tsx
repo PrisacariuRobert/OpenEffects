@@ -46,7 +46,7 @@ export function BrandPanel({ onAsk, onError }: { onAsk(prompt: string): void; on
           </button>
         </div>
       ) : (
-        <div className="brand">
+        <div className="brand-kit">
           <div className="prop-row">
             <span className="prop-label">Name</span>
             <span className="prop-value">
@@ -56,7 +56,7 @@ export function BrandPanel({ onAsk, onError }: { onAsk(prompt: string): void; on
           <div className="brand-swatches">
             {Object.entries(brand.colors ?? {}).map(([name, color]) => (
               <div key={name} className="brand-swatch">
-                <ColorField value={color} onChange={(v) => change({ ...brand, colors: { ...brand.colors, [name]: v } })} />
+                <ColorField swatch value={color} onChange={(v) => change({ ...brand, colors: { ...brand.colors, [name]: v } })} />
                 <span className="small">{name}</span>
                 <button
                   className="icon-only"

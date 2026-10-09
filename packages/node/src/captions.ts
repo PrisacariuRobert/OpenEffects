@@ -158,21 +158,54 @@ function run(cmd: string, args: string[]): Promise<void> {
 
 /** Groups words into caption lines: by length, duration and pauses. */
 export function groupWords(words: Word[], maxChars = 32, maxDuration = 3.2): Word[][] {
-  const groups: Word[][] = [];
+  // Phrases end at sentence ends, pauses and the duration limit...
+  const phrases: Word[][] = [];
   let cur: Word[] = [];
   for (const w of words) {
-    const len = cur.reduce((a, x) => a + x.text.length + 1, 0) + w.text.length;
     const gap = cur.length ? w.start - cur[cur.length - 1].end : 0;
     const dur = cur.length ? w.end - cur[0].start : 0;
     const sentenceEnd = cur.length > 0 && /[.!?]$/.test(cur[cur.length - 1].text);
-    if (cur.length && (len > maxChars || dur > maxDuration || gap > 0.6 || sentenceEnd)) {
-      groups.push(cur);
+    if (cur.length && (dur > maxDuration || gap > 0.6 || sentenceEnd)) {
+      phrases.push(cur);
       cur = [];
     }
     cur.push(w);
   }
-  if (cur.length) groups.push(cur);
-  return groups;
+  if (cur.length) phrases.push(cur);
+  // ...then a phrase too long for one line is split into the fewest lines of even length, so
+  // no word is left alone on a line.
+  return phrases.flatMap((p) => balance(p, maxChars));
+}
+
+const lineLength = (ws: Word[]) => ws.reduce((a, w) => a + w.text.length, 0) + ws.length - 1;
+
+function balance(words: Word[], maxChars: number): Word[][] {
+  if (words.length < 2 || lineLength(words) <= maxChars) return [words];
+  const n = words.length;
+  for (let k = 2; k <= n; k++) {
+    // best[i][j]: the smallest possible longest line when the first i words make j lines.
+    const best = Array.from({ length: n + 1 }, () => new Array<number>(k + 1).fill(Infinity));
+    const cut = Array.from({ length: n + 1 }, () => new Array<number>(k + 1).fill(0));
+    best[0][0] = 0;
+    for (let i = 1; i <= n; i++)
+      for (let j = 1; j <= Math.min(i, k); j++)
+        for (let s = j - 1; s < i; s++) {
+          const v = Math.max(best[s][j - 1], lineLength(words.slice(s, i)));
+          if (v < best[i][j]) {
+            best[i][j] = v;
+            cut[i][j] = s;
+          }
+        }
+    if (best[n][k] <= maxChars || k === n) {
+      const lines: Word[][] = [];
+      for (let i = n, j = k; j > 0; j--) {
+        lines.unshift(words.slice(cut[i][j], i));
+        i = cut[i][j];
+      }
+      return lines;
+    }
+  }
+  return [words];
 }
 
 const round = (n: number) => Math.round(n * 1000) / 1000;
@@ -204,10 +237,13 @@ export function captionLayers(words: Word[], comp: Pick<Composition, "width" | "
   const layers: Layer[] = [{ id: `${prefix}-captions`, type: "null", name: "Captions", transform: { position: [cx, cy] } }];
   const font = { family, weight, size };
 
-  groupWords(words, opts.maxChars ?? (comp.height > comp.width ? 22 : 32), opts.maxDuration ?? 3.2).forEach((group, gi) => {
-    const start = Math.max(0, round(group[0].start + offset - 0.05));
-    const next = group[group.length - 1].end + offset;
-    const end = Math.min(comp.duration, round(next + 0.25));
+  const groups = groupWords(words, opts.maxChars ?? (comp.height > comp.width ? 22 : 32), opts.maxDuration ?? 3.2);
+  const startOf = (g: Word[]) => Math.max(0, round(g[0].start + offset - 0.05));
+  groups.forEach((group, gi) => {
+    const start = startOf(group);
+    // Linger a moment after the last word, but never into the next line: they share a spot.
+    const nextStart = gi + 1 < groups.length ? startOf(groups[gi + 1]) : Infinity;
+    const end = Math.min(comp.duration, nextStart, round(group[group.length - 1].end + offset + 0.25));
     if (end <= start) return;
     const lineText = group.map((w) => w.text).join(" ");
     const layout = layoutText(ctx, { id: "m", type: "text", text: lineText, font } as never, 0);

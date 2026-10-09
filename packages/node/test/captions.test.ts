@@ -39,6 +39,15 @@ describe("captions", () => {
     expect(groups.every((g) => g.map((w) => w.text).join(" ").length <= 20 || g.length === 1)).toBe(true);
   });
 
+  it("splits long lines evenly and never shows two lines at once", () => {
+    const words = parseSubtitles("1\n00:00:06,900 --> 00:00:08,600\nThen you finish it by hand.\n\n2\n00:00:08,600 --> 00:00:09,500\nShip it.\n");
+    const lines = groupWords(words, 22).map((g) => g.map((w) => w.text).join(" "));
+    expect(lines).toEqual(["Then you finish", "it by hand.", "Ship it."]);
+    const layers = captionLayers(words, { width: 1080, height: 1920, duration: 10 }, { maxChars: 22 });
+    const bgs = layers.filter((l) => l.id.endsWith("-bg"));
+    for (let i = 1; i < bgs.length; i++) expect(bgs[i - 1].out!).toBeLessThanOrEqual(bgs[i].in!);
+  });
+
   it("builds word layers that appear when each word is spoken", () => {
     const comp = { width: 1920, height: 1080, duration: 6 };
     const words = parseSubtitles(SRT);

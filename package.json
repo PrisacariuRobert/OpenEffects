@@ -12,6 +12,7 @@
     "oe": "tsx apps/cli/src/index.ts",
     "dev": "tsx apps/cli/src/index.ts dev examples/logo-reveal",
     "build:web": "pnpm --filter @openeffects/web build",
+    "build:package": "pnpm --filter openeffects build:package",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "schema:json": "tsx packages/schema/scripts/emit-json-schema.ts"

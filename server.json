@@ -1,0 +1,30 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.PrisacariuRobert/openeffects",
+  "title": "OpenEffects",
+  "description": "Motion graphics for agents: animate layers, keyframes, captions and Lottie, then export MP4/GIF.",
+  "repository": {
+    "url": "https://github.com/PrisacariuRobert/OpenEffects",
+    "source": "github"
+  },
+  "websiteUrl": "https://github.com/PrisacariuRobert/OpenEffects",
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "openeffects",
+      "version": "0.1.0",
+      "transport": { "type": "stdio" },
+      "packageArguments": [
+        { "type": "positional", "value": "mcp" },
+        {
+          "type": "positional",
+          "valueHint": "project_dir",
+          "description": "Folder of the OpenEffects project (defaults to the working directory)",
+          "isRequired": false,
+          "default": "."
+        }
+      ]
+    }
+  ]
+}

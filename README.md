@@ -53,6 +53,18 @@ The prompts are in [examples/](examples).
 | ![Kinetic typography](docs/media/gallery/kinetic-type.gif)<br>Kinetic typography · 29 s · $0.014 | ![Lower third](docs/media/gallery/lower-third.gif)<br>Broadcast lower third · 53 s · $0.018 | ![Summer sale vertical ad](docs/media/gallery/summer-sale.gif)<br>Vertical social ad · 45 s · $0.013 |
 | ![Bar chart](docs/media/gallery/bar-chart.gif)<br>Animated chart · 50 s · $0.015 | ![Loader](docs/media/gallery/loader.gif)<br>Seamless loop · 21 s · $0.007 | [examples/showreel](examples/showreel) nests all of them as precomps into a 40 s reel, built in OpenEffects itself |
 
+## New: versions, captions, brand kits, batches and references
+
+Each of these was made by **Claude Sonnet 5.5** from one `oe ask` command (the prompts are in [examples/](examples)).
+
+| | |
+|---|---|
+| ![Four versions of a logo sting](docs/media/gallery/variations.gif)<br>**4 versions at once.** One prompt, four creative directions (bold, calm, playful, cinematic) made in parallel and previewed live side by side. Pick one and keep editing. `oe ask --variations 4` · 36 s · $0.98 for all four · [examples/logo-variations](examples/logo-variations) | ![A title card in the style of a reference poster](docs/media/gallery/reference.gif)<br>**Reference → animation.** Attach an image or a clip and the agent takes after its palette, type and layout (clips are read as a timed contact sheet, so motion carries over too). Left: the reference. Right: the result. `oe ask --ref poster.png` · 47 s · $0.33 · [examples/reference-title](examples/reference-title) |
+| ![Word-by-word captions on a vertical clip](docs/media/gallery/captions.gif)<br>**Word-by-word captions** from an SRT/VTT file, or transcribed locally with whisper.cpp. Pop, karaoke and minimal styles, timed to each spoken word, lines balanced so no word is left alone. `oe_add_captions` · 2 turns, 85 s · $1.25 · [examples/captions-clip](examples/captions-clip) | ![Three personalized welcome cards from one template](docs/media/gallery/team-batch.gif)<br>**Brand kit + data batch.** The agent designs with your `brand.json` (colors, fonts, logo, voice) and leaves `{{name}}`-style fields, then `oe batch --data team.csv` renders one video per row: 3 videos in 9 s. Agent turn: 26 s · $0.25 · [examples/team-welcome](examples/team-welcome) |
+
+**Review what the agent changed.** After each turn, the agent panel lists every layer and property it added,
+removed or changed, the timeline marks those layers, and any single layer can be reverted without undoing the rest.
+
 ## You stay in control
 
 The agent does the heavy lifting; you direct and fine-tune it like in any motion design tool.
@@ -122,16 +134,24 @@ Effects and AI motion tools.
 
 ## Quick start
 
-Requirements: Node 20+, [pnpm](https://pnpm.io), [ffmpeg](https://ffmpeg.org) (for video export) and at
-least one agent CLI installed and logged in (see [Agents](#agents)).
+Requirements: Node 20+, [ffmpeg](https://ffmpeg.org) (for video export) and at least one agent CLI installed
+and logged in (see [Agents](#agents)).
+
+```bash
+npx openeffects app my-first-animation
+```
+
+That's the whole install: it creates the project and opens the editor in its own window (a chromeless
+Chrome, Edge or Brave window, so no 150 MB Electron download; it falls back to your default browser).
+Closing the window quits. In Chrome or Edge you can also install it as an app from the address bar.
+*The npm package is ready but not published yet; until it is, run it from source:*
 
 ```bash
 git clone https://github.com/PrisacariuRobert/OpenEffects && cd OpenEffects
 pnpm install
 pnpm build:web
 
-pnpm oe init ~/my-first-animation      # create a project
-pnpm oe dev ~/my-first-animation       # open http://127.0.0.1:4310
+pnpm oe app ~/my-first-animation       # create the project and open the editor
 ```
 
 Type what you want in the **Agent** panel, e.g. *"Make a 5-second logo reveal for 'Nebula' with a glowing
@@ -159,17 +179,26 @@ a turn. Switching agents starts a fresh conversation; the project and its undo h
 
 | Command | What it does |
 |---|---|
+| `oe app [dir]` | Open the editor in its own window, creating the project if needed |
 | `oe init [dir]` | New project: `project.oe.json`, `AGENTS.md`, `.mcp.json`, git repo |
-| `oe dev [dir]` | Editor with live preview, timeline, agent panel, history (`--port`) |
+| `oe dev [dir]` | Editor server only; open the printed URL (`--port`) |
 | `oe ask [dir] "<prompt>"` | Let an agent edit the project from the terminal (`--agent claude\|codex\|opencode --model <id> --new`) |
+| `oe ask … --variations 4` | Several versions in parallel, each with its own creative direction, saved in `variations/` |
+| `oe ask … --ref file` | Take after a reference image or clip |
 | `oe render [dir]` | Export (`--format mp4\|webm\|gif\|mov\|png\|lottie --out file --scale 0.5`) |
+| `oe batch [dir] --data rows.csv` | One video per CSV row, filling `{{column}}` placeholders (`--format --name "{{name}}" --out`) |
+| `oe captions [dir] --from file` | Word-by-word captions from `.srt`/`.vtt`, or transcribe audio/video with local whisper.cpp (`--style pop\|karaoke\|minimal`) |
 | `oe import <file.json> [dir]` | Import a Lottie file: a new project, or a precomp layer in an existing one (`--replace`) |
 | `oe frame [dir] --time 2` | Render one frame to PNG |
 | `oe sheet [dir]` | Contact sheet of the whole animation |
 | `oe validate [dir]` | Check the project file |
 | `oe mcp [dir]` | OpenEffects MCP server on stdio |
 
-(Run them as `pnpm oe …` from the repo until the npm package is published.)
+(Run them as `npx openeffects …` once the package is published, or `pnpm oe …` from the repo.)
+
+Captions from audio need [whisper.cpp](https://github.com/ggml-org/whisper.cpp) (`whisper-cli` on your PATH, or
+`OE_WHISPER=/path/to/whisper-cli`) and a model at `~/.cache/openeffects/ggml-base.en.bin` (or `OE_WHISPER_MODEL`).
+Everything runs on your machine; subtitle files need nothing extra.
 
 ### Using other agents
 
@@ -178,10 +207,13 @@ Any MCP client can drive OpenEffects. Point it at `oe mcp <project-dir>`, e.g. f
 ```json
 {
   "mcpServers": {
-    "openeffects": { "command": "pnpm", "args": ["--silent", "--dir", "/path/to/OpenEffects", "oe", "mcp", "/path/to/project"] }
+    "openeffects": { "command": "npx", "args": ["-y", "openeffects", "mcp", "/path/to/project"] }
   }
 }
 ```
+
+From a clone, use `"command": "pnpm", "args": ["--silent", "--dir", "/path/to/OpenEffects", "oe", "mcp", "/path/to/project"]`.
+The server is described for the [MCP registry](https://registry.modelcontextprotocol.io) in [`server.json`](server.json).
 
 ## How it works
 
@@ -230,7 +262,9 @@ This is an early prototype (Phase 0 of the [plan](docs/PLAN.md)). Next up:
 
 - [x] Claude Code, Codex and OpenCode adapters, model picker (cheap models by default), `oe ask`
 - [ ] Gemini CLI adapter; a Codex `app-server` adapter for live streaming
-- [ ] Desktop app (Electron/Tauri) and `npx openeffects` packaging
+- [x] `npx openeffects` package and an app window (`oe app`), installable as a PWA
+- [x] Variations, reference → animation, captions, brand kits and CSV batches, per-layer review of agent changes
+- [ ] Native desktop builds (Tauri)
 - [x] Direct manipulation, visual properties panel, keyframe/easing editing, undo/redo, templates, image drop
 - [x] Graph editor, ease editor with saved easings, animate presets, keyframe multi-select/copy/paste, motion paths, align, safe guides, loop range ([research](docs/RESEARCH.md))
 - [x] Behaviors (wiggle, oscillate, drift, loop, follow) and a first-run welcome + guided tour
@@ -243,6 +277,7 @@ This is an early prototype (Phase 0 of the [plan](docs/PLAN.md)). Next up:
 ## Contributing
 
 Contributions are welcome, especially new effects, easings, templates and agent adapters. See [CONTRIBUTING.md](CONTRIBUTING.md).
+The release and launch checklist is in [docs/LAUNCH.md](docs/LAUNCH.md).
 
 ## Author
 

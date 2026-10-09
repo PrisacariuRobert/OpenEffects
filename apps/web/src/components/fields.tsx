@@ -106,7 +106,8 @@ function toHex(color: string): { hex: string; alpha: number } {
 }
 
 /** Color swatch (native picker) + alpha + editable text value. */
-export function ColorField({ value, onChange }: { value: string; onChange: Commit<string> }) {
+/** A color picker with hex and opacity fields; `swatch` shows only the picker (e.g. a palette). */
+export function ColorField({ value, onChange, swatch }: { value: string; onChange: Commit<string>; swatch?: boolean }) {
   const { hex, alpha } = toHex(value);
   const [text, setText] = useState(value);
   useEffect(() => setText(value), [value]);
@@ -114,14 +115,16 @@ export function ColorField({ value, onChange }: { value: string; onChange: Commi
   return (
     <span className="color-field">
       <input type="color" value={hex} onInput={(e) => onChange(withAlpha((e.target as HTMLInputElement).value, alpha), true)} onChange={(e) => onChange(withAlpha(e.target.value, alpha))} />
-      <input
-        className="color-text"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onBlur={() => (parseColor(text) ? onChange(text) : setText(value))}
-        onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-      />
-      <NumberField value={Math.round(alpha * 100)} min={0} max={100} step={1} width={36} suffix="%" onChange={(a, tr) => onChange(withAlpha(hex, a / 100), tr)} />
+      {!swatch && (
+        <input
+          className="color-text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onBlur={() => (parseColor(text) ? onChange(text) : setText(value))}
+          onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+        />
+      )}
+      {!swatch && <NumberField value={Math.round(alpha * 100)} min={0} max={100} step={1} width={36} suffix="%" onChange={(a, tr) => onChange(withAlpha(hex, a / 100), tr)} />}
     </span>
   );
 }

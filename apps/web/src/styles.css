@@ -2264,7 +2264,7 @@ button.legend.off {
 }
 
 /* Brand kit and template fields */
-.brand {
+.brand-kit {
   display: grid;
   gap: 8px;
 }

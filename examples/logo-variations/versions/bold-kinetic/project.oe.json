@@ -1,0 +1,237 @@
+{
+  "version": 1,
+  "name": "Lumen sting v1",
+  "compositions": [
+    {
+      "id": "main",
+      "name": "Main",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "duration": 4,
+      "background": "#0a0a0f",
+      "layers": [
+        {
+          "id": "flash",
+          "type": "solid",
+          "color": "#ffd60a",
+          "transform": {
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": 100,
+                  "ease": "easeOutExpo"
+                },
+                {
+                  "t": 0.35,
+                  "v": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "ring",
+          "type": "ellipse",
+          "size": [
+            240,
+            240
+          ],
+          "stroke": {
+            "color": "#ffd60a",
+            "width": 6
+          },
+          "transform": {
+            "position": [
+              440,
+              540
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0.15,
+                  "v": 100,
+                  "ease": "easeOutExpo"
+                },
+                {
+                  "t": 1,
+                  "v": 420
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0.15,
+                  "v": 80,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 1,
+                  "v": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "sun",
+          "type": "ellipse",
+          "size": [
+            240,
+            240
+          ],
+          "fill": "#ffd60a",
+          "transform": {
+            "position": [
+              440,
+              540
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0.1,
+                  "v": 0,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 0.6,
+                  "v": 100
+                }
+              ]
+            }
+          },
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 50,
+              "intensity": 0.6,
+              "color": "#ffd60a"
+            }
+          ]
+        },
+        {
+          "id": "bar1",
+          "type": "rect",
+          "size": [
+            130,
+            22
+          ],
+          "radius": 11,
+          "fill": "#0a0a0f",
+          "transform": {
+            "position": [
+              440,
+              505
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0.45,
+                  "v": 0,
+                  "ease": "easeOutExpo"
+                },
+                {
+                  "t": 0.8,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "bar2",
+          "type": "rect",
+          "size": [
+            90,
+            22
+          ],
+          "radius": 11,
+          "fill": "#0a0a0f",
+          "transform": {
+            "position": [
+              420,
+              555
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0.55,
+                  "v": 0,
+                  "ease": "easeOutExpo"
+                },
+                {
+                  "t": 0.9,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "word",
+          "type": "text",
+          "text": "LUMEN",
+          "font": {
+            "weight": 900,
+            "size": 260
+          },
+          "fill": "#ffffff",
+          "letterSpacing": 4,
+          "transform": {
+            "position": [
+              1140,
+              540
+            ]
+          },
+          "animator": {
+            "by": "character",
+            "stagger": 0.06,
+            "duration": 0.5,
+            "ease": "easeOutExpo",
+            "from": {
+              "opacity": 0,
+              "offset": [
+                0,
+                160
+              ],
+              "scale": 70
+            }
+          },
+          "in": 0.5
+        },
+        {
+          "id": "tag",
+          "type": "text",
+          "text": "NOTES, CALMLY.",
+          "font": {
+            "weight": 700,
+            "size": 46
+          },
+          "fill": "#ffd60a",
+          "letterSpacing": 14,
+          "transform": {
+            "position": [
+              1140,
+              710
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 1.4,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 1.8,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

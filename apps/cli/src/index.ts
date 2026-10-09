@@ -19,17 +19,20 @@ import {
   resolveProjectFile,
   type ExportFormat,
 } from "@openeffects/node";
-import { mcpLaunch } from "./mcp-launch.ts";
+import { mcpLaunch, serverPaths } from "./mcp-launch.ts";
+import { openAppWindow } from "./app-window.ts";
 import { getComp, parseCsv, templateFields } from "@openeffects/schema";
 import { addAsPrecomp } from "@openeffects/lottie";
 
 const HELP = `OpenEffects: open-source motion graphics, driven by your AI agent
 
 Usage: oe <command> [project] [options]
+       npx openeffects app my-video    # no install needed
 
 Commands:
   init [dir]                 Create a new project (project.oe.json, AGENTS.md, .mcp.json, git repo)
-  dev [dir]                  Open the editor (preview, timeline, agent panel)  --port 4310
+  app [dir]                  Open OpenEffects in its own window (creates the project if needed)
+  dev [dir]                  Run the editor server only (open the printed URL)  --port 4310
   ask [dir] "<prompt>"       Let an agent edit the project from the terminal
                              --agent claude|codex|opencode  --model <id> (Claude default: claude-haiku-5-5)
                              --new (start a fresh conversation)
@@ -54,6 +57,15 @@ Commands:
 function fail(message: string): never {
   console.error(`error: ${message}`);
   process.exit(1);
+}
+
+/** A self-overwriting progress line in a terminal; in logs, at most one plain line per second. */
+let progressAt = 0;
+function progress(line: string): void {
+  if (process.stderr.isTTY) return void process.stderr.write(`\r${line}`);
+  if (Date.now() - progressAt < 1000) return;
+  progressAt = Date.now();
+  process.stderr.write(`${line.trimEnd()}\n`);
 }
 
 function load(target: string | undefined) {
@@ -100,7 +112,14 @@ async function main(): Promise<void> {
       console.log(`Created ${path.relative(process.cwd(), file) || file}\n\nNext:\n  oe dev ${target ?? "."}        # open the editor\n  cd ${target ?? "."} && claude   # or talk to Claude Code directly; .mcp.json is ready`);
       return;
     }
-    case "dev": {
+    case "dev":
+    case "app": {
+      // `oe app` is `oe dev` in its own window, creating the project first if needed.
+      if (command === "app" && !fs.existsSync(resolveProjectFile(target ?? "."))) {
+        const dir = path.resolve(target ?? ".");
+        initProject(dir, { name: values.name, mcp: mcpLaunch(dir) });
+        console.log(`Created a new project in ${path.relative(process.cwd(), dir) || "."}`);
+      }
       const { file, dir } = load(target);
       const { startServer } = await import("@openeffects/server");
       const server = await startServer({
@@ -108,14 +127,26 @@ async function main(): Promise<void> {
         port: values.port ? Number(values.port) : 4310,
         host: values.host,
         mcp: mcpLaunch(dir),
+        findFreePort: !values.port,
+        ...serverPaths(),
       });
-      console.log(`OpenEffects editor running at ${server.url}\nProject: ${file}\nPress Ctrl+C to stop.`);
       const stop = async () => {
         await server.close();
         process.exit(0);
       };
       process.on("SIGINT", stop);
       process.on("SIGTERM", stop);
+      if (command === "dev") {
+        console.log(`OpenEffects editor running at ${server.url}\nProject: ${file}\nPress Ctrl+C to stop.`);
+        return;
+      }
+      const window = openAppWindow(server.url);
+      if (window.kind === "app") {
+        console.log(`OpenEffects is open (${window.browser}). Closing the window quits.\nProject: ${file}`);
+        window.closed.then(stop);
+      } else {
+        console.log(`OpenEffects is open in your browser at ${server.url}\nProject: ${file}\nPress Ctrl+C to stop.`);
+      }
       return;
     }
     case "ask": {
@@ -152,7 +183,7 @@ async function main(): Promise<void> {
           root,
           onUpdate: (run) => {
             const line = run.items.map((i) => `v${i.index + 1} ${i.state === "working" ? (i.status ?? "…").slice(0, 28) : i.state}`).join(" | ");
-            if (line !== last) process.stderr.write(`\r${(last = line).padEnd(120).slice(0, 160)}`);
+            if (line !== last) progress((last = line).padEnd(120).slice(0, 160));
           },
         });
         const run = await done;
@@ -205,7 +236,7 @@ async function main(): Promise<void> {
         format,
         compId: comp.id,
         scale: values.scale ? Number(values.scale) : format === "gif" ? 0.5 : 1,
-        onProgress: (f, total) => process.stderr.write(`\rRendering frame ${f}/${total}`),
+        onProgress: (f, total) => progress(`Rendering frame ${f}/${total}`),
       });
       process.stderr.write("\n");
       console.log(`Wrote ${r.file} (${r.frames} frames in ${((Date.now() - started) / 1000).toFixed(1)}s)`);
@@ -227,7 +258,7 @@ async function main(): Promise<void> {
         compId: values.comp,
         name: values.name,
         outDir: values.out ? path.resolve(values.out) : undefined,
-        onProgress: (row, f, total) => process.stderr.write(`\rRow ${row + 1}/${rows.length} · frame ${f}/${total}   `),
+        onProgress: (row, f, total) => progress(`Row ${row + 1}/${rows.length} · frame ${f}/${total}   `),
       });
       process.stderr.write("\n");
       for (const e of r.errors) console.warn(`  skipped: ${e}`);

@@ -45,6 +45,8 @@ export interface ServerOptions {
   providers?: AgentProvider[];
   /** Folder of template projects (default: the repo's examples/). */
   templatesDir?: string;
+  /** If the port is taken, use the next free one instead of failing. */
+  findFreePort?: boolean;
 }
 
 const MIME: Record<string, string> = {
@@ -52,6 +54,7 @@ const MIME: Record<string, string> = {
   ".js": "text/javascript",
   ".css": "text/css",
   ".json": "application/json",
+  ".webmanifest": "application/manifest+json",
   ".png": "image/png",
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
@@ -456,10 +459,24 @@ export async function startServer(opts: ServerOptions): Promise<{ url: string; c
   });
 
   const host = opts.host ?? "127.0.0.1";
-  await new Promise<void>((resolve, reject) => {
-    server.once("error", reject);
-    server.listen(opts.port ?? 4310, host, resolve);
-  });
+  const listen = (port: number) =>
+    new Promise<void>((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(port, host, () => {
+        server.off("error", reject);
+        resolve();
+      });
+    });
+  const first = opts.port ?? 4310;
+  for (let port = first; ; port++) {
+    try {
+      await listen(port);
+      break;
+    } catch (e) {
+      // Another OpenEffects (or anything else) is on this port: take the next free one.
+      if (!opts.findFreePort || (e as NodeJS.ErrnoException).code !== "EADDRINUSE" || port >= first + 20) throw e;
+    }
+  }
   const address = server.address();
   const port = typeof address === "object" && address ? address.port : opts.port;
 

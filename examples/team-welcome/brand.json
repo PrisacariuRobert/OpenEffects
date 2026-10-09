@@ -1,0 +1,7 @@
+{
+  "name": "Northwind",
+  "colors": { "primary": "#1f6feb", "accent": "#ffb000", "background": "#0d1117", "surface": "#161b22", "text": "#f0f6fc" },
+  "fonts": { "heading": { "family": "Inter", "weight": 800 }, "body": { "family": "Inter", "weight": 500 } },
+  "logo": "assets/logo.svg",
+  "voice": "Warm and direct. Short sentences. No exclamation marks, no emoji."
+}

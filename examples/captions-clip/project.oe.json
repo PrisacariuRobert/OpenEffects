@@ -1,0 +1,2102 @@
+{
+  "version": 1,
+  "name": "Captions clip",
+  "compositions": [
+    {
+      "id": "main",
+      "name": "Main",
+      "width": 1080,
+      "height": 1920,
+      "fps": 30,
+      "duration": 10,
+      "background": "#0b0d17",
+      "markers": [
+        {
+          "t": 0.4,
+          "label": "cue1"
+        },
+        {
+          "t": 2.3,
+          "label": "cue2"
+        },
+        {
+          "t": 4.6,
+          "label": "cue3"
+        },
+        {
+          "t": 6.9,
+          "label": "cue4"
+        },
+        {
+          "t": 9.1,
+          "label": "wordmark"
+        }
+      ],
+      "layers": [
+        {
+          "id": "bg",
+          "type": "solid",
+          "color": {
+            "type": "linear",
+            "stops": [
+              [
+                0,
+                "#10122a"
+              ],
+              [
+                1,
+                "#07080f"
+              ]
+            ],
+            "from": [
+              0,
+              -960
+            ],
+            "to": [
+              0,
+              960
+            ]
+          }
+        },
+        {
+          "id": "blob1",
+          "type": "ellipse",
+          "size": [
+            900,
+            900
+          ],
+          "fill": {
+            "type": "radial",
+            "stops": [
+              [
+                0,
+                "#6a5cff"
+              ],
+              [
+                1,
+                "#6a5cff00"
+              ]
+            ],
+            "radius": 450
+          },
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    250,
+                    450
+                  ],
+                  "ease": "easeInOut"
+                },
+                {
+                  "t": 4.5,
+                  "v": [
+                    780,
+                    700
+                  ],
+                  "ease": "easeInOut"
+                },
+                {
+                  "t": 9,
+                  "v": [
+                    300,
+                    500
+                  ]
+                }
+              ]
+            },
+            "opacity": 55
+          }
+        },
+        {
+          "id": "blob2",
+          "type": "ellipse",
+          "size": [
+            800,
+            800
+          ],
+          "fill": {
+            "type": "radial",
+            "stops": [
+              [
+                0,
+                "#12c2e9"
+              ],
+              [
+                1,
+                "#12c2e900"
+              ]
+            ],
+            "radius": 400
+          },
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    850,
+                    1000
+                  ],
+                  "ease": "easeInOut"
+                },
+                {
+                  "t": 4.5,
+                  "v": [
+                    300,
+                    800
+                  ],
+                  "ease": "easeInOut"
+                },
+                {
+                  "t": 9,
+                  "v": [
+                    800,
+                    1050
+                  ]
+                }
+              ]
+            },
+            "opacity": 40
+          }
+        },
+        {
+          "id": "blob3",
+          "type": "ellipse",
+          "size": [
+            700,
+            700
+          ],
+          "fill": {
+            "type": "radial",
+            "stops": [
+              [
+                0,
+                "#ff4f9a"
+              ],
+              [
+                1,
+                "#ff4f9a00"
+              ]
+            ],
+            "radius": 350
+          },
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 0,
+                  "v": [
+                    500,
+                    200
+                  ],
+                  "ease": "easeInOut"
+                },
+                {
+                  "t": 4.5,
+                  "v": [
+                    850,
+                    300
+                  ],
+                  "ease": "easeInOut"
+                },
+                {
+                  "t": 9,
+                  "v": [
+                    450,
+                    250
+                  ]
+                }
+              ]
+            },
+            "opacity": 35
+          }
+        },
+        {
+          "id": "ring",
+          "type": "ellipse",
+          "size": [
+            420,
+            420
+          ],
+          "stroke": {
+            "color": "#8f86ff",
+            "width": 6
+          },
+          "transform": {
+            "position": [
+              540,
+              520
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0.4,
+                  "v": 30,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 1.6,
+                  "v": 100,
+                  "ease": "easeInOut"
+                },
+                {
+                  "t": 9,
+                  "v": 110
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0.4,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 0.9,
+                  "v": 80
+                },
+                {
+                  "t": 8.85,
+                  "v": 80,
+                  "ease": "easeInCubic"
+                },
+                {
+                  "t": 9.1,
+                  "v": 0
+                }
+              ]
+            }
+          },
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 24,
+              "intensity": 1
+            }
+          ]
+        },
+        {
+          "id": "line",
+          "type": "path",
+          "d": "M 240 520 L 840 520",
+          "stroke": {
+            "color": "#12c2e9",
+            "width": 8
+          },
+          "trim": {
+            "end": {
+              "keyframes": [
+                {
+                  "t": 2.3,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 3.1,
+                  "v": 100
+                }
+              ]
+            }
+          },
+          "transform": {
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 8.85,
+                  "v": 100,
+                  "ease": "easeInCubic"
+                },
+                {
+                  "t": 9.1,
+                  "v": 0
+                }
+              ]
+            }
+          },
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 20,
+              "intensity": 1
+            }
+          ]
+        },
+        {
+          "id": "card1",
+          "type": "rect",
+          "size": [
+            260,
+            170
+          ],
+          "radius": 28,
+          "fill": "#ffffff22",
+          "stroke": {
+            "color": "#ffffff66",
+            "width": 3
+          },
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 4.6,
+                  "v": [
+                    330,
+                    760
+                  ],
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 5.3,
+                  "v": [
+                    330,
+                    720
+                  ]
+                }
+              ]
+            },
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 4.6,
+                  "v": 0,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 5.2,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 8.85,
+                  "v": 100,
+                  "ease": "easeInCubic"
+                },
+                {
+                  "t": 9.1,
+                  "v": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "card2",
+          "type": "rect",
+          "size": [
+            260,
+            170
+          ],
+          "radius": 28,
+          "fill": "#ffffff22",
+          "stroke": {
+            "color": "#ffffff66",
+            "width": 3
+          },
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 4.8,
+                  "v": [
+                    540,
+                    720
+                  ],
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 5.5,
+                  "v": [
+                    540,
+                    690
+                  ]
+                }
+              ]
+            },
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 4.8,
+                  "v": 0,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 5.4,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 8.85,
+                  "v": 100,
+                  "ease": "easeInCubic"
+                },
+                {
+                  "t": 9.1,
+                  "v": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "card3",
+          "type": "rect",
+          "size": [
+            260,
+            170
+          ],
+          "radius": 28,
+          "fill": "#ffffff22",
+          "stroke": {
+            "color": "#ffffff66",
+            "width": 3
+          },
+          "transform": {
+            "position": {
+              "keyframes": [
+                {
+                  "t": 5,
+                  "v": [
+                    750,
+                    760
+                  ],
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 5.7,
+                  "v": [
+                    750,
+                    720
+                  ]
+                }
+              ]
+            },
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 5,
+                  "v": 0,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 5.6,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 8.85,
+                  "v": 100,
+                  "ease": "easeInCubic"
+                },
+                {
+                  "t": 9.1,
+                  "v": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "spark",
+          "type": "path",
+          "d": "M 0 -90 L 22 -22 L 90 0 L 22 22 L 0 90 L -22 22 L -90 0 L -22 -22 Z",
+          "fill": "#ffd36e",
+          "transform": {
+            "position": [
+              540,
+              340
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 6.9,
+                  "v": 0,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 7.5,
+                  "v": 100,
+                  "ease": "easeInOut"
+                },
+                {
+                  "t": 8.85,
+                  "v": 100,
+                  "ease": "easeInCubic"
+                },
+                {
+                  "t": 9.1,
+                  "v": 0
+                }
+              ]
+            },
+            "rotation": {
+              "keyframes": [
+                {
+                  "t": 6.9,
+                  "v": -90,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 7.6,
+                  "v": 0
+                }
+              ]
+            }
+          },
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 30,
+              "intensity": 1.2
+            }
+          ]
+        },
+        {
+          "id": "wordmark",
+          "type": "text",
+          "text": "OpenEffects",
+          "font": {
+            "weight": 800,
+            "size": 150
+          },
+          "fill": {
+            "type": "linear",
+            "stops": [
+              [
+                0,
+                "#ffffff"
+              ],
+              [
+                1,
+                "#9fb4ff"
+              ]
+            ],
+            "from": [
+              0,
+              -75
+            ],
+            "to": [
+              0,
+              75
+            ]
+          },
+          "in": 9.1,
+          "transform": {
+            "position": [
+              540,
+              700
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 9.1,
+                  "v": 80,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 9.5,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 9.1,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 9.35,
+                  "v": 100
+                }
+              ]
+            }
+          },
+          "effects": [
+            {
+              "type": "glow",
+              "radius": 30,
+              "intensity": 0.8
+            }
+          ]
+        },
+        {
+          "id": "cap-captions",
+          "type": "null",
+          "name": "Captions",
+          "transform": {
+            "position": [
+              540,
+              1380
+            ]
+          }
+        },
+        {
+          "id": "cap-0-bg",
+          "type": "rect",
+          "parent": "cap-captions",
+          "size": [
+            746,
+            118
+          ],
+          "radius": 27,
+          "fill": "rgba(0,0,0,0.55)",
+          "in": 0.35,
+          "out": 1.219,
+          "transform": {
+            "position": [
+              0,
+              0
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0.35,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 0.5,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-0-0",
+          "type": "text",
+          "text": "Stop",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 0.35,
+          "out": 1.219,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              -251.995,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0.4,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 0.58,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0.4,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 0.48,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-0-1",
+          "type": "text",
+          "text": "fighting",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 0.35,
+          "out": 1.219,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              0.52,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 0.629,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 0.809,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 0.629,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 0.709,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-0-2",
+          "type": "text",
+          "text": "your",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 0.35,
+          "out": 1.219,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              252.51,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 1.04,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 1.22,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 1.04,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 1.12,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-1-bg",
+          "type": "rect",
+          "parent": "cap-captions",
+          "size": [
+            631,
+            118
+          ],
+          "radius": 27,
+          "fill": "rgba(0,0,0,0.55)",
+          "in": 1.219,
+          "out": 2.25,
+          "transform": {
+            "position": [
+              0,
+              0
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 1.219,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 1.369,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-1-0",
+          "type": "text",
+          "text": "animation",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 1.219,
+          "out": 2.25,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              -93.665,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 1.269,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 1.449,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 1.269,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 1.349,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-1-1",
+          "type": "text",
+          "text": "tool.",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 1.219,
+          "out": 2.25,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              196.105,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 1.726,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 1.906,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 1.726,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 1.806,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-2-bg",
+          "type": "rect",
+          "parent": "cap-captions",
+          "size": [
+            767,
+            118
+          ],
+          "radius": 27,
+          "fill": "rgba(0,0,0,0.55)",
+          "in": 2.25,
+          "out": 3.173,
+          "transform": {
+            "position": [
+              0,
+              0
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 2.25,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 2.4,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-2-0",
+          "type": "text",
+          "text": "Describe",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 2.25,
+          "out": 3.173,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              -180.93,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 2.3,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 2.48,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 2.3,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 2.38,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-2-1",
+          "type": "text",
+          "text": "what",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 2.25,
+          "out": 3.173,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              98.1,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 2.762,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 2.942,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 2.762,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 2.842,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-2-2",
+          "type": "text",
+          "text": "you",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 2.25,
+          "out": 3.173,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              279.025,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 3.018,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 3.198,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 3.018,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 3.098,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-3-bg",
+          "type": "rect",
+          "parent": "cap-captions",
+          "size": [
+            820,
+            118
+          ],
+          "radius": 27,
+          "fill": "rgba(0,0,0,0.55)",
+          "in": 3.173,
+          "out": 4.55,
+          "transform": {
+            "position": [
+              0,
+              0
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 3.173,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 3.323,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-3-0",
+          "type": "text",
+          "text": "want",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 3.173,
+          "out": 4.55,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              -282.275,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 3.223,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 3.403,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 3.223,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 3.303,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-3-1",
+          "type": "text",
+          "text": "in",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 3.173,
+          "out": 4.55,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              -137.1,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 3.479,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 3.659,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 3.479,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 3.559,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-3-2",
+          "type": "text",
+          "text": "plain",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 3.173,
+          "out": 4.55,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              6.675,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 3.633,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 3.813,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 3.633,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 3.713,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-3-3",
+          "type": "text",
+          "text": "words.",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 3.173,
+          "out": 4.55,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              245.735,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 3.941,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 4.121,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 3.941,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 4.021,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-4-bg",
+          "type": "rect",
+          "parent": "cap-captions",
+          "size": [
+            792,
+            118
+          ],
+          "radius": 27,
+          "fill": "rgba(0,0,0,0.55)",
+          "in": 4.55,
+          "out": 5.574,
+          "transform": {
+            "position": [
+              0,
+              0
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 4.55,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 4.7,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-4-0",
+          "type": "text",
+          "text": "Your",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 4.55,
+          "out": 5.574,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              -274.24,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 4.6,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 4.78,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 4.6,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 4.68,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-4-1",
+          "type": "text",
+          "text": "agent",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 4.55,
+          "out": 5.574,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              -61.97,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 4.844,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 5.024,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 4.844,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 4.924,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-4-2",
+          "type": "text",
+          "text": "builds",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 4.55,
+          "out": 5.574,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              178.685,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 5.137,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 5.317,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 5.137,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 5.217,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-4-3",
+          "type": "text",
+          "text": "it",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 4.55,
+          "out": 5.574,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              336.49,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 5.478,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 5.658,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 5.478,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 5.558,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-5-bg",
+          "type": "rect",
+          "parent": "cap-captions",
+          "size": [
+            731,
+            118
+          ],
+          "radius": 27,
+          "fill": "rgba(0,0,0,0.55)",
+          "in": 5.574,
+          "out": 6.85,
+          "transform": {
+            "position": [
+              0,
+              0
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 5.574,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 5.724,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-5-0",
+          "type": "text",
+          "text": "on",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 5.574,
+          "out": 6.85,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              -283.72,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 5.624,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 5.804,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 5.624,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 5.704,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-5-1",
+          "type": "text",
+          "text": "a",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 5.574,
+          "out": 6.85,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              -197.065,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 5.771,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 5.951,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 5.771,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 5.851,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-5-2",
+          "type": "text",
+          "text": "real",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 5.574,
+          "out": 6.85,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              -86.875,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 5.868,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 6.048,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 5.868,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 5.948,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-5-3",
+          "type": "text",
+          "text": "timeline.",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 5.574,
+          "out": 6.85,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              166.175,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 6.112,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 6.292,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 6.112,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 6.192,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-6-bg",
+          "type": "rect",
+          "parent": "cap-captions",
+          "size": [
+            651,
+            118
+          ],
+          "radius": 27,
+          "fill": "rgba(0,0,0,0.55)",
+          "in": 6.85,
+          "out": 7.821,
+          "transform": {
+            "position": [
+              0,
+              0
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 6.85,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 7,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-6-0",
+          "type": "text",
+          "text": "Then",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 6.85,
+          "out": 7.821,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              -194.73,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 6.9,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 7.08,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 6.9,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 6.98,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-6-1",
+          "type": "text",
+          "text": "you",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 6.85,
+          "out": 7.821,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              -10.78,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 7.204,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 7.384,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 7.204,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 7.284,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-6-2",
+          "type": "text",
+          "text": "finish",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 6.85,
+          "out": 7.821,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              183.95,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 7.446,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 7.626,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 7.446,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 7.526,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-7-bg",
+          "type": "rect",
+          "parent": "cap-captions",
+          "size": [
+            463,
+            118
+          ],
+          "radius": 27,
+          "fill": "rgba(0,0,0,0.55)",
+          "in": 7.821,
+          "out": 8.85,
+          "transform": {
+            "position": [
+              0,
+              0
+            ],
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 7.821,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 7.971,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-7-0",
+          "type": "text",
+          "text": "it",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 7.821,
+          "out": 8.85,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              -171.965,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 7.871,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 8.051,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 7.871,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 7.951,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-7-1",
+          "type": "text",
+          "text": "by",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 7.821,
+          "out": 8.85,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              -82.345,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 8.054,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 8.234,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 8.054,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 8.134,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cap-7-2",
+          "type": "text",
+          "text": "hand.",
+          "font": {
+            "family": "Inter",
+            "weight": 800,
+            "size": 76
+          },
+          "parent": "cap-captions",
+          "in": 7.821,
+          "out": 8.85,
+          "fill": "#ffffff",
+          "transform": {
+            "position": [
+              88.97,
+              0
+            ],
+            "scale": {
+              "keyframes": [
+                {
+                  "t": 8.236,
+                  "v": 60,
+                  "ease": "easeOutBack"
+                },
+                {
+                  "t": 8.416,
+                  "v": 100
+                }
+              ]
+            },
+            "opacity": {
+              "keyframes": [
+                {
+                  "t": 8.236,
+                  "v": 0,
+                  "ease": "easeOutCubic"
+                },
+                {
+                  "t": 8.316,
+                  "v": 100
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
