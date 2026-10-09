@@ -6,6 +6,9 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import {
   AGENT_GUIDE,
+  ANIMATION_PRESETS,
+  applyPreset,
+  editLayer,
   EditError,
   addLayer,
   deleteLayer,
@@ -180,6 +183,28 @@ export function createMcpServer(projectFile: string): McpServer {
         () => `Set ${keyframes.length} keyframe(s) on ${target}.${property}.`,
       );
     },
+  );
+
+  server.registerTool(
+    "oe_apply_preset",
+    {
+      title: "Apply animation preset",
+      description:
+        "Apply a ready-made animation to a layer, starting at `time` (loops run to the end). It writes normal keyframes you can still tweak. Presets: " +
+        ANIMATION_PRESETS.map((p) => `${p.id} (${p.kind}${p.textOnly ? ", text only" : ""})`).join(", "),
+      inputSchema: {
+        layerId: z.string(),
+        preset: z.enum(ANIMATION_PRESETS.map((p) => p.id) as [string, ...string[]]),
+        time: z.number().min(0).describe("Seconds"),
+        duration: z.number().positive().optional().describe("Seconds for in/out presets. Default 0.6"),
+        compId,
+      },
+    },
+    async ({ layerId, preset, time, duration, compId }) =>
+      edit(
+        (p) => editLayer(p, layerId, (l) => applyPreset(l, preset, { comp: getComp(p, compId), time, duration }), { compId }),
+        () => `Applied "${preset}" to ${layerId} at ${time}s.`,
+      ),
   );
 
   server.registerTool(

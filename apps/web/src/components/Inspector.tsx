@@ -1,6 +1,8 @@
 import { useState } from "react";
 import {
+  ANIMATION_PRESETS,
   EASE_NAMES,
+  applyPreset,
   editLayer,
   getComp,
   getIn,
@@ -341,12 +343,50 @@ function TextAnimatorEditor({ ctx }: { ctx: Ctx }) {
   );
 }
 
+/** One-click animations applied at the playhead; they write normal, editable keyframes. */
+function AnimatePresets({ ctx }: { ctx: Ctx }) {
+  const [duration, setDuration] = useState(0.6);
+  const groups: [string, "in" | "out" | "loop"][] = [
+    ["In", "in"],
+    ["Out", "out"],
+    ["Loop", "loop"],
+  ];
+  return (
+    <>
+      {groups.map(([title, kind]) => (
+        <div className="preset-group" key={kind}>
+          <span className="preset-kind">{title}</span>
+          <span className="preset-chips">
+            {ANIMATION_PRESETS.filter((p) => p.kind === kind && (!p.textOnly || ctx.layer.type === "text")).map((p) => (
+              <button
+                key={p.id}
+                className="preset-chip"
+                title={`${p.description}${kind === "loop" ? " (from the playhead to the end)" : ` (starts at the playhead, ${duration}s)`}`}
+                onClick={() => ctx.edit((l) => applyPreset(l, p.id, { comp: ctx.comp, time: ctx.time, duration }))}
+              >
+                {p.name}
+              </button>
+            ))}
+          </span>
+        </div>
+      ))}
+      <Row label="Length">
+        <NumberField value={duration} min={0.1} max={5} step={0.05} suffix="s" width={44} onChange={(v) => setDuration(v)} />
+        <span className="muted small">Presets start at the playhead · Ctrl+Z to undo</span>
+      </Row>
+    </>
+  );
+}
+
 function LayerInspector({ ctx, comp, onSelect }: { ctx: Ctx; comp: Composition; onSelect(id: string | null): void }) {
   const l = ctx.layer;
   const others = comp.layers.filter((o) => o.id !== l.id);
   const center: Vec2 = l.type === "path" ? [0, 0] : [comp.width / 2, comp.height / 2];
   return (
     <>
+      <Section title="Animate">
+        <AnimatePresets ctx={ctx} />
+      </Section>
       <Section title="Layer">
         <Row label="Name">
           <TextField value={l.name ?? l.id} onChange={(v) => ctx.edit((x) => setIn(x, "name", v.trim() && v !== x.id ? v : undefined))} />

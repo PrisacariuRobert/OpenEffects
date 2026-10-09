@@ -28,7 +28,7 @@ describe("OpenEffects MCP server", () => {
   it("exposes the editing and rendering tools", async () => {
     const { tools } = await client.listTools();
     const names = tools.map((t) => t.name);
-    for (const n of ["oe_get_guide", "oe_get_project", "oe_add_layer", "oe_update_layer", "oe_set_keyframes", "oe_render_frame", "oe_render_contact_sheet", "oe_export"]) {
+    for (const n of ["oe_get_guide", "oe_get_project", "oe_add_layer", "oe_apply_preset", "oe_update_layer", "oe_set_keyframes", "oe_render_frame", "oe_render_contact_sheet", "oe_export"]) {
       expect(names).toContain(n);
     }
   });
@@ -45,6 +45,12 @@ describe("OpenEffects MCP server", () => {
     // `id` works as an alias, matching the other layer tools.
     const alias = await client.callTool({ name: "oe_set_keyframes", arguments: { id: "dot", property: "transform.rotation", keyframes: [{ t: 0, v: 0 }, { t: 1, v: 90 }] } });
     expect(alias.isError).toBeFalsy();
+  });
+
+  it("applies animation presets", async () => {
+    const r = await client.callTool({ name: "oe_apply_preset", arguments: { layerId: "hello", preset: "pop-in", time: 0.5 } });
+    expect(r.isError).toBeFalsy();
+    expect(read().compositions[0].layers[0].transform.scale.keyframes[0]).toMatchObject({ t: 0.5, v: 0, ease: "easeOutBack" });
   });
 
   it("rejects invalid edits with a precise error and leaves the file untouched", async () => {

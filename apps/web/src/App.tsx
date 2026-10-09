@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { deleteLayer, duplicateLayer, editLayer, getComp, removeKeyframe } from "@openeffects/schema";
+import { deleteLayer, duplicateLayer, editLayer, getComp, getIn, insertKeyframes, removeKeyframe, type Keyframe } from "@openeffects/schema";
 import { api, useServer } from "./api.ts";
 import { useEditor } from "./editor.ts";
 import { Viewport } from "./components/Viewport.tsx";
@@ -16,7 +16,11 @@ const SHORTCUTS: [string, string][] = [
   ["← / →", "Previous / next frame (Shift: 10 frames)"],
   ["Home", "Go to start"],
   ["Ctrl+Z / Ctrl+Shift+Z", "Undo / redo (includes the agent's edits)"],
-  ["Del", "Delete the selected keyframe, or the selected layer"],
+  ["Del", "Delete the selected keyframes, or the selected layer"],
+  ["Shift+click keyframes", "Select several keyframes (then set easing or delete them together)"],
+  ["Ctrl+C / Ctrl+V", "Copy keyframes / paste them at the playhead onto the selected layer"],
+  ["B / N", "Set the preview loop start / end at the playhead (double-click the range to clear)"],
+  ["∿ Graph", "Value curves: drag keyframes and bezier handles to shape the motion"],
   ["Ctrl+D", "Duplicate the selected layer"],
   ["Esc", "Deselect"],
   ["Drag in viewer", "Move · corners scale · top handle rotates · Shift constrains/snaps · Alt disables center snapping"],
@@ -32,7 +36,9 @@ export function App() {
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
-  const [selectedKeyframe, setSelectedKeyframe] = useState<KeyframeRef | null>(null);
+  const [selectedKeyframes, setSelectedKeyframes] = useState<KeyframeRef[]>([]);
+  const [workArea, setWorkArea] = useState<{ start: number; end: number } | null>(null);
+  const clipboard = useRef<{ path: string; dt: number; kf: Keyframe<unknown> }[]>([]);
   const [tab, setTab] = useState<Tab>("agent");
   const [toast, setToast] = useState<string | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
@@ -60,7 +66,13 @@ export function App() {
     const tick = (now: number) => {
       const dt = last.current === null ? 0 : (now - last.current) / 1000;
       last.current = now;
-      setTime((t) => (t + dt) % comp.duration);
+      setTime((t) => {
+        // Loop inside the preview range when one is set.
+        const a = workArea?.start ?? 0;
+        const b = workArea?.end ?? comp.duration;
+        const next = t + dt;
+        return next >= b || next < a ? a + ((next - a) % (b - a) + (b - a)) % (b - a) : next;
+      });
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -68,7 +80,7 @@ export function App() {
       cancelAnimationFrame(raf);
       last.current = null;
     };
-  }, [playing, comp?.duration]);
+  }, [playing, comp?.duration, workArea]);
 
   useEffect(() => {
     if (comp && time >= comp.duration) setTime(0);
@@ -84,7 +96,7 @@ export function App() {
 
   const select = (id: string | null) => {
     setSelected(id);
-    if (!id || selectedKeyframe?.layerId !== id) setSelectedKeyframe(null);
+    setSelectedKeyframes((ks) => (id ? ks.filter((k) => k.layerId === id) : []));
   };
 
   // Keyboard shortcuts (ignored while typing).
@@ -104,6 +116,31 @@ export function App() {
         return;
       }
       if (typing || !comp) return;
+      if (mod && e.key.toLowerCase() === "c" && selectedKeyframes.length) {
+        // Copy keyframes with their timing relative to the earliest one.
+        const items = selectedKeyframes
+          .map((ref) => {
+            const l = comp.layers.find((x) => x.id === ref.layerId);
+            const kf = l ? (getIn(l, ref.path) as { keyframes?: Keyframe<unknown>[] })?.keyframes?.[ref.index] : undefined;
+            return kf ? { path: ref.path, kf } : null;
+          })
+          .filter((x): x is { path: string; kf: Keyframe<unknown> } => x !== null);
+        const t0 = Math.min(...items.map((i) => i.kf.t));
+        clipboard.current = items.map((i) => ({ path: i.path, dt: i.kf.t - t0, kf: i.kf }));
+        showToast(`Copied ${items.length} keyframe${items.length > 1 ? "s" : ""}`);
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "v" && clipboard.current.length) {
+        if (!selected) return showToast("Select a layer to paste keyframes onto");
+        const byPath = new Map<string, Keyframe<unknown>[]>();
+        for (const c of clipboard.current) byPath.set(c.path, [...(byPath.get(c.path) ?? []), { ...c.kf, t: time + c.dt }]);
+        editor.update((p) =>
+          editLayer(p, selected, (l) => [...byPath].reduce((acc, [path, kfs]) => insertKeyframes(acc, path, kfs, comp.fps), l), { compId: comp.id }),
+        );
+        return;
+      }
+      if (e.key === "b" || e.key === "B") return setWorkArea((w) => ({ start: Math.min(time, (w?.end ?? comp.duration) - 2 / comp.fps), end: w?.end ?? comp.duration }));
+      if (e.key === "n" || e.key === "N") return setWorkArea((w) => ({ start: w?.start ?? 0, end: Math.max(time + 1 / comp.fps, (w?.start ?? 0) + 2 / comp.fps) }));
       if (e.code === "Space") {
         e.preventDefault();
         setPlaying((p) => !p);
@@ -112,14 +149,14 @@ export function App() {
       else if (e.key === "ArrowLeft") setTime((t) => Math.max(0, t - (e.shiftKey ? 10 : 1) / comp.fps));
       else if (e.key === "Escape") {
         setSelected(null);
-        setSelectedKeyframe(null);
+        setSelectedKeyframes([]);
         setShowHelp(false);
       } else if (e.key === "?") setShowHelp((v) => !v);
       else if (e.key === "Delete" || e.key === "Backspace") {
-        if (selectedKeyframe) {
-          const k = selectedKeyframe;
-          editor.update((p) => editLayer(p, k.layerId, (l) => removeKeyframe(l, k.path, k.index), { compId: comp.id }));
-          setSelectedKeyframe(null);
+        if (selectedKeyframes.length) {
+          const sorted = [...selectedKeyframes].sort((a, b) => b.index - a.index);
+          editor.update((p) => sorted.reduce((acc, k) => editLayer(acc, k.layerId, (l) => removeKeyframe(l, k.path, k.index), { compId: comp.id }), p));
+          setSelectedKeyframes([]);
         } else if (selected) {
           editor.update((p) => deleteLayer(p, selected, { compId: comp.id }));
           setSelected(null);
@@ -135,7 +172,7 @@ export function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [comp, editor, selected, selectedKeyframe]);
+  }, [comp, editor, selected, selectedKeyframes, time, showToast]);
 
   const exportAs = async (format: string) => {
     try {
@@ -225,12 +262,14 @@ export function App() {
                 time={time}
                 playing={playing}
                 selected={selected}
-                selectedKeyframe={selectedKeyframe}
+                selectedKeyframes={selectedKeyframes}
                 assets={assets}
+                workArea={workArea}
+                onWorkArea={setWorkArea}
                 onSeek={(t) => setTime(t)}
                 onTogglePlay={() => setPlaying((p) => !p)}
                 onSelect={select}
-                onSelectKeyframe={setSelectedKeyframe}
+                onSelectKeyframes={setSelectedKeyframes}
               />
             </>
           ) : (

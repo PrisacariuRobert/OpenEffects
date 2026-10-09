@@ -7,6 +7,7 @@ import {
   deleteLayer,
   duplicateLayer,
   editLayer,
+  easeKind,
   getIn,
   moveKeyframe,
   moveLayer,
@@ -23,6 +24,8 @@ import {
   type Project,
 } from "@openeffects/schema";
 import type { Editor } from "../editor.ts";
+import { CurveIcon, EaseEditor } from "./EaseEditor.tsx";
+import { GraphEditor } from "./GraphEditor.tsx";
 
 export interface KeyframeRef {
   layerId: string;
@@ -37,12 +40,14 @@ interface Props {
   time: number;
   playing: boolean;
   selected: string | null;
-  selectedKeyframe: KeyframeRef | null;
+  selectedKeyframes: KeyframeRef[];
   assets: string[];
+  workArea: { start: number; end: number } | null;
+  onWorkArea(w: { start: number; end: number } | null): void;
   onSeek(t: number): void;
   onTogglePlay(): void;
   onSelect(id: string | null): void;
-  onSelectKeyframe(k: KeyframeRef | null): void;
+  onSelectKeyframes(k: KeyframeRef[]): void;
 }
 
 const TYPE_ICON: Record<string, string> = { solid: "■", rect: "▭", ellipse: "●", path: "✎", text: "T", image: "▣", null: "✛", comp: "❒" };
@@ -98,23 +103,11 @@ function newLayer(kind: string, comp: Composition, id: string, src?: string): La
   }
 }
 
-/** Small curve preview for an easing. */
-function EaseCurve({ ease }: { ease: Easing | undefined }) {
-  const f = resolveEase(ease);
-  const pts = Array.from({ length: 33 }, (_, i) => {
-    const x = i / 32;
-    return `${2 + x * 36},${30 - f(x) * 26}`;
-  }).join(" ");
-  return (
-    <svg className="ease-curve" width={40} height={34} viewBox="0 0 40 34">
-      <rect x={2} y={4} width={36} height={26} className="ease-box" />
-      <polyline points={pts} />
-    </svg>
-  );
-}
-
 export function Timeline(props: Props) {
-  const { editor, comp, time, playing, selected, selectedKeyframe, assets, onSeek, onTogglePlay, onSelect, onSelectKeyframe } = props;
+  const { editor, comp, time, playing, selected, selectedKeyframes, assets, workArea, onWorkArea, onSeek, onTogglePlay, onSelect, onSelectKeyframes } = props;
+  const [graph, setGraph] = useState(false);
+  const [graphPath, setGraphPath] = useState<string | null>(null);
+  const [easeOpen, setEaseOpen] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [menu, setMenu] = useState(false);
@@ -149,7 +142,7 @@ export function Timeline(props: Props) {
   };
 
   const scrub = (e: React.PointerEvent) => {
-    onSelectKeyframe(null);
+    onSelectKeyframes([]);
     const seek = (x: number) => onSeek(Math.min(snap(timeAt(x)), D - 1 / comp.fps));
     seek(e.clientX);
     const move = (ev: PointerEvent) => seek(ev.clientX);
@@ -206,48 +199,94 @@ export function Timeline(props: Props) {
   const ticks: number[] = [];
   for (let t = 0; t <= D + 1e-6; t += step) ticks.push(Number(t.toFixed(3)));
 
-  const kfSel = selectedKeyframe;
-  const kfLayer = kfSel ? comp.layers.find((l) => l.id === kfSel.layerId) : undefined;
-  const kfData = kfLayer ? ((getIn(kfLayer, kfSel!.path) as { keyframes?: Keyframe<unknown>[] })?.keyframes?.[kfSel!.index] ?? null) : null;
+  // Selected keyframes that still exist (the agent or undo may have removed some).
+  const selKfs = selectedKeyframes
+    .map((ref) => {
+      const l = comp.layers.find((x) => x.id === ref.layerId);
+      const kf = l ? (getIn(l, ref.path) as { keyframes?: Keyframe<unknown>[] })?.keyframes?.[ref.index] : undefined;
+      return l && kf ? { ref, layer: l, kf } : null;
+    })
+    .filter((x): x is { ref: KeyframeRef; layer: Layer; kf: Keyframe<unknown> } => x !== null);
+  const firstSel = selKfs[0];
+  const applyEase = (ease: Easing) =>
+    editor.update((p) =>
+      selKfs.reduce((acc, { ref }) => editLayer(acc, ref.layerId, (l) => setKeyframeEase(l, ref.path, ref.index, ease), { compId: comp.id }), p),
+    );
+  const deleteSelected = () => {
+    // Delete from the highest index down so earlier indices stay valid.
+    const sorted = [...selKfs].sort((a, b) => b.ref.index - a.ref.index);
+    editor.update((p) => sorted.reduce((acc, { ref }) => editLayer(acc, ref.layerId, (l) => removeKeyframe(l, ref.path, ref.index), { compId: comp.id }), p));
+    onSelectKeyframes([]);
+  };
+  const toggleKf = (ref: KeyframeRef, additive: boolean) => {
+    const has = selectedKeyframes.some((k) => k.layerId === ref.layerId && k.path === ref.path && k.index === ref.index);
+    if (additive) onSelectKeyframes(has ? selectedKeyframes.filter((k) => !(k.layerId === ref.layerId && k.path === ref.path && k.index === ref.index)) : [...selectedKeyframes, ref]);
+    else if (!has) onSelectKeyframes([ref]);
+  };
+
+  /** Drag the loop region handles on the ruler. */
+  const dragWorkArea = (which: "start" | "end" | "both") => (e: React.PointerEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const w0 = workArea ?? { start: 0, end: D };
+    const x0 = e.clientX;
+    const move = (ev: PointerEvent) => {
+      const dt = snap((ev.clientX - x0) * secondsPerPx());
+      const min = 2 / comp.fps;
+      if (which === "start") onWorkArea({ start: Math.max(0, Math.min(w0.end - min, w0.start + dt)), end: w0.end });
+      else if (which === "end") onWorkArea({ start: w0.start, end: Math.min(D, Math.max(w0.start + min, w0.end + dt)) });
+      else {
+        const len = w0.end - w0.start;
+        const s0 = Math.max(0, Math.min(D - len, w0.start + dt));
+        onWorkArea({ start: s0, end: s0 + len });
+      }
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
 
   return (
-    <div className="timeline">
+    <div className={`timeline ${graph ? "graph-mode" : ""}`}>
       <div className="transport">
         <button className="icon-btn" onClick={() => onSeek(0)} title="Go to start (Home)">⏮</button>
         <button className="icon-btn play" onClick={onTogglePlay} title="Play/Pause (Space)">{playing ? "❚❚" : "▶"}</button>
         <span className="timecode">{formatTime(time, comp.fps)}</span>
         <span className="muted small">/ {formatTime(D, comp.fps)} · {comp.width}×{comp.height} · {comp.fps} fps</span>
         <span className="grow" />
-        {kfData && kfLayer && (
+        {firstSel && (
           <span className="kf-bar">
             <span className="kf-dot">◆</span>
             <span>
-              {pretty(kfSel!.path, kfLayer)} @ {kfData.t.toFixed(2)}s
+              {selKfs.length > 1 ? `${selKfs.length} keyframes` : `${pretty(firstSel.ref.path, firstSel.layer)} @ ${firstSel.kf.t.toFixed(2)}s`}
             </span>
-            <span className="muted small">ease to next</span>
+            <span className="muted small">ease</span>
             <select
               className="field-select"
-              value={typeof kfData.ease === "string" ? kfData.ease : kfData.ease ? "custom" : "easeInOut"}
-              onChange={(e) => editL(kfLayer.id, (l) => setKeyframeEase(l, kfSel!.path, kfSel!.index, e.target.value as Easing))}
+              value={typeof firstSel.kf.ease === "string" ? firstSel.kf.ease : firstSel.kf.ease ? "custom" : "easeInOut"}
+              onChange={(e) => applyEase(e.target.value as Easing)}
             >
-              {typeof kfData.ease === "object" && <option value="custom">custom bezier</option>}
+              {typeof firstSel.kf.ease === "object" && <option value="custom">custom bezier</option>}
               {EASE_NAMES.map((n) => (
                 <option key={n} value={n}>
                   {n}
                 </option>
               ))}
             </select>
-            <EaseCurve ease={kfData.ease} />
-            <button
-              className="tiny"
-              title="Delete keyframe (Del)"
-              onClick={() => {
-                editL(kfLayer.id, (l) => removeKeyframe(l, kfSel!.path, kfSel!.index));
-                onSelectKeyframe(null);
-              }}
-            >
+            <button className="bare curve-btn" title="Edit the curve" onClick={() => setEaseOpen(!easeOpen)}>
+              <CurveIcon ease={firstSel.kf.ease} size={30} />
+            </button>
+            <button className="tiny" title="Delete keyframes (Del)" onClick={deleteSelected}>
               🗑
             </button>
+            {easeOpen && (
+              <div className="ease-pop">
+                <EaseEditor value={firstSel.kf.ease} onChange={applyEase} onClose={() => setEaseOpen(false)} />
+              </div>
+            )}
           </span>
         )}
       </div>
@@ -276,6 +315,9 @@ export function Timeline(props: Props) {
                 </div>
               )}
             </div>
+            <button className={`tiny ${graph ? "active" : ""}`} title="Graph editor: value curves and easing handles" onClick={() => setGraph(!graph)}>
+              ∿ Graph
+            </button>
             <button className="tiny" disabled={!selected} title="Duplicate (Ctrl+D)" onClick={() => selected && editor.update((p) => {
               const r = duplicateLayer(p, selected, { compId: comp.id });
               setTimeout(() => onSelect(r.id));
@@ -345,8 +387,29 @@ export function Timeline(props: Props) {
                 {Number.isInteger(t) ? `${t}s` : ""}
               </span>
             ))}
+            {workArea && (
+              <div className="work-area" style={{ left: pct(workArea.start), width: `calc(${pct(workArea.end)} - ${pct(workArea.start)})` }} onPointerDown={dragWorkArea("both")} title="Preview loop range (B / N set start / end, double-click to clear)" onDoubleClick={() => onWorkArea(null)}>
+                <span className="wa-handle left" onPointerDown={dragWorkArea("start")} />
+                <span className="wa-handle right" onPointerDown={dragWorkArea("end")} />
+              </div>
+            )}
           </div>
-          {layersTopFirst.map((l) => {
+          {graph && (
+            <div className="graph-wrap" onPointerDown={(e) => e.stopPropagation()}>
+              <GraphEditor
+                editor={editor}
+                comp={comp}
+                layer={comp.layers.find((l) => l.id === selected)}
+                path={graphPath ?? firstSel?.ref.path ?? null}
+                time={time}
+                selectedKeyframes={selectedKeyframes}
+                onSelectKeyframes={onSelectKeyframes}
+                onSelectPath={setGraphPath}
+                onSeek={onSeek}
+              />
+            </div>
+          )}
+          {!graph && layersTopFirst.map((l) => {
             const start = l.in ?? 0;
             const end = l.out ?? D;
             const allKfs = [...collectKeyframeTimes(l)];
@@ -382,30 +445,34 @@ export function Timeline(props: Props) {
                       }}
                     />
                   </div>
-                  {!expanded.has(l.id) && allKfs.map((t) => <span key={t} className="kf summary" style={{ left: pct(t) }} />)}
+                  {!expanded.has(l.id) && allKfs.map((t) => <span key={t} className="kf summary kind-eased" style={{ left: pct(t) }} />)}
                 </div>
                 {paths.map((path) => {
-                  const kfs = ((getIn(l, path) as { keyframes: Keyframe<unknown>[] }).keyframes ?? []).map((k) => k.t);
+                  const kfList = (getIn(l, path) as { keyframes: Keyframe<unknown>[] }).keyframes ?? [];
+                  const kfs = kfList.map((k) => k.t);
                   return (
                     <div key={path} className="tl-row sub">
                       {kfs.map((t, i) => {
-                        const isSel = kfSel?.layerId === l.id && kfSel.path === path && kfSel.index === i;
+                        const isSel = selectedKeyframes.some((k) => k.layerId === l.id && k.path === path && k.index === i);
                         return (
                           <span
                             key={i}
-                            className={`kf ${isSel ? "sel" : ""}`}
+                            className={`kf kind-${easeKind(kfList[i].ease)} ${isSel ? "sel" : ""}`}
                             style={{ left: pct(t) }}
                             title={`${t.toFixed(2)}s · drag to retime, click to edit easing`}
                             onPointerDown={(e) => {
+                              e.stopPropagation(); // don't let the track scrubber clear the selection
                               onSelect(l.id);
-                              onSelectKeyframe({ layerId: l.id, path, index: i });
+                              setGraphPath(path);
+                              toggleKf({ layerId: l.id, path, index: i }, e.shiftKey);
+                              if (e.shiftKey) return;
                               const base = l;
                               dragTime(e, (dt, tr) => {
                                 const next = moveKeyframe(base, path, i, Math.min(D, Math.max(0, t + dt)));
                                 editL(l.id, () => next, tr);
                                 // Keep the moved keyframe selected after re-sorting.
                                 const newIndex = ((getIn(next, path) as { keyframes: Keyframe<unknown>[] }).keyframes ?? []).findIndex((k) => Math.abs(k.t - snapT(t + dt)) < 1e-6);
-                                if (!tr && newIndex >= 0) onSelectKeyframe({ layerId: l.id, path, index: newIndex });
+                                if (!tr && newIndex >= 0) onSelectKeyframes([{ layerId: l.id, path, index: newIndex }]);
                               });
                             }}
                           />

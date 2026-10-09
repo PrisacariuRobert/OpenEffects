@@ -80,6 +80,11 @@ Track matte (reveal text from behind a moving shape): give the shape \`"visible"
 }
 \`\`\`
 
+## Animation presets
+\`oe_apply_preset\` adds a ready-made, editable animation to a layer at a time: fade-in, slide-up/down/left/right,
+pop-in, zoom-in, blur-in, spin-in, typewriter / words-up / letters-pop (text), fade-out, slide-out-down, pop-out,
+zoom-out, and loops pulse, float, wiggle, spin. Use them for quick, consistent motion, then fine-tune the keyframes.
+
 ## Motion design tips
 - Fast in, slow settle: easeOutCubic/Expo for entrances, easeInCubic for exits, easeInOut for moves.
 - Stagger elements by 0.05-0.15 s instead of animating everything at once.

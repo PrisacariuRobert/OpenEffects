@@ -33,11 +33,29 @@ The agent does the heavy lifting; you direct and fine-tune it like in any motion
 - **Properties panel:** every property has a real control: drag-to-scrub numbers, color pickers, gradients, fonts,
   effects, text animators, parenting and mattes. ◷ animates a property, ◆ adds a keyframe, ‹ › jumps between keyframes.
 - **Timeline:** drag layers in time, trim their in/out points, reorder by dragging, hide/show, twirl down to see each
-  animated property, drag keyframes to retime them and pick an easing with a curve preview.
+  animated property, drag keyframes to retime them. Keyframe shapes show their easing (◆ linear, ● eased, pink = overshoot,
+  ■ hold). Shift-click to select several, Ctrl+C / Ctrl+V to copy them to another layer at the playhead, B / N to set a
+  preview loop range.
+- **Graph editor** (∿ Graph): the value curves of a property; drag keyframes in time and value and drag bezier handles to
+  shape the motion, After Effects-style. Constant dimensions are hidden so small moves stay readable.
+- **Ease editor:** click the curve in the keyframe bar for a bezier editor with a live preview, presets from Smooth and
+  Snappy to Overshoot, Anticipate, Spring and Bounce, and your own saved "My easings".
+- **Animate presets:** one click for fade, slide, pop, zoom, blur, spin, typewriter / words rise / letters pop (in and out),
+  and pulse, float, wiggle and spin loops. They write normal keyframes, so everything stays editable, and agents can use
+  the same presets (`oe_apply_preset`).
+- **Viewer aids:** motion paths for animated positions, align to frame (left/center/right/top/middle/bottom),
+  title/action-safe guides.
 - **Ask the AI about the selection:** with a layer selected, requests apply to it ("make it bouncier") and one-click
   quick asks are offered. The agent only touches what you pointed at.
 - **Undo everything:** Ctrl+Z / Ctrl+Shift+Z for your edits *and* the agent's; per-turn checkpoints in History.
 - **Start fast:** a template gallery with live previews, drag & drop images onto the viewer, `?` for all shortcuts.
+
+| Graph editor | Ease editor |
+|---|---|
+| ![Graph editor](docs/media/graph-editor.png) | ![Ease editor](docs/media/ease-editor.png) |
+
+What to build was decided by a short [UX research study](docs/RESEARCH.md) of Jitter, Cavalry, Lottie Creator, After
+Effects and AI motion tools.
 
 ## Why OpenEffects
 
@@ -158,7 +176,8 @@ This is an early prototype (Phase 0 of the [plan](docs/PLAN.md)). Next up:
 - [ ] Gemini CLI adapter; a Codex `app-server` adapter for live streaming
 - [ ] Desktop app (Electron/Tauri) and `npx openeffects` packaging
 - [x] Direct manipulation, visual properties panel, keyframe/easing editing, undo/redo, templates, image drop
-- [ ] Graph editor for custom bezier easing, video layers, audio
+- [x] Graph editor, ease editor with saved easings, animate presets, keyframe multi-select/copy/paste, motion paths, align, safe guides, loop range ([research](docs/RESEARCH.md))
+- [ ] Procedural behaviours (wiggle/noise as properties), markers and audio, video layers, Lottie import/export
 - [ ] WebGPU renderer, shader effect plugins, Lottie import/export
 - [ ] Template gallery
 

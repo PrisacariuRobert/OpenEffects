@@ -166,3 +166,18 @@ export function duplicateLayer(project: Project, layerId: string, opts: { compId
 }
 
 const round = (t: number) => Math.round(t * 1000) / 1000;
+
+/**
+ * Write keyframes into a property, turning a static value into an animation if needed.
+ * Existing keyframes strictly inside the new keyframes' time span are replaced.
+ */
+export function insertKeyframes<T>(layer: T, path: string, kfs: Keyframe<unknown>[], fps = 30): T {
+  if (kfs.length === 0) return layer;
+  const sorted = [...kfs].sort((a, b) => a.t - b.t).map((k) => ({ ...k, t: round(k.t) }));
+  const first = sorted[0].t;
+  const last = sorted[sorted.length - 1].t;
+  const prop = getIn(layer, path);
+  const existing = isKeyframed(prop as Animatable<unknown>) ? (prop as { keyframes: Keyframe<unknown>[] }).keyframes : [];
+  const kept = existing.filter((k) => k.t < first - 0.5 / fps || k.t > last + 0.5 / fps);
+  return setIn(layer, path, { keyframes: [...kept, ...sorted].sort((a, b) => a.t - b.t) });
+}

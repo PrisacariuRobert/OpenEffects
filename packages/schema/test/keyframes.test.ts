@@ -82,3 +82,40 @@ describe("keyframe editing", () => {
     expect(validateProject(b.project).ok).toBe(true);
   });
 });
+
+describe("easing helpers", async () => {
+  const { easeToBezier, easeKind, cubicBezier, NAMED_EASES } = await import("../src/index.ts");
+  it("bezier equivalents track the named curves", () => {
+    for (const name of ["easeOutCubic", "easeInOutQuad", "easeOutExpo"]) {
+      const b = easeToBezier(name)!;
+      const f = cubicBezier(...b);
+      for (const x of [0.2, 0.5, 0.8]) expect(Math.abs(f(x) - NAMED_EASES[name](x))).toBeLessThan(0.05);
+    }
+    expect(easeToBezier("easeOutElastic")).toBeNull();
+    expect(easeKind("easeOutBack")).toBe("overshoot");
+    expect(easeKind([0.2, 0, 0, 1])).toBe("eased");
+  });
+});
+
+describe("animation presets", async () => {
+  const { ANIMATION_PRESETS, applyPreset } = await import("../src/index.ts");
+  const comp = blankProject().compositions[0];
+  it("every preset produces a valid layer", () => {
+    for (const preset of ANIMATION_PRESETS) {
+      const base: Layer = preset.textOnly ? { id: "t", type: "text", text: "Hello world" } : { id: "r", type: "rect", size: [100, 100], fill: "#fff" };
+      const layer = applyPreset(base, preset.id, { comp, time: 1 });
+      const p = { ...blankProject(), compositions: [{ ...comp, layers: [layer] }] };
+      const r = validateProject(p);
+      expect(r.ok ? [] : r.errors, preset.id).toEqual([]);
+      expect(layer, preset.id).not.toEqual(base);
+    }
+  });
+  it("slide-up ends at the layer's current position and keeps earlier keyframes", () => {
+    let l: Layer = { id: "r", type: "rect", size: [10, 10], transform: { position: { keyframes: [{ t: 0, v: [100, 100] }, { t: 0.5, v: [500, 500] }] } } };
+    l = applyPreset(l, "slide-up", { comp, time: 2 });
+    const kfs = (l.transform?.position as { keyframes: { t: number; v: number[] }[] }).keyframes;
+    expect(kfs.map((k) => k.t)).toEqual([0, 0.5, 2, 2.6]);
+    expect(kfs[3].v).toEqual([500, 500]);
+    expect(kfs[2].v[1]).toBeGreaterThan(500);
+  });
+});

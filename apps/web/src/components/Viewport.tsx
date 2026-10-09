@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { invert, isActive, layerGeometry, pointInQuad, renderFrame, type LayerGeometry } from "@openeffects/engine";
-import { addLayer, editLayer, getIn, sample, setValueAtTime, uniqueLayerId, type Composition, type Layer, type Project } from "@openeffects/schema";
+import { addLayer, editLayer, getIn, isKeyframed, sample, setValueAtTime, uniqueLayerId, type Composition, type Layer, type Project } from "@openeffects/schema";
 import { browserEnv, preload } from "../browserEnv.ts";
 import type { Editor } from "../editor.ts";
 
@@ -33,6 +33,8 @@ export function Viewport({ editor, project, comp, time, errors, selected, onSele
   const [hover, setHover] = useState<string | null>(null);
   const [guides, setGuides] = useState<{ x?: number; y?: number }>({});
   const [dropping, setDropping] = useState(false);
+  const [showPath, setShowPath] = useState(true);
+  const [showSafe, setShowSafe] = useState(false);
   const drag = useRef<Drag | null>(null);
   /** True once the pointer has moved enough to count as a drag (a plain click must not edit). */
   const moved = useRef(false);
@@ -220,6 +222,36 @@ export function Viewport({ editor, project, comp, time, errors, selected, onSele
   };
 
   const sel = geometry(selected);
+
+  /** Align the selected layer's bounding box to the composition (sets position at the playhead). */
+  const align = (h: "left" | "center" | "right" | null, v: "top" | "middle" | "bottom" | null) => {
+    if (!sel || !selected) return;
+    const l = layerById(selected)!;
+    const xs = sel.quad.map((q) => q[0]);
+    const ys = sel.quad.map((q) => q[1]);
+    const box = { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) };
+    const dx = h === "left" ? -box.x0 : h === "right" ? comp.width - box.x1 : h === "center" ? comp.width / 2 - (box.x0 + box.x1) / 2 : 0;
+    const dy = v === "top" ? -box.y0 : v === "bottom" ? comp.height - box.y1 : v === "middle" ? comp.height / 2 - (box.y0 + box.y1) / 2 : 0;
+    const inv = invert([sel.parentWorld[0], sel.parentWorld[1], sel.parentWorld[2], sel.parentWorld[3], 0, 0]);
+    const cur = sample(l.transform?.position, t, fallbackPos(l)) as Pt;
+    edit(selected, "transform.position", [round(cur[0] + inv[0] * dx + inv[2] * dy), round(cur[1] + inv[1] * dx + inv[3] * dy)], false);
+  };
+
+  // Motion path: where the selected layer's position travels, with its keyframes.
+  let motionPath: { points: Pt[]; keys: Pt[] } | null = null;
+  const selPos = selected ? layerById(selected)?.transform?.position : undefined;
+  if (showPath && sel && isKeyframed(selPos as never)) {
+    const kfs = (selPos as { keyframes: { t: number; v: Pt }[] }).keyframes;
+    const pw = sel.parentWorld;
+    const toC = ([x, y]: Pt): Pt => [pw[0] * x + pw[2] * y + pw[4], pw[1] * x + pw[3] * y + pw[5]];
+    const t0 = kfs[0].t;
+    const t1 = kfs[kfs.length - 1].t;
+    const steps = Math.max(2, Math.min(240, Math.round((t1 - t0) * 60)));
+    motionPath = {
+      points: Array.from({ length: steps + 1 }, (_, i) => toC(sample(selPos as never, t0 + ((t1 - t0) * i) / steps, [0, 0] as never) as Pt)),
+      keys: kfs.map((k) => toC(k.v)),
+    };
+  }
   const hov = hover && hover !== selected ? geometry(hover) : null;
   const toScreen = (q: Pt[]) => q.map(([x, y]) => `${x * k},${y * k}`).join(" ");
   const selLayer = selected ? layerById(selected) : undefined;
@@ -251,6 +283,23 @@ export function Viewport({ editor, project, comp, time, errors, selected, onSele
           >
             {guides.x !== undefined && <line className="guide" x1={guides.x * k} x2={guides.x * k} y1={0} y2={displayH} />}
             {guides.y !== undefined && <line className="guide" y1={guides.y * k} y2={guides.y * k} x1={0} x2={displayW} />}
+            {showSafe && (
+              <>
+                <rect className="safe" x={displayW * 0.05} y={displayH * 0.05} width={displayW * 0.9} height={displayH * 0.9} />
+                <rect className="safe title" x={displayW * 0.1} y={displayH * 0.1} width={displayW * 0.8} height={displayH * 0.8} />
+              </>
+            )}
+            {motionPath && (
+              <g className="motion-path">
+                <polyline points={toScreen(motionPath.points)} />
+                {motionPath.points.filter((_, i) => i % 4 === 0).map((p, i) => (
+                  <circle key={i} cx={p[0] * k} cy={p[1] * k} r={1.5} className="mp-dot" />
+                ))}
+                {motionPath.keys.map((p, i) => (
+                  <rect key={i} x={p[0] * k - 4} y={p[1] * k - 4} width={8} height={8} className="mp-key" transform={`rotate(45 ${p[0] * k} ${p[1] * k})`} />
+                ))}
+              </g>
+            )}
             {hov && <polygon className="hover-box" points={toScreen(hov.quad)} />}
             {sel && (
               <g>
@@ -293,6 +342,25 @@ export function Viewport({ editor, project, comp, time, errors, selected, onSele
           </svg>
         </div>
       )}
+      <div className="view-tools" onPointerDown={(e) => e.stopPropagation()}>
+        <button className={`tiny ${showPath ? "active" : ""}`} title="Show the motion path of the selected layer" onClick={() => setShowPath(!showPath)}>
+          ⤳ Path
+        </button>
+        <button className={`tiny ${showSafe ? "active" : ""}`} title="Title / action safe guides" onClick={() => setShowSafe(!showSafe)}>
+          ⬚ Safe
+        </button>
+        {selected && (
+          <span className="align-tools" title="Align the selected layer to the frame">
+            <button className="tiny" title="Align left" onClick={() => align("left", null)}>⇤</button>
+            <button className="tiny" title="Center horizontally" onClick={() => align("center", null)}>↔</button>
+            <button className="tiny" title="Align right" onClick={() => align("right", null)}>⇥</button>
+            <button className="tiny" title="Align top" onClick={() => align(null, "top")}>⤒</button>
+            <button className="tiny" title="Center vertically" onClick={() => align(null, "middle")}>↕</button>
+            <button className="tiny" title="Align bottom" onClick={() => align(null, "bottom")}>⤓</button>
+            <button className="tiny" title="Center in frame" onClick={() => align("center", "middle")}>⊕</button>
+          </span>
+        )}
+      </div>
       {dropping && <div className="drop-hint">Drop images to add them as layers</div>}
       {errors.length > 0 && (
         <div className="error-banner">
