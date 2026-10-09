@@ -46,7 +46,28 @@ export interface Checkpoint {
   createdAt: number;
 }
 
-export type ExportState = { state: "progress" | "done" | "error"; progress?: number; url?: string; error?: string; warnings?: string[] };
+export type ExportState = { state: "progress" | "done" | "error"; progress?: number; url?: string; error?: string; warnings?: string[]; label?: string; files?: string[] };
+
+/** One version in a variations run: the same prompt with its own creative direction. */
+export interface Variation {
+  index: number;
+  direction: string;
+  state: "working" | "done" | "failed";
+  /** Latest progress line (tool being used…). */
+  status?: string;
+  error?: string;
+  project?: Project;
+  costUsd?: number;
+  durationMs?: number;
+}
+export interface VariationsRun {
+  id: string;
+  prompt: string;
+  provider: string;
+  model?: string;
+  items: Variation[];
+  running: boolean;
+}
 
 /** Messages pushed to clients over the WebSocket at /ws. */
 export type ServerMessage =
@@ -55,7 +76,8 @@ export type ServerMessage =
   | { type: "agent-state"; running: boolean; sessionId?: string }
   | { type: "agent-reset" }
   | { type: "checkpoints"; checkpoints: Checkpoint[] }
-  | ({ type: "export" } & ExportState);
+  | ({ type: "export" } & ExportState)
+  | { type: "variations"; run: VariationsRun };
 
 /** GET /api/state */
 export interface StateResponse {
@@ -66,4 +88,5 @@ export interface StateResponse {
   checkpoints: Checkpoint[];
   history: AgentEvent[];
   running: boolean;
+  variations?: VariationsRun | null;
 }

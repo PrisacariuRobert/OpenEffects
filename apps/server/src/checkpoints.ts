@@ -93,6 +93,16 @@ export class Checkpoints {
   }
 
   /** Restores tracked project files to a checkpoint. A safety checkpoint is taken first. */
+  /** A file's contents at a checkpoint (e.g. project.oe.json before an agent turn), or null. */
+  async read(id: string, file: string): Promise<string | null> {
+    if (!/^\d+$/.test(id) || !(await this.ready)) return null;
+    try {
+      return await this.git(["show", `${this.ns}/${id}:./${file}`]);
+    } catch {
+      return null;
+    }
+  }
+
   async restore(id: string): Promise<void> {
     if (!/^\d+$/.test(id)) throw new Error("Invalid checkpoint id");
     await this.create(`Before restoring checkpoint ${id}`);

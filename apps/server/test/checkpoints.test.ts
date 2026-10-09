@@ -31,5 +31,9 @@ describe("Checkpoints", () => {
     expect(git(dir, "diff", "--cached", "--name-only")).toBe("");
     // Restoring created a safety checkpoint holding "v3 by the agent".
     expect((await cp.list()).some((x) => x.label.startsWith("Before restoring"))).toBe(true);
+    // Any checkpoint's project can be read back (the editor's "review changes").
+    expect(await cp.read(c!.id, "project.oe.json")).toBe("v2");
+    expect(await cp.read(c!.id, "missing.json")).toBeNull();
+    expect(await cp.read("../etc", "project.oe.json")).toBeNull();
   });
 });

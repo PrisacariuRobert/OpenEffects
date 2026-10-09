@@ -80,6 +80,8 @@ interface Props {
   onSelect(id: string | null): void;
   onSelectKeyframes(k: KeyframeRef[]): void;
   onImportLottie(): void;
+  /** Layers the latest agent turn added or changed (shown with a dot until reviewed). */
+  changedLayers?: Map<string, "added" | "changed">;
 }
 
 const TYPE_ICON: Record<string, string> = { solid: "■", rect: "▭", ellipse: "●", path: "✎", text: "T", image: "▣", video: "▶", audio: "♪", null: "✛", comp: "❒" };
@@ -171,7 +173,7 @@ function newLayer(kind: string, comp: Composition, id: string, src?: string): La
 }
 
 export function Timeline(props: Props) {
-  const { editor, comp, time, playing, selected, selectedKeyframes, assets, workArea, onWorkArea, onSeek, onTogglePlay, onSelect, onSelectKeyframes, muted, onToggleMute, onImportLottie } = props;
+  const { editor, comp, time, playing, selected, selectedKeyframes, assets, workArea, onWorkArea, onSeek, onTogglePlay, onSelect, onSelectKeyframes, muted, onToggleMute, onImportLottie, changedLayers } = props;
   const [graph, setGraph] = useState(false);
   const [graphPath, setGraphPath] = useState<string | null>(null);
   const [easeOpen, setEaseOpen] = useState(false);
@@ -506,6 +508,7 @@ export function Timeline(props: Props) {
                   </button>
                   <span className="tl-icon">{TYPE_ICON[l.type] ?? "?"}</span>
                   <span className="tl-label">{l.name ?? l.id}</span>
+                  {changedLayers?.has(l.id) && <span className={`agent-dot ${changedLayers.get(l.id)}`} title={changedLayers.get(l.id) === "added" ? "Added by the agent's last turn" : "Changed by the agent's last turn"} />}
                   {!!l.behaviors?.length && (
                     <span className="tl-tag behavior-tag" title={l.behaviors.map((b) => `${b.type} → ${b.property}`).join("\n")}>
                       ∿ {l.behaviors.length}

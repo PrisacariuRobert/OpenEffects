@@ -6,6 +6,8 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import {
   AGENT_GUIDE,
+  brandBrief,
+  templateFields,
   ANIMATION_PRESETS,
   beatMarkers,
   isMediaLayer,
@@ -26,8 +28,13 @@ import {
 } from "@openeffects/schema";
 import {
   ProjectValidationError,
+  captionLayers,
   detectBeats,
+  readBrand,
+  saveBrand,
   exportLottieFile,
+  readTranscript,
+  transcribe,
   exportVideo,
   importLottieFile,
   loadProject,
@@ -106,7 +113,16 @@ export function createMcpServer(projectFile: string): McpServer {
       try {
         const project = loadProject(projectFile);
         const body = compId ? getComp(project, compId) : project;
-        return text(`${summarize(project)}\n\n${JSON.stringify(body, null, 1)}`);
+        let brand = "";
+        try {
+          const kit = readBrand(projectDir);
+          if (kit) brand = `\n\n${brandBrief(kit)}`;
+        } catch (e) {
+          brand = `\n\n${(e as Error).message}`;
+        }
+        const fields = templateFields(project);
+        const data = fields.length ? `\n\nTemplate fields filled per CSV row by "oe batch": ${fields.map((f) => `{{${f}}}`).join(", ")}. Keep them as written.` : "";
+        return text(`${summarize(project)}${brand}${data}\n\n${JSON.stringify(body, null, 1)}`);
       } catch (e) {
         return fail(describeError(e));
       }
@@ -365,6 +381,105 @@ export function createMcpServer(projectFile: string): McpServer {
         fs.mkdirSync(path.dirname(out), { recursive: true });
         const r = await exportVideo(project, projectDir, { out, format: fmt, compId, scale: scale ?? (fmt === "gif" ? 0.5 : 1) });
         return text(`Exported ${r.frames} frames to ${path.relative(projectDir, r.file)}`);
+      } catch (e) {
+        return fail(describeError(e));
+      }
+    },
+  );
+
+  server.registerTool(
+    "oe_view_reference",
+    {
+      title: "View reference",
+      description: "Show a reference image or contact sheet the user attached (path given in their message, usually under .openeffects/references/). Study it before designing.",
+      inputSchema: { file: z.string().describe("Path relative to the project") },
+      annotations: { readOnlyHint: true },
+    },
+    async ({ file }) => {
+      const src = path.resolve(projectDir, file);
+      if (!src.startsWith(projectDir + path.sep) || !fs.existsSync(src)) return fail(`No reference at ${file}`);
+      if (!/\.png$/i.test(src)) return fail("References are PNG images (made when the user attaches an image or clip)");
+      return image(fs.readFileSync(src), `Reference ${file}`);
+    },
+  );
+
+  server.registerTool(
+    "oe_get_brand",
+    {
+      title: "Get brand kit",
+      description: "The project's brand kit (brand.json): colors, fonts, logo and voice. Call it before designing and use these values instead of inventing a palette.",
+      annotations: { readOnlyHint: true },
+    },
+    async () => {
+      try {
+        const brand = readBrand(projectDir);
+        if (!brand) return text("This project has no brand kit (brand.json). Choose a palette and fonts that fit the request, or create one with oe_set_brand if the user gives brand details.");
+        return text(`${brandBrief(brand)}\n\nbrand.json: ${JSON.stringify(brand)}`);
+      } catch (e) {
+        return fail(describeError(e));
+      }
+    },
+  );
+
+  server.registerTool(
+    "oe_set_brand",
+    {
+      title: "Set brand kit",
+      description: "Create or replace the brand kit (brand.json) when the user describes their brand: { name?, colors?: { primary: '#…', … }, fonts?: { heading?: { family, weight? }, body?: … }, logo?: 'assets/…', voice? }.",
+      inputSchema: { brand: z.record(z.string(), z.unknown()) },
+    },
+    async ({ brand }) => {
+      try {
+        return text(`Saved brand.json.\n${brandBrief(saveBrand(projectDir, brand))}`);
+      } catch (e) {
+        return fail(describeError(e));
+      }
+    },
+  );
+
+  server.registerTool(
+    "oe_add_captions",
+    {
+      title: "Add captions",
+      description:
+        "Add word-timed animated captions. Source: a subtitle file in the project (.srt/.vtt/.json word list), or an audio/video layer to transcribe locally with whisper.cpp. Replaces earlier captions. Styles: pop (words pop in as spoken), karaoke (line visible, spoken word highlighted), minimal (whole lines).",
+      inputSchema: {
+        file: z.string().optional().describe("Subtitle/transcript file relative to the project, e.g. assets/talk.srt"),
+        layerId: z.string().optional().describe("Audio or video layer to transcribe (needs whisper.cpp installed)"),
+        style: z.enum(["pop", "karaoke", "minimal"]).optional().describe("Default pop"),
+        color: z.string().optional(),
+        highlight: z.string().optional().describe("Color of the spoken word (karaoke) / accent"),
+        fontSize: z.number().optional(),
+        position: z.tuple([z.number(), z.number()]).optional().describe("Center of the caption line. Default lower third"),
+        compId,
+      },
+    },
+    async ({ file, layerId, style, color, highlight, fontSize, position, compId }) => {
+      try {
+        const project = loadProject(projectFile);
+        const comp = getComp(project, compId);
+        let words;
+        let offset = 0;
+        if (file) {
+          const src = path.resolve(projectDir, file);
+          if (!src.startsWith(projectDir + path.sep) || !fs.existsSync(src)) return fail(`No file at ${file}`);
+          words = readTranscript(src);
+        } else if (layerId) {
+          const layer = comp.layers.find((l) => l.id === layerId);
+          if (!layer || !isMediaLayer(layer)) return fail(`Layer "${layerId}" is not an audio or video layer.`);
+          words = await transcribe(path.resolve(projectDir, layer.src));
+          offset = (layer.in ?? 0) - (layer.trimStart ?? 0) / (layer.speed ?? 1);
+        } else return fail("Pass file (a subtitle file) or layerId (an audio/video layer).");
+        if (!words.length) return fail("The transcript has no words.");
+        const layers = captionLayers(words, comp, { style, color, highlight, fontSize, position, offset });
+        return edit(
+          (p) => {
+            const c = getComp(p, compId);
+            const kept = c.layers.filter((l) => !l.id.startsWith("cap-"));
+            return { ...p, compositions: p.compositions.map((x) => (x === c ? { ...x, layers: [...kept, ...layers] } : x)) };
+          },
+          () => `Added ${words.length} words of captions (${layers.length} layers under "cap-captions"; move that null to reposition them).`,
+        );
       } catch (e) {
         return fail(describeError(e));
       }

@@ -116,3 +116,4 @@ export const IconCenter = make(
 export const IconChevronLeft = make(<path d="m12 6-4 4 4 4" />);
 export const IconArrowUp = make(<path d="M10 15.5v-11M5.5 9 10 4.5 14.5 9" />);
 export const IconStop = make(<rect x="5.5" y="5.5" width="9" height="9" rx="1.5" />, true);
+export const IconAttach = make(<path d="M15.5 9.5 10 15a3.5 3.5 0 0 1-5-5l6-6a2.3 2.3 0 0 1 3.3 3.3l-6 6a1.1 1.1 0 0 1-1.6-1.6L12 6.4" />);

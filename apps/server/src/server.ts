@@ -5,7 +5,17 @@ import { fileURLToPath } from "node:url";
 import { WebSocketServer, WebSocket } from "ws";
 import {
   ProjectValidationError,
+  captionLayers,
   exportLottieFile,
+  referencePrompt,
+  referenceSheet,
+  readBrand,
+  renderBatch,
+  saveBrand,
+  parseSubtitles,
+  parseWordsJson,
+  parseWhisperJson,
+  transcribe,
   exportVideo,
   importLottieData,
   readProject,
@@ -18,9 +28,10 @@ import {
   type ExportFormat,
   type McpLaunch,
 } from "@openeffects/node";
-import { getComp, mediaKind, type ServerMessage, type StateResponse } from "@openeffects/schema";
+import { type VariationsRun, getComp, mediaKind, parseCsv, templateFields, type ServerMessage, type StateResponse } from "@openeffects/schema";
 import { AgentError, AgentSession } from "./agents/session.ts";
 import type { AgentProvider } from "./agents/types.ts";
+import { runVariations } from "./variations.ts";
 
 export interface ServerOptions {
   projectFile: string;
@@ -97,6 +108,10 @@ export async function startServer(opts: ServerOptions): Promise<{ url: string; c
     onCheckpointsChange: () => void pushCheckpoints(),
   });
   const checkpoints = agent.checkpoints;
+
+  // Variations: N versions of one prompt, each in its own copy of the project.
+  let variations: { run: VariationsRun; stop(): void } | null = null;
+  const mcpFor = (dir: string): McpLaunch => ({ ...opts.mcp, args: opts.mcp.args.map((a) => (path.resolve(a) === path.resolve(projectDir) ? dir : a)) });
   const pushCheckpoints = async () => broadcast({ type: "checkpoints", checkpoints: await checkpoints.list() });
 
   // Hot reload: watch the project folder and push changes made by agents or editors.
@@ -182,6 +197,7 @@ export async function startServer(opts: ServerOptions): Promise<{ url: string; c
         checkpoints: await checkpoints.list(),
         history: agent.history,
         running: agent.isRunning,
+        variations: variations?.run ?? null,
       };
       return sendJson(res, 200, state);
     }
@@ -199,6 +215,41 @@ export async function startServer(opts: ServerOptions): Promise<{ url: string; c
       await agent.start(body.provider ?? "claude", body.prompt.trim(), body.model);
       return sendJson(res, 202, { ok: true });
     }
+    if (route === "POST /api/variations") {
+      const body = (await readJson(req)) as { prompt?: string; count?: number; provider?: string; model?: string };
+      if (!body.prompt?.trim()) throw new HttpError(400, "Describe what to make first");
+      if (agent.isRunning || variations?.run.running) throw new HttpError(409, "The agent is already working");
+      const statuses = await agent.statuses();
+      const providerId = body.provider ?? "claude";
+      const provider = agent.providers.find((p) => p.id === providerId);
+      const status = statuses.find((s) => s.id === providerId);
+      if (!provider || !status) throw new HttpError(400, `Unknown provider "${providerId}"`);
+      if (!status.available) throw new HttpError(412, `${status.label}: ${status.detail}`);
+      const started = runVariations({
+        projectDir,
+        provider,
+        model: body.model?.trim() || status.defaultModel || undefined,
+        prompt: body.prompt.trim(),
+        count: body.count ?? 4,
+        mcp: mcpFor,
+        onUpdate: (run) => {
+          if (variations) variations.run = run;
+          broadcast({ type: "variations", run });
+        },
+      });
+      variations = started;
+      broadcast({ type: "variations", run: started.run });
+      return sendJson(res, 202, { id: started.run.id });
+    }
+    if (route === "POST /api/variations/stop") {
+      variations?.stop();
+      return sendJson(res, 200, { ok: true });
+    }
+    if (route === "POST /api/variations/clear") {
+      if (variations?.run.running) throw new HttpError(409, "Stop the variations first");
+      variations = null;
+      return sendJson(res, 200, { ok: true });
+    }
     if (route === "POST /api/agent/stop") {
       agent.stop();
       return sendJson(res, 200, { ok: true });
@@ -207,6 +258,14 @@ export async function startServer(opts: ServerOptions): Promise<{ url: string; c
       agent.reset();
       broadcast({ type: "agent-reset" });
       return sendJson(res, 200, { ok: true });
+    }
+    if (req.method === "GET" && url.pathname.startsWith("/api/checkpoints/") && url.pathname.endsWith("/project")) {
+      const id = url.pathname.split("/")[3];
+      const text = await checkpoints.read(id, path.basename(projectFile));
+      if (text === null) throw new HttpError(404, "No project in that checkpoint");
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(text);
+      return;
     }
     if (route === "POST /api/checkpoints/restore") {
       if (agent.isRunning) throw new HttpError(409, "Stop the agent before restoring");
@@ -220,6 +279,104 @@ export async function startServer(opts: ServerOptions): Promise<{ url: string; c
       if (!["mp4", "webm", "gif", "mov", "lottie"].includes(format)) throw new HttpError(400, "Unsupported format");
       await startExport(format, compId);
       return sendJson(res, 202, { ok: true });
+    }
+    if (route === "GET /api/brand") {
+      try {
+        return sendJson(res, 200, { brand: readBrand(projectDir) });
+      } catch (e) {
+        return sendJson(res, 200, { brand: null, error: (e as Error).message });
+      }
+    }
+    if (route === "PUT /api/brand") {
+      try {
+        return sendJson(res, 200, { brand: saveBrand(projectDir, await readJson(req)) });
+      } catch (e) {
+        throw new HttpError(422, (e as Error).message);
+      }
+    }
+    if (route === "POST /api/batch") {
+      // One video per CSV row, filling {{column}} placeholders. Runs like an export job.
+      const { csv, format = "mp4", compId } = (await readJson(req)) as { csv?: string; format?: ExportFormat; compId?: string };
+      if (exporting) throw new HttpError(409, "An export is already running");
+      if (!current.ok) throw new HttpError(422, "Fix the project errors before exporting");
+      if (!["mp4", "webm", "gif", "mov"].includes(format)) throw new HttpError(400, "Unsupported format");
+      const rows = parseCsv(csv ?? "");
+      if (!rows.length) throw new HttpError(422, "The CSV has no data rows. The first line must be the column names.");
+      const fields = templateFields(current.project);
+      if (!fields.length) throw new HttpError(422, "Nothing to fill: put {{column}} placeholders in your text first, e.g. Hello {{name}}");
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const outDir = path.join(projectDir, "renders", `batch-${stamp}`);
+      const controller = (exporting = new AbortController());
+      let lastPct = -1;
+      renderBatch(current.project, projectDir, rows, {
+        format,
+        compId,
+        outDir,
+        signal: controller.signal,
+        onProgress: (row, f, total) => {
+          const pct = Math.floor(((row + f / total) / rows.length) * 100);
+          if (pct !== lastPct) broadcast({ type: "export", state: "progress", progress: (lastPct = pct), label: `Batch ${row + 1}/${rows.length}` });
+        },
+      })
+        .then((r) =>
+          broadcast({
+            type: "export",
+            state: "done",
+            url: r.files[0] ? `/api/renders/${encodeURIComponent(path.relative(path.join(projectDir, "renders"), r.files[0]).split(path.sep).join("/"))}` : undefined,
+            warnings: r.errors,
+            files: r.files.map((f) => `/api/renders/${path.relative(path.join(projectDir, "renders"), f).split(path.sep).map(encodeURIComponent).join("/")}`),
+          }),
+        )
+        .catch((e: Error) => broadcast({ type: "export", state: "error", error: e.message }))
+        .finally(() => (exporting = undefined));
+      return sendJson(res, 202, { ok: true, rows: rows.length });
+    }
+    if (route === "POST /api/reference") {
+      // An image or clip to take after: saved under .openeffects/references with a contact
+      // sheet the agent opens through oe_view_reference.
+      const original = url.searchParams.get("name") ?? "reference";
+      const kind = mediaKind(original);
+      if (kind !== "image" && kind !== "video") throw new HttpError(415, "Attach an image (PNG, JPG, WebP, GIF) or a video clip (MP4, MOV, WebM)");
+      const dir = path.join(projectDir, ".openeffects", "references");
+      fs.mkdirSync(dir, { recursive: true });
+      const base = path.basename(original, path.extname(original)).replace(/[^A-Za-z0-9_-]+/g, "-").slice(0, 40) || "reference";
+      const stamp = Date.now().toString(36);
+      const file = path.join(dir, `${base}-${stamp}${path.extname(original).toLowerCase()}`);
+      await saveUpload(req, file, 500 * 1024 * 1024);
+      try {
+        const sheet = await referenceSheet(file, path.join(dir, `${base}-${stamp}-sheet.png`));
+        const rel = path.relative(projectDir, sheet.file).split(path.sep).join("/");
+        return sendJson(res, 201, { file: rel, kind: sheet.kind, duration: sheet.duration, frames: sheet.times?.length ?? 1, prompt: referencePrompt(rel, sheet, original) });
+      } catch (e) {
+        throw new HttpError(422, `Couldn't read that file: ${(e as Error).message}`);
+      }
+    }
+    if (route === "POST /api/captions") {
+      // Caption layers from pasted subtitles (SRT/VTT/JSON) or a local transcription of a media
+      // layer. The editor inserts them, so the change is undoable.
+      if (!current.ok) throw new HttpError(422, "Fix the project errors first");
+      const body = (await readJson(req)) as { compId?: string; layerId?: string; subtitles?: string; style?: "pop" | "karaoke" | "minimal"; highlight?: string; color?: string };
+      const comp = getComp(current.project, body.compId);
+      let words;
+      let offset = 0;
+      if (body.subtitles) {
+        const text = body.subtitles.trim();
+        if (text.startsWith("{") || text.startsWith("[")) {
+          const json = JSON.parse(text);
+          words = Array.isArray(json) ? parseWordsJson(json) : parseWhisperJson(json);
+        } else words = parseSubtitles(text);
+      } else if (body.layerId) {
+        const layer = comp.layers.find((l) => l.id === body.layerId);
+        if (!layer || (layer.type !== "audio" && layer.type !== "video")) throw new HttpError(400, "Pick an audio or video layer");
+        try {
+          words = await transcribe(projectPath(layer.src));
+        } catch (e) {
+          throw new HttpError(422, (e as Error).message);
+        }
+        offset = (layer.in ?? 0) - (layer.trimStart ?? 0) / (layer.speed ?? 1);
+      } else throw new HttpError(400, "Send subtitles or a layerId");
+      if (!words.length) throw new HttpError(422, "No words found in those subtitles");
+      return sendJson(res, 200, { words: words.length, layers: captionLayers(words, comp, { style: body.style, highlight: body.highlight, color: body.color, offset }) });
     }
     if (route === "POST /api/import/lottie") {
       // Converts a Lottie file and stores its images in assets/. The editor merges the result

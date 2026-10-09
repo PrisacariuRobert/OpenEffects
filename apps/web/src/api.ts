@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type {
+  VariationsRun,
   AgentEvent,
   Checkpoint,
   ExportState,
@@ -35,6 +36,7 @@ export interface ServerState {
   events: AgentEvent[];
   running: boolean;
   exportState: ExportState | null;
+  variations: VariationsRun | null;
 }
 
 const initial: ServerState = {
@@ -47,6 +49,7 @@ const initial: ServerState = {
   events: [],
   running: false,
   exportState: null,
+  variations: null,
 };
 
 /** Loads /api/state, then keeps it live through the /ws push channel (reconnecting). */
@@ -71,6 +74,7 @@ export function useServer(): [ServerState, (fn: (s: ServerState) => ServerState)
           checkpoints: s.checkpoints,
           events: s.history,
           running: s.running,
+          variations: s.variations ?? null,
         }));
       } catch {
         timer = setTimeout(connect, Math.min(5000, 500 * 2 ** retry.current++));
@@ -117,5 +121,7 @@ function reduce(s: ServerState, msg: ServerMessage): ServerState {
       const { type: _type, ...rest } = msg;
       return { ...s, exportState: rest };
     }
+    case "variations":
+      return { ...s, variations: msg.run };
   }
 }

@@ -5,3 +5,4 @@ export { ClaudeCodeProvider, CLAUDE_MODELS, createClaudeParser } from "./agents/
 export { CodexProvider, createCodexParser } from "./agents/codex.ts";
 export { OpenCodeProvider, createOpenCodeParser } from "./agents/opencode.ts";
 export type { AdapterEvent, AgentEvent, AgentProvider, ProviderStatus, TurnResult } from "./agents/types.ts";
+export { runVariations, DIRECTIONS } from "./variations.ts";

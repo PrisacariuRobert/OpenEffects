@@ -32,6 +32,7 @@ import { IconChevronLeft, IconChevronRight, IconClose, IconStopwatch } from "./I
 import type { Editor } from "../editor.ts";
 import { ColorField, NumberField, Section, SelectField, TextField, Toggle } from "./fields.tsx";
 import { JsonEditor } from "./JsonEditor.tsx";
+import { BrandPanel, TemplatePanel } from "./BrandPanel.tsx";
 
 interface Props {
   editor: Editor;
@@ -41,6 +42,11 @@ interface Props {
   time: number;
   onSeek(t: number): void;
   onSelect(id: string | null): void;
+  templateValues: Record<string, string>;
+  onTemplateValues(v: Record<string, string>): void;
+  onBatch(): void;
+  onAsk(prompt: string): void;
+  onError(message: string): void;
 }
 
 type Vec2 = [number, number];
@@ -570,6 +576,37 @@ function MediaEditor({ ctx, layer, editor }: { ctx: Ctx; layer: MediaLayer; edit
   /** Composition time at which the media runs out (or the comp ends). */
   const mediaEnd = info ? start + (info.duration - (layer.trimStart ?? 0)) / speed : null;
 
+  const [capStyle, setCapStyle] = useState<"pop" | "karaoke" | "minimal">("pop");
+  /** Adds captions (replacing earlier ones) as one undoable edit. */
+  const captions = async (source: { layerId?: string; subtitles?: string }) => {
+    setBusy("captions");
+    setNote(null);
+    try {
+      const r = await fetch("/api/captions", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ compId: comp.id, style: capStyle, ...source }) });
+      const data = (await r.json()) as { layers?: Layer[]; words?: number; error?: string };
+      if (!r.ok || !data.layers) throw new Error(data.error ?? "Captions failed");
+      editor.update((p) => ({
+        ...p,
+        compositions: p.compositions.map((c) => (c.id === comp.id ? { ...c, layers: [...c.layers.filter((l) => !l.id.startsWith("cap-")), ...data.layers!] } : c)),
+      }));
+      setNote(`${data.words} words captioned · move the "Captions" null to reposition them`);
+    } catch (e) {
+      setNote((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  };
+  const pickSubtitles = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".srt,.vtt,.json";
+    input.onchange = async () => {
+      const f = input.files?.[0];
+      if (f) await captions({ subtitles: await f.text() });
+    };
+    input.click();
+  };
+
   const detect = async (mode: "beats" | "onsets") => {
     setBusy(mode);
     setNote(null);
@@ -585,7 +622,7 @@ function MediaEditor({ ctx, layer, editor }: { ctx: Ctx; layer: MediaLayer; edit
         const markers = [...keep, ...found].sort((a, b) => a.t - b.t);
         return updateComposition(p, { markers: markers.length ? markers : null }, { compId: comp.id });
       });
-      setNote(`${found.length} ${mode === "beats" ? "beat" : "hit"} markers${data.bpm ? ` · ~${Math.round(data.bpm)} BPM` : ""}`);
+      setNote(`${found.length} ${mode === "beats" ? "beat" : "hit"} markers${data.bpm ? ` · ~${Math.round(data.bpm)} BPM` : ""}. Keyframes and layers snap to markers when dragged.`);
     } catch (e) {
       setNote((e as Error).message);
     } finally {
@@ -639,7 +676,16 @@ function MediaEditor({ ctx, layer, editor }: { ctx: Ctx; layer: MediaLayer; edit
               {busy === "onsets" ? "Listening…" : "Hits"}
             </button>
           </Row>
-          {note && <p className="muted small media-info">{note}. Keyframes and layers snap to markers when dragged.</p>}
+          {note && <p className="muted small media-info">{note}</p>}
+          <Row label="Captions">
+            <SelectField value={capStyle} options={[{ value: "pop", label: "Pop" }, { value: "karaoke", label: "Karaoke" }, { value: "minimal", label: "Minimal" }]} onChange={(v) => setCapStyle(v as "pop" | "karaoke" | "minimal")} />
+            <button className="ghost small" disabled={!!busy} title="Transcribe this layer locally with whisper.cpp" onClick={() => captions({ layerId: layer.id })}>
+              {busy === "captions" ? "Working…" : "Transcribe"}
+            </button>
+            <button className="ghost small" disabled={!!busy} title="Use an .srt, .vtt or word-timing .json file" onClick={pickSubtitles}>
+              From file…
+            </button>
+          </Row>
         </>
       )}
     </>
@@ -886,7 +932,7 @@ function CompInspector({ editor, comp }: { editor: Editor; comp: Composition }) 
 }
 
 /** Visual property editor for the selected layer (or the composition), with a JSON escape hatch. */
-export function Inspector({ editor, project, compId, selected, time, onSeek, onSelect }: Props) {
+export function Inspector({ editor, project, compId, selected, time, onSeek, onSelect, templateValues, onTemplateValues, onBatch, onAsk, onError }: Props) {
   const [mode, setMode] = useState<"visual" | "json">("visual");
   const comp = getComp(project, compId);
   const layer = selected ? comp.layers.find((l) => l.id === selected) : undefined;
@@ -924,6 +970,8 @@ export function Inspector({ editor, project, compId, selected, time, onSeek, onS
           <>
             <CompInspector editor={editor} comp={comp} />
             <MarkersEditor editor={editor} comp={comp} onSeek={onSeek} />
+            <BrandPanel onAsk={onAsk} onError={onError} />
+            <TemplatePanel project={project} values={templateValues} onValues={onTemplateValues} onBatch={onBatch} />
             <p className="muted small hint">Select a layer in the viewer or the timeline to edit it. Tip: the stopwatch animates a property; the diamond adds a keyframe at the playhead.</p>
           </>
         )}

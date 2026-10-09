@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import type { AgentEvent, ProviderStatus } from "@openeffects/schema";
-import { IconArrowUp, IconChevronRight, IconSparkles, IconStop } from "./Icons.tsx";
+import type { AgentEvent, CompDiff, ProviderStatus } from "@openeffects/schema";
+import { IconArrowUp, IconAttach, IconChevronRight, IconClose, IconGrid, IconSparkles, IconStop } from "./Icons.tsx";
 import { api } from "../api.ts";
 import { Markdown } from "./Markdown.tsx";
 
@@ -17,6 +17,10 @@ interface Props {
   running: boolean;
   providers: ProviderStatus[];
   selection: Selection | null;
+  /** Variations are being made (the agent is busy). */
+  busy?: boolean;
+  /** What the latest turn changed, for review. */
+  review?: Review | null;
   onError(message: string): void;
 }
 
@@ -81,7 +85,62 @@ function groupTurns(events: AgentEvent[]): Turn[] {
   return [...turns.values()];
 }
 
-export function AgentPanel({ events, running, providers, selection, onError }: Props) {
+/** Starts an agent turn with the provider and model last picked in the agent panel. */
+export async function askAgent(prompt: string): Promise<void> {
+  const provider = readPref("oe.provider") || "claude";
+  let model: string | undefined;
+  try {
+    model = (JSON.parse(readPref("oe.models") || "{}") as Record<string, string>)[provider] || undefined;
+  } catch {
+    model = undefined;
+  }
+  await api("/api/agent/turn", { provider, prompt, model });
+}
+
+export interface Review {
+  turnId: string;
+  changes: CompDiff[];
+  onRevert(compId: string, layerId: string): void;
+  onDismiss(): void;
+}
+
+const PROP_NAMES: Record<string, string> = { "transform.position": "position", "transform.scale": "scale", "transform.rotation": "rotation", "transform.opacity": "opacity", "transform.anchor": "anchor" };
+
+function ReviewCard({ review }: { review: Review }) {
+  const total = review.changes.reduce((n, c) => n + c.layers.length + (c.settings.length ? 1 : 0), 0);
+  if (!total) return null;
+  return (
+    <div className="review">
+      <div className="review-head">
+        <strong>Review changes</strong>
+        <span className="muted small">{total} change{total === 1 ? "" : "s"}</span>
+        <button className="ghost small" onClick={review.onDismiss}>
+          Keep all
+        </button>
+      </div>
+      {review.changes.map((c) => (
+        <div key={c.compId}>
+          {review.changes.length > 1 && <div className="muted small review-comp">{c.compId}</div>}
+          {c.settings.length > 0 && <div className="review-row"><span className="review-kind changed">~</span><span className="grow">Composition: {c.settings.join(", ")}</span></div>}
+          {c.layers.map((l) => (
+            <div key={l.id} className="review-row">
+              <span className={`review-kind ${l.kind}`}>{l.kind === "added" ? "+" : l.kind === "removed" ? "−" : "~"}</span>
+              <span className="grow">
+                <b>{l.id}</b>
+                {l.props.length > 0 && <span className="muted"> · {l.props.map((p) => PROP_NAMES[p] ?? p).join(", ")}</span>}
+              </span>
+              <button className="ghost small" title={l.kind === "added" ? "Remove this layer" : "Put this layer back as it was"} onClick={() => review.onRevert(c.compId, l.id)}>
+                Revert
+              </button>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function AgentPanel({ events, running, providers, selection, busy = false, review = null, onError }: Props) {
   const [prompt, setPrompt] = useState("");
   const [useSelection, setUseSelection] = useState(true);
   const sel = useSelection ? selection : null;
@@ -111,11 +170,37 @@ export function AgentPanel({ events, running, providers, selection, onError }: P
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [events.length]);
 
+  /** An attached image or clip to take after (prefixed to the next request). */
+  const [reference, setReference] = useState<{ name: string; prompt: string; frames: number } | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const withReference = (text: string) => (reference ? `${reference.prompt}\n\n${text}` : text);
+  const attach = async (file: File) => {
+    setUploading(true);
+    try {
+      const r = await fetch(`/api/reference?name=${encodeURIComponent(file.name)}`, { method: "POST", headers: { "content-type": "application/octet-stream" }, body: file });
+      const d = (await r.json()) as { prompt?: string; frames?: number; error?: string };
+      if (!r.ok || !d.prompt) throw new Error(d.error ?? "Couldn't attach that file");
+      setReference({ name: file.name, prompt: d.prompt, frames: d.frames ?? 1 });
+    } catch (e) {
+      onError((e as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  };
+  const pickReference = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*,video/*";
+    input.onchange = () => input.files?.[0] && attach(input.files[0]);
+    input.click();
+  };
+
   const send = async (text = prompt) => {
     if (!text.trim() || running) return;
     try {
-      await api("/api/agent/turn", { provider, prompt: withContext(text, sel), model: model || undefined });
+      await api("/api/agent/turn", { provider, prompt: withContext(withReference(text), sel), model: model || undefined });
       setPrompt("");
+      setReference(null);
     } catch (e) {
       onError((e as Error).message);
     }
@@ -235,7 +320,9 @@ export function AgentPanel({ events, running, providers, selection, onError }: P
                   </button>
                 )}
               </div>
-            ) : (
+            ) : null}
+            {turn.end && review && review.turnId === turn.end.turnId && <ReviewCard review={review} />}
+            {!turn.end && (
               <div className="working">
                 <span className="spinner" /> Working…
               </div>
@@ -259,8 +346,32 @@ export function AgentPanel({ events, running, providers, selection, onError }: P
           </button>
         ))}
       </div>
-      <div className="composer">
+      <div
+        className="composer"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          const f = [...e.dataTransfer.files].find((x) => /^(image|video)\//.test(x.type));
+          if (f) {
+            e.preventDefault();
+            attach(f);
+          }
+        }}
+      >
+        {(reference || uploading) && (
+          <div className="ref-chip">
+            <IconAttach size={13} />
+            <span>{uploading ? "Reading reference…" : `Reference: ${reference!.name}${reference!.frames > 1 ? ` · ${reference!.frames} frames` : ""}`}</span>
+            {reference && (
+              <button className="icon-only" aria-label="Remove reference" onClick={() => setReference(null)}>
+                <IconClose size={12} />
+              </button>
+            )}
+          </div>
+        )}
         <div className="composer-box">
+        <button className="icon-only" title="Attach a reference image or clip to take after" aria-label="Attach a reference" disabled={running || uploading} onClick={pickReference}>
+          <IconAttach size={16} />
+        </button>
         <textarea
           value={prompt}
           placeholder={running ? "The agent is working…" : sel ? `Change ${sel.label}…` : "Describe an animation or a change…"}
@@ -273,6 +384,25 @@ export function AgentPanel({ events, running, providers, selection, onError }: P
           }}
           rows={2}
         />
+        {!running && (
+          <button
+            className="icon-only versions-btn"
+            disabled={!prompt.trim() || !status?.available || busy}
+            title="Make 4 versions with different creative directions, then pick one"
+            aria-label="Make 4 versions"
+            onClick={async () => {
+              try {
+                await api("/api/variations", { provider, prompt: withContext(withReference(prompt), sel), model: model || undefined, count: 4 });
+                setPrompt("");
+                setReference(null);
+              } catch (e) {
+                onError((e as Error).message);
+              }
+            }}
+          >
+            <IconGrid size={16} />
+          </button>
+        )}
         {running ? (
           <button className="send-btn stop" onClick={() => api("/api/agent/stop", {})} title="Stop" aria-label="Stop">
             <IconStop size={14} />

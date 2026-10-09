@@ -1,15 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { deleteLayer, duplicateLayer, editLayer, getComp, getIn, insertKeyframes, removeKeyframe, updateComposition, type Keyframe } from "@openeffects/schema";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { diffProjects, revertLayer, type Project, fillTemplate, deleteLayer, duplicateLayer, editLayer, getComp, getIn, insertKeyframes, removeKeyframe, updateComposition, type Keyframe } from "@openeffects/schema";
 import { api, useServer } from "./api.ts";
 import { useEditor } from "./editor.ts";
 import { Viewport } from "./components/Viewport.tsx";
 import { Timeline, type KeyframeRef } from "./components/Timeline.tsx";
-import { AgentPanel } from "./components/AgentPanel.tsx";
+import { AgentPanel, askAgent } from "./components/AgentPanel.tsx";
 import { Inspector } from "./components/Inspector.tsx";
 import { History } from "./components/History.tsx";
 import { Templates } from "./components/Templates.tsx";
 import { Tour, Welcome, type TourStep } from "./components/Tour.tsx";
 import { useMediaPlayback } from "./mediaPlayback.ts";
+import { Variations } from "./components/Variations.tsx";
 import { importLottie, pickLottieFile } from "./lottieImport.ts";
 import { useDismiss } from "./useDismiss.ts";
 import { IconChevronDown, IconClock, IconClose, IconExport, IconGrid, IconHelp, IconImport, IconRedo, IconSliders, IconSparkles, IconUndo } from "./components/Icons.tsx";
@@ -78,6 +79,11 @@ export function App() {
   const [touring, setTouring] = useState(false);
   const [assets, setAssets] = useState<{ src: string; kind: "image" | "video" | "audio" }[]>([]);
   const [muted, setMuted] = useState(false);
+  const [templateValues, setTemplateValues] = useState<Record<string, string>>({});
+  const [dismissedVariations, setDismissedVariations] = useState<string | null>(null);
+  // Review: the project as it was before the latest agent turn, to show what changed.
+  const [reviewBase, setReviewBase] = useState<{ turnId: string; before: Project } | null>(null);
+  const [dismissedReview, setDismissedReview] = useState<string | null>(null);
   const project = editor.project;
   const comp = project ? (project.compositions.find((c) => c.id === compId) ?? getComp(project)) : null;
 
@@ -239,9 +245,65 @@ export function App() {
     const ex = state.exportState;
     if (ex?.state === "done" && ex.url !== lastExport.current) {
       lastExport.current = ex.url;
-      if (ex.warnings?.length) showToast(`Lottie exported. Note: ${ex.warnings.join(" · ")}`);
+      if (ex.files?.length) showToast(`Rendered ${ex.files.length} videos into renders/${ex.warnings?.length ? `. Skipped: ${ex.warnings.join(" · ")}` : ""}`);
+      else if (ex.warnings?.length) showToast(`Lottie exported. Note: ${ex.warnings.join(" · ")}`);
     }
   }, [state.exportState, showToast]);
+
+  const lastTurn = [...state.events].reverse().find((e) => e.type === "turn-end") as Extract<(typeof state.events)[number], { type: "turn-end" }> | undefined;
+  useEffect(() => {
+    if (!lastTurn?.ok || !lastTurn.checkpointBefore || reviewBase?.turnId === lastTurn.turnId) return;
+    fetch(`/api/checkpoints/${lastTurn.checkpointBefore}/project`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((before: Project | null) => before && setReviewBase({ turnId: lastTurn.turnId, before }))
+      .catch(() => {});
+  }, [lastTurn?.turnId]);
+  const reviewChanges = useMemo(() => (reviewBase && project && reviewBase.turnId !== dismissedReview ? diffProjects(reviewBase.before, project) : []), [reviewBase, project, dismissedReview]);
+  const review =
+    reviewBase && reviewChanges.length
+      ? {
+          turnId: reviewBase.turnId,
+          changes: reviewChanges,
+          onRevert: (compId: string, layerId: string) => editor.update((p) => revertLayer(p, reviewBase.before, compId, layerId)),
+          onDismiss: () => setDismissedReview(reviewBase.turnId),
+        }
+      : null;
+  const changedLayers = useMemo(() => {
+    const m = new Map<string, "added" | "changed">();
+    for (const c of reviewChanges) if (c.compId === comp?.id) for (const l of c.layers) if (l.kind !== "removed") m.set(l.id, l.kind as "added" | "changed");
+    return m;
+  }, [reviewChanges, comp?.id]);
+
+  const ask = useCallback(
+    async (prompt: string) => {
+      setTab("agent");
+      try {
+        await askAgent(prompt);
+      } catch (e) {
+        showToast((e as Error).message);
+      }
+    },
+    [showToast],
+  );
+
+  /** One video per CSV row, filling the {{column}} placeholders. */
+  const batchFromCsv = async () => {
+    setExportMenu(false);
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".csv,text/csv";
+    input.onchange = async () => {
+      const f = input.files?.[0];
+      if (!f) return;
+      try {
+        const r = await api<{ rows: number }>("/api/batch", { csv: await f.text(), format: "mp4", compId: comp?.id });
+        showToast(`Rendering ${r.rows} videos from ${f.name}…`);
+      } catch (e) {
+        showToast((e as Error).message);
+      }
+    };
+    input.click();
+  };
 
   const importLottieFile = async (file: File | null) => {
     if (!file || !comp) return;
@@ -314,6 +376,10 @@ export function App() {
   ];
 
   const ex = state.exportState;
+  // Template preview: the viewer shows {{fields}} filled with the sample values.
+  const filledValues = Object.fromEntries(Object.entries(templateValues).filter(([, v]) => v !== ""));
+  const viewProject = project && Object.keys(filledValues).length ? fillTemplate(project, filledValues) : null;
+  const viewComp = viewProject && comp ? viewProject.compositions.find((c) => c.id === comp.id) : null;
   const fileName = state.file.split(/[\\/]/).slice(-2).join("/");
   const selLayer = selected && comp ? comp.layers.find((l) => l.id === selected) : undefined;
 
@@ -350,7 +416,7 @@ export function App() {
         {!state.connected && <span className="pill warn">Reconnecting…</span>}
         {ex?.state === "progress" && (
           <span className="pill progress" style={{ ["--p" as string]: `${ex.progress ?? 0}%` }}>
-            Exporting {ex.progress ?? 0}%
+            {ex.label ?? "Exporting"} {ex.progress ?? 0}%
           </span>
         )}
         {ex?.state === "done" && ex.url && (
@@ -378,6 +444,10 @@ export function App() {
                 </button>
               ))}
               <div className="menu-sep" />
+              <button onClick={batchFromCsv}>
+                <span className="menu-label">Batch from CSV…</span>
+                <span className="menu-hint-inline">One video per row, fills {"{{fields}}"}</span>
+              </button>
               <button
                 onClick={async () => {
                   setExportMenu(false);
@@ -400,8 +470,8 @@ export function App() {
             <>
               <Viewport
                 editor={editor}
-                project={project}
-                comp={comp}
+                project={viewProject ?? project}
+                comp={viewComp ?? comp}
                 time={time}
                 errors={state.errors}
                 selected={selected}
@@ -431,6 +501,7 @@ export function App() {
                 onSelect={select}
                 onSelectKeyframes={setSelectedKeyframes}
                 onImportLottie={async () => importLottieFile(await pickLottieFile())}
+                changedLayers={changedLayers}
               />
             </>
           ) : (
@@ -465,12 +536,27 @@ export function App() {
                 events={state.events}
                 running={state.running}
                 providers={state.providers}
+                busy={!!state.variations?.running}
+                review={review}
                 selection={selLayer && comp ? { layerId: selLayer.id, label: selLayer.name ?? selLayer.id, type: selLayer.type, compId: comp.id, time } : null}
                 onError={showToast}
               />
             )}
             {tab === "inspector" && project && comp && (
-              <Inspector editor={editor} project={project} compId={comp.id} selected={selected} time={time} onSeek={setTime} onSelect={select} />
+              <Inspector
+                editor={editor}
+                project={project}
+                compId={comp.id}
+                selected={selected}
+                time={time}
+                onSeek={setTime}
+                onSelect={select}
+                templateValues={templateValues}
+                onTemplateValues={setTemplateValues}
+                onBatch={batchFromCsv}
+                onAsk={ask}
+                onError={showToast}
+              />
             )}
             {tab === "history" && <History checkpoints={state.checkpoints} running={state.running} onError={showToast} />}
           </div>
@@ -550,6 +636,19 @@ export function App() {
         />
       )}
       {touring && <Tour steps={tourSteps} onDone={() => setTouring(false)} />}
+      {state.variations && state.variations.id !== dismissedVariations && (
+        <Variations
+          run={state.variations}
+          onError={showToast}
+          onClose={() => setDismissedVariations(state.variations!.id)}
+          onUse={(p) => {
+            editor.update(() => p);
+            setSelected(null);
+            setDismissedVariations(state.variations!.id);
+            showToast("Using that version. Ctrl+Z goes back.");
+          }}
+        />
+      )}
       {toast && <div className="toast">{toast}</div>}
     </div>
   );

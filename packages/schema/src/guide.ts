@@ -87,6 +87,20 @@ Compositions can have \`markers: [{ "t": 1.5, "label": "drop" }]\`. With an audi
 marker on every beat (or on every hit); read them back with \`oe_get_project\` and put keyframes on those times to
 sync motion to the music. Media layers use \`in\`/\`out\` like any layer; \`trimStart\` skips into the file.
 
+## Brand kits and data templates
+
+- If the project has a brand kit (brand.json), \`oe_get_project\` shows it; use its colors, fonts, logo and voice
+  instead of inventing your own. \`oe_set_brand\` saves one when the user describes their brand.
+- For personalized videos, write \`{{column}}\` placeholders in text (or image paths), e.g.
+  \`"text": "Happy birthday, {{name}}!"\`. \`oe batch --data rows.csv\` renders one video per CSV row. Design for
+  the longest value (shrink type or wrap) so every row fits.
+
+## Captions
+
+\`oe_add_captions\` turns a subtitle file (.srt/.vtt) or an audio/video layer (local transcription) into
+word-timed caption layers under a "cap-captions" null: style "pop" (words pop in as spoken), "karaoke" (the
+spoken word lights up) or "minimal". Move or scale the null to place them; don't edit the word layers one by one.
+
 ## Lottie
 
 - \`oe_export\` with format "lottie" writes a Lottie JSON for websites and iOS/Android apps. Shapes, text, images,

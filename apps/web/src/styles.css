@@ -2262,3 +2262,191 @@ button.legend.off {
 .marker-nav {
   margin-right: 2px;
 }
+
+/* Brand kit and template fields */
+.brand {
+  display: grid;
+  gap: 8px;
+}
+.brand-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 0;
+}
+.brand-swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px 3px 4px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.05);
+}
+.brand-swatch .color-text {
+  display: none;
+}
+.brand-swatch .icon-only {
+  width: 20px;
+  height: 20px;
+}
+.brand-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 4px;
+}
+.brand-empty {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.prop-label.mono {
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+/* Variations grid */
+.modal.variations {
+  width: min(1100px, 94vw);
+}
+.variations-prompt {
+  max-width: 70ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.variation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 14px;
+  margin: 14px 0 6px;
+}
+.variation {
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--panel);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.variation.failed {
+  opacity: 0.6;
+}
+.variation-stage {
+  background: #000;
+  display: grid;
+  place-items: center;
+  min-height: 160px;
+}
+.variation-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.variation-wait {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 20px;
+  color: var(--muted);
+  text-align: center;
+}
+.variation-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+.variation-dir {
+  flex: 1;
+  font-weight: 600;
+}
+.versions-btn {
+  flex-shrink: 0;
+}
+.composer {
+  flex-direction: column;
+  align-items: stretch;
+}
+.ref-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 3px 4px 3px 10px;
+  border-radius: 99px;
+  background: var(--accent-soft);
+  color: #6cb6ff;
+  font-size: 12px;
+}
+.ref-chip .icon-only {
+  width: 20px;
+  height: 20px;
+  color: inherit;
+}
+
+/* Review of the agent's last turn */
+.review {
+  margin: 8px 0 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--panel-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  display: grid;
+  gap: 4px;
+}
+.review-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.review-head strong {
+  flex: 1;
+}
+.review-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  min-height: 26px;
+}
+.review-row .grow {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.review-row b {
+  font-weight: 600;
+}
+.review-kind {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.review-kind.added {
+  background: rgba(48, 209, 88, 0.16);
+  color: var(--ok);
+}
+.review-kind.changed {
+  background: var(--accent-soft);
+  color: #6cb6ff;
+}
+.review-kind.removed {
+  background: rgba(255, 69, 58, 0.16);
+  color: var(--bad);
+}
+.review-comp {
+  margin-top: 4px;
+}
+.agent-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #6cb6ff;
+}
+.agent-dot.added {
+  background: var(--ok);
+}
