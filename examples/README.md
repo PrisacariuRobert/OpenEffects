@@ -14,6 +14,13 @@ OpenEffects, with no hand edits. Open one with `pnpm oe dev examples/<name>` or 
 | [loader](loader) | Claude Haiku 5.5 via `oe ask` | 21 s | $0.007 |
 | [logo-reveal](logo-reveal) | hand-written | | |
 | [showreel](showreel) | generated script: nests the AI-made comps as precomps with titles | | |
+| [launch-reel](launch-reel) | Claude Code writing the project file directly (no GUI), checked with contact sheets | | |
+
+**launch-reel** is the 32-second OpenEffects launch film: 10 compositions and 145 layers, a 16:9 cut and a 9:16
+cut that nests it, an original 120 BPM soundtrack (`assets/soundtrack.mp3`) with scene cuts on its beat markers,
+path morphs, behaviors, text animators, and an end card that also exports to Lottie
+(`pnpm oe render examples/launch-reel --comp end-card --format lottie`). Render the vertical cut with
+`--comp vertical`.
 
 ## Prompts
 

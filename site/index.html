@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="OpenEffects: the open-source alternative to Claude Motion. Motion graphics made by your own AI agent, finished by you on a real timeline. Video and Lottie export.">
+<title>OpenEffects</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Geist:wght@400;500;600&family=Inter:wght@500;600;800&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: the page is a timeline. A timecode ruler runs down the left; every section is a
+     clip that starts at a keyframe. The reel itself is the hero, scrubbable by its markers. */
+  :root {
+    --bg: #0b0b0d;
+    --surface: #141418;
+    --raised: #1d1d23;
+    --line: rgba(236, 238, 255, 0.09);
+    --fg: #f2f2f5;
+    --muted: #8f909c;
+    --accent: #3b8cff;
+    --accent-soft: rgba(59, 140, 255, 0.14);
+    --key: #ffd60a;
+    --stage: #0b0b0c;
+    --display: "Bricolage Grotesque", "Avenir Next Condensed", "Helvetica Neue", Arial, sans-serif;
+    --body: "Geist", -apple-system, "Segoe UI", system-ui, sans-serif;
+    --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --gutter: clamp(16px, 4vw, 40px);
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f6f6f8; --surface: #ffffff; --raised: #ececf1; --line: rgba(20, 20, 40, 0.1);
+      --fg: #111116; --muted: #5f606b; --accent: #0a6cf0; --accent-soft: rgba(10, 108, 240, 0.1); --key: #c99a00;
+      color-scheme: light;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f6f6f8; --surface: #ffffff; --raised: #ececf1; --line: rgba(20, 20, 40, 0.1);
+    --fg: #111116; --muted: #5f606b; --accent: #0a6cf0; --accent-soft: rgba(10, 108, 240, 0.1); --key: #c99a00;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 16px/1.6 var(--body);
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding-inline: var(--gutter); }
+
+  /* ---- top bar ---- */
+  .bar { display: flex; align-items: center; gap: 16px; padding-block: 20px; }
+  .mark { width: 22px; height: 22px; border-radius: 50%; background: conic-gradient(#3b8cff, #6f63ff, #c45cff, #ff4d78, #3b8cff); -webkit-mask: radial-gradient(circle, transparent 48%, #000 51%); mask: radial-gradient(circle, transparent 48%, #000 51%); flex-shrink: 0; }
+  .brand { font: 700 18px/1 var(--display); letter-spacing: -0.02em; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+  .bar nav { margin-left: auto; display: flex; gap: 20px; font-size: 14px; color: var(--muted); }
+  .bar nav a { text-decoration: none; }
+  .bar nav a:hover { color: var(--fg); }
+  .gh { color: var(--fg) !important; }
+
+  /* ---- hero ---- */
+  .hero { padding-block: clamp(32px, 7vw, 72px) 24px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .eyebrow { font: 500 13px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); display: flex; align-items: center; gap: 10px; }
+  .eyebrow::before { content: ""; width: 9px; height: 9px; background: var(--key); transform: rotate(45deg); border-radius: 1px; }
+  h1 { font: 800 clamp(42px, 7.4vw, 92px)/0.98 var(--display); letter-spacing: -0.035em; margin: 0; text-wrap: balance; max-width: 15ch; }
+  h1 em { font-style: normal; color: var(--muted); }
+  .lede { font-size: clamp(17px, 2vw, 20px); color: var(--muted); max-width: 58ch; margin: 0; text-wrap: pretty; }
+  .lede strong { color: var(--fg); font-weight: 500; }
+  .ctas { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 999px; font: 600 15px/1 var(--body); text-decoration: none; border: 0; cursor: pointer; }
+  .btn.primary { background: var(--accent); color: #fff; }
+  .btn.primary:hover { filter: brightness(1.1); }
+  .install { display: inline-flex; align-items: center; gap: 12px; padding: 7px 7px 7px 16px; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); font: 14px/1 var(--mono); color: var(--muted); max-width: 100%; min-width: 0; }
+  .install code { color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .copy { background: var(--raised); color: var(--fg); border: 0; border-radius: 999px; padding: 8px 14px; font: 500 13px/1 var(--body); cursor: pointer; flex-shrink: 0; }
+
+  /* ---- the reel with its timeline ---- */
+  .reel { margin-top: 18px; border-radius: 18px; overflow: hidden; background: var(--stage); box-shadow: 0 0 0 1px var(--line), 0 40px 120px -40px rgba(59, 140, 255, 0.35); }
+  .reel video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background: var(--stage); }
+  .scrub { background: var(--surface); padding: 14px 18px 16px; display: grid; gap: 10px; }
+  .scrub-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; font: 13px/1 var(--mono); color: var(--muted); }
+  .tc { color: var(--fg); font-variant-numeric: tabular-nums; min-width: 9ch; }
+  .play, .sound { background: var(--raised); color: var(--fg); border: 0; border-radius: 999px; height: 30px; padding: 0 14px; font: 500 13px/1 var(--body); cursor: pointer; }
+  .sound { margin-left: auto; }
+  .track { position: relative; height: 38px; cursor: pointer; touch-action: none; }
+  .track::before { content: ""; position: absolute; left: 0; right: 0; top: 18px; height: 2px; background: var(--line); border-radius: 2px; }
+  .fill { position: absolute; left: 0; top: 18px; height: 2px; background: var(--accent); border-radius: 2px; width: 0; }
+  .head { position: absolute; top: 4px; bottom: 4px; width: 2px; margin-left: -1px; background: var(--accent); left: 0; }
+  .kf { position: absolute; top: 13px; width: 12px; height: 12px; margin-left: -6px; background: var(--key); transform: rotate(45deg); border-radius: 2px; border: 0; padding: 0; cursor: pointer; }
+  .kf span { position: absolute; top: 18px; left: 50%; transform: rotate(-45deg) translate(-20%, 0); transform-origin: 0 0; font: 11px/1 var(--mono); color: var(--muted); white-space: nowrap; pointer-events: none; }
+  .scenes { display: flex; flex-wrap: wrap; gap: 6px 14px; font: 12px/1.4 var(--mono); color: var(--muted); }
+  .scenes b { color: var(--fg); font-weight: 500; }
+  .credit { font-size: 14px; color: var(--muted); margin: 14px 2px 0; }
+
+  /* ---- sections as clips on a ruler ---- */
+  section.clip { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 0 28px; padding-block: clamp(56px, 9vw, 96px) 0; }
+  .stamp { font: 500 13px/1 var(--mono); color: var(--muted); padding-top: 10px; border-top: 1px solid var(--line); position: relative; font-variant-numeric: tabular-nums; }
+  .stamp::before { content: ""; position: absolute; left: 0; top: -6px; width: 10px; height: 10px; background: var(--key); transform: rotate(45deg); border-radius: 1px; }
+  .stamp b { display: block; padding-top: 10px; color: var(--fg); font-weight: 500; }
+  .body { border-top: 1px solid var(--line); padding-top: 28px; min-width: 0; display: grid; gap: 20px; }
+  h2 { font: 700 clamp(30px, 4.4vw, 52px)/1.02 var(--display); letter-spacing: -0.03em; margin: 0; text-wrap: balance; max-width: 18ch; }
+  .body > p { margin: 0; color: var(--muted); max-width: 62ch; }
+  .body > p strong { color: var(--fg); font-weight: 500; }
+
+  .split { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+  .stage { border-radius: 16px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
+  .lottie-box { aspect-ratio: 16 / 9; background: var(--stage); max-width: 100%; }
+  .stage-foot { display: flex; align-items: center; gap: 12px; padding: 12px 16px; font: 13px/1.3 var(--mono); color: var(--muted); border-top: 1px solid var(--line); flex-wrap: wrap; }
+  .stage-foot .tc { min-width: 0; }
+  .facts { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+  .facts li { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .facts li:last-child { border-bottom: 0; }
+  .facts b { font: 500 13px/1.6 var(--mono); color: var(--muted); font-weight: 400; }
+
+  .phone-row { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 32px; align-items: center; }
+  .phone { border-radius: 26px; overflow: hidden; background: var(--stage); box-shadow: 0 0 0 1px var(--line), 0 30px 80px -30px rgba(196, 92, 255, 0.35); max-width: 100%; }
+  .phone video { display: block; width: 100%; height: auto; aspect-ratio: 9 / 16; }
+  .formats { display: flex; flex-wrap: wrap; gap: 8px; }
+  .fmt { padding: 8px 14px; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); font: 500 14px/1 var(--mono); }
+  .fmt small { color: var(--muted); font-weight: 400; margin-left: 6px; }
+
+  .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; counter-reset: s; }
+  .step { padding: 20px; border-radius: 14px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); display: grid; gap: 8px; align-content: start; }
+  .step::before { counter-increment: s; content: "0" counter(s); font: 500 13px/1 var(--mono); color: var(--accent); }
+  .step h3 { margin: 0; font: 700 22px/1.15 var(--display); letter-spacing: -0.02em; }
+  .step p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  .table-wrap { overflow-x: auto; border-radius: 14px; box-shadow: inset 0 0 0 1px var(--line); }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 15px; }
+  th, td { text-align: left; padding: 14px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  thead th { font: 500 13px/1 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; background: var(--surface); }
+  td:first-child { color: var(--muted); width: 22%; }
+  td:nth-child(2) { color: var(--fg); }
+  td:nth-child(3) { color: var(--muted); }
+  .note { font-size: 13px; color: var(--muted); }
+
+  .terminal { background: var(--surface); border-radius: 14px; box-shadow: inset 0 0 0 1px var(--line); padding: 18px 20px; font: 14px/1.9 var(--mono); overflow-x: auto; white-space: pre; color: var(--fg); }
+  .terminal .c { color: var(--muted); }
+
+  footer { margin-top: clamp(64px, 10vw, 120px); padding-block: 28px 40px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 10px 24px; font-size: 14px; color: var(--muted); }
+  footer p { margin: 0; max-width: 70ch; }
+
+  @media (max-width: 860px) {
+    .split, .phone-row { grid-template-columns: minmax(0, 1fr); }
+    .phone { max-width: 260px; }
+    .steps { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 640px) {
+    section.clip { grid-template-columns: minmax(0, 1fr); }
+    .stamp { border-top: 0; padding-top: 0; display: flex; gap: 10px; align-items: center; padding-left: 20px; }
+    .stamp::before { top: 2px; }
+    .stamp b { padding-top: 0; }
+    .body { border-top: 0; padding-top: 16px; }
+    .bar nav a:not(.gh) { display: none; }
+    .kf span { display: none; }
+    .facts li { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="bar">
+    <a class="brand" href="#top"><span class="mark" aria-hidden="true"></span>OpenEffects</a>
+    <nav aria-label="Sections">
+      <a href="#formats">Formats</a>
+      <a href="#compare">Compare</a>
+      <a href="#lottie-demo">Lottie</a>
+      <a href="#start">Get started</a>
+      <a class="gh" href="https://github.com/PrisacariuRobert/OpenEffects">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <div class="hero">
+      <div class="eyebrow">The open-source alternative to Claude Motion</div>
+      <h1>Your AI agent animates it. <em>You finish it.</em></h1>
+      <p class="lede">OpenEffects turns the coding agent you already use (Claude Code, Codex or OpenCode, with any model) into a motion designer that works on <strong>a real timeline</strong>. Every shape, keyframe and easing curve stays editable. Export video for people and <strong>Lottie for apps</strong>. Free, MIT-licensed, on your machine.</p>
+      <div class="ctas">
+        <a class="btn primary" href="https://github.com/PrisacariuRobert/OpenEffects">Get OpenEffects on GitHub</a>
+        <div class="install"><code id="cmd">git clone https://github.com/PrisacariuRobert/OpenEffects</code><button class="copy" type="button" data-copy="cmd" id="copy-hero">Copy</button></div>
+      </div>
+
+      <div class="reel">
+        <video id="reel" src="media/launch.mp4" poster="media/poster.jpg" autoplay muted loop playsinline preload="auto" aria-label="OpenEffects launch reel"></video>
+        <div class="scrub">
+          <div class="scrub-top">
+            <button class="play" id="play" type="button">Pause</button>
+            <span class="tc" id="tc">00:00:00</span>
+            <span>/ 00:32:00 · 30 fps · 120 BPM</span>
+            <button class="sound" id="sound" type="button">Sound on</button>
+          </div>
+          <div class="track" id="track" role="slider" aria-label="Scrub the reel" aria-valuemin="0" aria-valuemax="32" aria-valuenow="0" tabindex="0">
+            <div class="fill" id="fill"></div>
+            <div class="head" id="head"></div>
+          </div>
+        </div>
+      </div>
+      <p class="credit">Every frame above was rendered by OpenEffects from one project file: 10 compositions, 145 layers, cut to markers that its beat detection placed on the soundtrack. The diamonds are those markers. Click one to jump.</p>
+    </div>
+
+    <section class="clip" id="how">
+      <div class="stamp">00:00:00<b>Workflow</b></div>
+      <div class="body">
+        <h2>Prompt it, then direct it.</h2>
+        <div class="steps">
+          <div class="step"><h3>Describe it</h3><p>Type what you want in the agent panel. Your own Claude Code, Codex or OpenCode login does the work. Cheap models like Haiku cost cents per animation.</p></div>
+          <div class="step"><h3>Watch it build</h3><p>The agent edits real layers through OpenEffects' MCP tools, renders frames to check its own work, and you see every change live.</p></div>
+          <div class="step"><h3>Finish by hand</h3><p>Drag keyframes, shape easing in the graph editor, snap to beat markers, undo any AI turn. Then export.</p></div>
+        </div>
+      </div>
+    </section>
+    <section class="clip" id="formats">
+      <div class="stamp">00:16:00<b>Formats</b></div>
+      <div class="body">
+        <h2>One project, every screen.</h2>
+        <div class="phone-row">
+          <div class="phone"><video src="media/launch-vertical.mp4" autoplay muted loop playsinline preload="metadata" aria-label="The 9:16 cut of the reel"></video></div>
+          <div style="display:grid;gap:18px;min-width:0">
+            <p style="margin:0;color:var(--muted);max-width:52ch">The vertical cut is a second composition that nests the whole 16:9 reel as a precomp and frames it for phones. No duplicated work: change a word in a scene and both versions update.</p>
+            <div class="formats">
+              <span class="fmt">MP4<small>H.264 + AAC</small></span>
+              <span class="fmt">MOV<small>ProRes 4444, alpha</small></span>
+              <span class="fmt">WebM<small>VP9, alpha</small></span>
+              <span class="fmt">GIF</span>
+              <span class="fmt">PNG<small>sequence</small></span>
+              <span class="fmt">Lottie<small>JSON</small></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="clip" id="compare">
+      <div class="stamp">00:20:00<b>Compare</b></div>
+      <div class="body">
+        <h2>Same idea as Claude Motion. Open to everyone.</h2>
+        <p>Claude Motion showed that AI motion graphics should be code, not generated footage: every frame exact, every detail changeable. OpenEffects agrees, and runs that idea on any agent, any plan, on your own machine.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th scope="col"></th><th scope="col">OpenEffects</th><th scope="col">Claude Motion</th></tr></thead>
+            <tbody>
+              <tr><td>Price and plans</td><td>Free and open source (MIT)</td><td>Claude Team and Enterprise plans (beta)</td></tr>
+              <tr><td>AI</td><td>Claude Code, Codex, OpenCode (free and local models), any MCP client</td><td>Claude</td></tr>
+              <tr><td>Where it runs</td><td>Your machine; projects are JSON in your git repo</td><td>Inside Claude</td></tr>
+              <tr><td>Editing</td><td>Prompts and a full editor: timeline, keyframes, graph and ease editors</td><td>By asking Claude</td></tr>
+              <tr><td>Export</td><td>MP4, ProRes and WebM with alpha, GIF, PNG, Lottie</td><td>MP4</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note">Claude Motion details are from Anthropic's help center and pricing page, October 2026. OpenEffects runs on your existing Claude Code login, so you can use both.</p>
+      </div>
+    </section>
+    <section class="clip" id="lottie-demo">
+      <div class="stamp">00:28:00<b>End card</b></div>
+      <div class="body">
+        <h2>That end card is also 62 KB of Lottie.</h2>
+        <p>Below is not a video. It is the reel's last scene, exported by OpenEffects as a Lottie file and played by <strong>lottie-web</strong> in your browser, the same player websites and apps use. Shapes, trim paths, per-letter text animation and easing all survive the trip.</p>
+        <div class="split">
+          <div class="stage">
+            <div class="lottie-box" id="lottie-box" aria-label="End card playing as Lottie"></div>
+            <div class="stage-foot"><button class="play" id="replay" type="button">Replay</button><span class="tc" id="lottie-tc">frame 0</span><span>end-card.json · 120 frames · vector</span></div>
+          </div>
+          <ul class="facts">
+            <li><b>Export</b><span>Any composition to Lottie JSON. Bezier easing carries over; elastic, bounce, behaviors and text animators are baked into keyframes.</span></li>
+            <li><b>Import</b><span>Drop an After Effects export on the viewer and get editable layers: shapes, path morphs, curved motion, masks, mattes, text and precomps.</span></li>
+            <li><b>Checked</b><span>Exports match OpenEffects' own renders in lottie-web, and real After Effects exports import within a few percent of it.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+    <section class="clip" id="start">
+      <div class="stamp">00:31:00<b>Get started</b></div>
+      <div class="body">
+        <h2>Running in two minutes.</h2>
+        <div class="terminal" id="terminal"><span class="c"># needs Node 20+, pnpm, ffmpeg and one agent CLI (claude, codex or opencode)</span>
+git clone https://github.com/PrisacariuRobert/OpenEffects && cd OpenEffects
+pnpm install && pnpm build:web
+pnpm oe init ~/my-animation
+pnpm oe dev ~/my-animation        <span class="c"># opens the editor</span>
+pnpm oe import loader.json ~/lottie  <span class="c"># or start from a Lottie file</span></div>
+        <div><button class="btn primary" type="button" data-copy="terminal" id="copy-term">Copy commands</button></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>OpenEffects is created and maintained by <a href="https://github.com/PrisacariuRobert">@PrisacariuRobert</a>. MIT license.</p>
+    <p>Independent project, not affiliated with Anthropic or Adobe. Claude and Claude Motion are trademarks of Anthropic; After Effects is a trademark of Adobe.</p>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie.min.js"></script>
+<script>
+  // Reel scrubber with the scene markers the reel was cut to.
+  const MARKERS = [[0, "describe"], [4, "builds"], [8, "finish"], [12, "beat"], [16, "formats"], [20, "agents"], [24, "free"], [28, "end"]];
+  const DUR = 32, FPS = 30;
+  const video = document.getElementById("reel");
+  const track = document.getElementById("track");
+  const fill = document.getElementById("fill");
+  const head = document.getElementById("head");
+  const tc = document.getElementById("tc");
+  const playBtn = document.getElementById("play");
+  const soundBtn = document.getElementById("sound");
+  const fmt = (t) => {
+    const s = Math.floor(t), f = Math.floor((t - s) * FPS);
+    return `00:${String(s).padStart(2, "0")}:${String(f).padStart(2, "0")}`;
+  };
+  for (const [t, label] of MARKERS) {
+    const b = document.createElement("button");
+    b.className = "kf";
+    b.type = "button";
+    b.style.left = `${(t / DUR) * 100}%`;
+    b.setAttribute("aria-label", `Jump to ${label} at ${t} seconds`);
+    b.innerHTML = `<span>${label}</span>`;
+    b.addEventListener("click", (e) => { e.stopPropagation(); video.currentTime = t; video.play().catch(() => {}); });
+    track.appendChild(b);
+  }
+  const render = () => {
+    const t = video.currentTime || 0;
+    const p = Math.min(1, t / DUR) * 100;
+    fill.style.width = p + "%";
+    head.style.left = p + "%";
+    tc.textContent = fmt(t);
+    track.setAttribute("aria-valuenow", t.toFixed(1));
+    requestAnimationFrame(render);
+  };
+  requestAnimationFrame(render);
+  const seekTo = (clientX) => {
+    const r = track.getBoundingClientRect();
+    video.currentTime = Math.max(0, Math.min(1, (clientX - r.left) / r.width)) * DUR;
+  };
+  track.addEventListener("pointerdown", (e) => {
+    seekTo(e.clientX);
+    const move = (ev) => seekTo(ev.clientX);
+    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  });
+  track.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight") video.currentTime = Math.min(DUR, video.currentTime + 1);
+    if (e.key === "ArrowLeft") video.currentTime = Math.max(0, video.currentTime - 1);
+  });
+  playBtn.addEventListener("click", () => (video.paused ? video.play().catch(() => {}) : video.pause()));
+  video.addEventListener("play", () => (playBtn.textContent = "Pause"));
+  video.addEventListener("pause", () => (playBtn.textContent = "Play"));
+  soundBtn.addEventListener("click", () => {
+    video.muted = !video.muted;
+    soundBtn.textContent = video.muted ? "Sound on" : "Sound off";
+    if (!video.muted) video.play().catch(() => {});
+  });
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { video.removeAttribute("autoplay"); video.pause(); }
+
+  // The end card, as Lottie.
+  const box = document.getElementById("lottie-box");
+  const lottieTc = document.getElementById("lottie-tc");
+  if (window.lottie && typeof window.lottie.loadAnimation === "function") {
+    const anim = lottie.loadAnimation({ container: box, renderer: "svg", loop: false, autoplay: true, path: "media/end-card.json" });
+    anim.addEventListener("enterFrame", (e) => (lottieTc.textContent = `frame ${Math.floor(e.currentTime)}`));
+    document.getElementById("replay").addEventListener("click", () => anim.goToAndPlay(0, true));
+    new IntersectionObserver((entries) => entries.forEach((en) => en.isIntersecting && anim.goToAndPlay(0, true)), { threshold: 0.5 }).observe(box);
+  } else {
+    lottieTc.textContent = "Lottie player could not load";
+  }
+
+  // Copy buttons.
+  document.querySelectorAll("[data-copy]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const el = document.getElementById(btn.dataset.copy);
+      const text = el.innerText.split("\n").filter((l) => !l.trim().startsWith("#")).map((l) => l.replace(/\s+#.*$/, "")).join("\n").trim();
+      const label = btn.textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = "Copied";
+      } catch {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const sel = getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        btn.textContent = "Selected, press ⌘C";
+      }
+      setTimeout(() => (btn.textContent = label), 1800);
+    });
+  });
+</script>
+
+</body>
+</html>

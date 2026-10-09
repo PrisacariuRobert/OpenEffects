@@ -68,6 +68,15 @@ describe.skipIf(!hasFfmpeg)("media", () => {
     for (const t of b.beats) expect(Math.min(t % 0.5, 0.5 - (t % 0.5))).toBeLessThan(0.005); // on the clicks
   });
 
+  it("keeps the beat grid exact when the music starts late after a stray hit", async () => {
+    // A lone hit at 0.2 s, silence, then 120 BPM clicks from 4 s (like a soft intro before the drop).
+    const file = path.join(dir, "late-clicks.wav");
+    ff("-f", "lavfi", "-i", "aevalsrc=if(lt(abs(t-0.2)\\,0.03)\\,0.5*sin(2*PI*300*t)\\,0)+if(gte(t\\,4)*lt(mod(t\\,0.5)\\,0.04)\\,0.9*sin(2*PI*880*t)*exp(-60*mod(t\\,0.5))\\,0):s=44100:d=12", "-c:a", "pcm_s16le", file);
+    const b = await detectBeats(file);
+    expect(b.bpm).toBeCloseTo(120, 0);
+    for (const t of b.beats.filter((x) => x >= 4)) expect(Math.min(t % 0.5, 0.5 - (t % 0.5))).toBeLessThan(0.01);
+  });
+
   it("computes waveform peaks", async () => {
     const w = await waveform(path.join(dir, "clicks.wav"), 50);
     expect(w.peaks.length).toBeGreaterThan(290);

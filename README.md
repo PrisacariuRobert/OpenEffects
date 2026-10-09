@@ -9,9 +9,17 @@ and it runs on your machine.
 
 Created and maintained by [@PrisacariuRobert](https://github.com/PrisacariuRobert).
 
+![The OpenEffects launch reel, made in OpenEffects](docs/media/launch.gif)
+
+*The OpenEffects launch reel, made entirely in OpenEffects: 10 compositions, 145 layers, an original soundtrack and
+scene cuts on its beat markers, with a 16:9 and a 9:16 cut from one project. Watch it with sound:
+[16:9 MP4](site/media/launch.mp4) · [9:16 MP4](site/media/launch-vertical.mp4) · the end card as
+[Lottie JSON](site/media/end-card.json) · project in [examples/launch-reel](examples/launch-reel). A landing page
+built around it is in [site/](site/index.html).*
+
 ![A logo reveal made by Claude Code in OpenEffects from one prompt](docs/media/nebula.gif)
 
-*The animation above was made by Claude Code in OpenEffects from a single prompt (29 seconds, $0.25), see [examples/nebula](examples/nebula).*
+*This logo reveal was made by Claude Code in OpenEffects from a single prompt (29 seconds, $0.25), see [examples/nebula](examples/nebula).*
 
 ![The OpenEffects editor](docs/media/editor.png)
 

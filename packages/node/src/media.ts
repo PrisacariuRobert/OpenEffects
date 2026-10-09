@@ -260,21 +260,42 @@ export function analyzeBeats(pcm: Float32Array, rate: number): BeatInfo {
       bestLag = lag;
     }
   }
-  // Refine with the onsets themselves: number each onset by its beat index at the rough
-  // period, then fit time = phase + index × period by least squares (exact tempo and phase).
+  // Refine with the onsets themselves. Anchor the grid on the onset most others agree with
+  // (stray hits, e.g. a soft intro, must not set the phase), number every onset by its beat
+  // index, and fit time = phase + index × period by least squares, rejecting outliers.
   const approx = bestLag * hopSec;
-  const pts = onsets.map((t) => ({ t, k: Math.round((t - onsets[0]) / approx) })).filter((p) => Math.abs(p.t - onsets[0] - p.k * approx) < approx * 0.25);
+  const inliers = (phase: number, period: number, tol: number) =>
+    onsets.map((t) => ({ t, k: Math.round((t - phase) / period) })).filter((p) => Math.abs(p.t - phase - p.k * period) < period * tol);
+  // The autocorrelation lag is whole analysis frames (~23 ms), too coarse over many beats:
+  // search periods within ±4% and anchors for the grid that the most onsets agree with.
   let period = approx;
   let phase = onsets[0];
-  if (pts.length >= 3) {
+  let agree = -1;
+  for (let p = approx * 0.96; p <= approx * 1.04; p += 0.0005) {
+    for (const anchor of onsets) {
+      let score = 0;
+      for (const t of onsets) {
+        const r = (t - anchor) / p;
+        const d = (r - Math.round(r)) * p; // seconds off the grid
+        score += Math.exp(-((d / 0.02) ** 2));
+      }
+      if (score > agree) {
+        agree = score;
+        period = p;
+        phase = anchor;
+      }
+    }
+  }
+  for (const tol of [0.2, 0.12]) {
+    const pts = inliers(phase, period, tol);
+    if (pts.length < 3) break;
     const mk = pts.reduce((a, p) => a + p.k, 0) / pts.length;
     const mt = pts.reduce((a, p) => a + p.t, 0) / pts.length;
     const cov = pts.reduce((a, p) => a + (p.k - mk) * (p.t - mt), 0);
     const vk = pts.reduce((a, p) => a + (p.k - mk) ** 2, 0);
-    if (vk > 0) {
-      period = cov / vk;
-      phase = mt - period * mk;
-    }
+    if (vk <= 0) break;
+    period = cov / vk;
+    phase = mt - period * mk;
   }
   const bpm = Math.round((60 / period) * 10) / 10;
   const beats: number[] = [];
