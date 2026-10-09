@@ -197,7 +197,7 @@ export const EllipseLayer = z.strictObject({
 export const PathLayer = z.strictObject({
   ...layerBase,
   type: z.literal("path"),
-  d: z.string().min(1).describe("SVG path data, in layer coordinates"),
+  d: anim(z.string().min(1)).describe("SVG path data, in layer coordinates. Keyframe it to morph between shapes: every keyframe needs the same commands and number of points"),
   fill: Fill.optional(),
   stroke: Stroke.optional(),
   trim: Trim.optional().describe("Animate end 0→100 to draw a line on"),
@@ -277,6 +277,7 @@ export const CompLayer = z.strictObject({
   type: z.literal("comp"),
   comp: z.string().describe("Id of another composition to nest (precomp)"),
   timeOffset: z.number().optional().describe("Seconds. Nested time = time - in + timeOffset"),
+  timeRemap: Num.optional().describe("Seconds of the nested composition to show (animatable: freeze frames, slow motion, reverse). Overrides timeOffset"),
 });
 
 export const Layer = z.discriminatedUnion("type", [

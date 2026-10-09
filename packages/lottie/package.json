@@ -1,0 +1,12 @@
+{
+  "name": "@openeffects/lottie",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "description": "Lottie (bodymovin JSON) import and export for OpenEffects projects",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": {
+    "@openeffects/engine": "workspace:*",
+    "@openeffects/schema": "workspace:*"
+  }
+}

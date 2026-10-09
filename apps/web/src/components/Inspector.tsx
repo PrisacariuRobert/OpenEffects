@@ -744,7 +744,11 @@ function LayerInspector({ ctx, comp, editor, onSelect }: { ctx: Ctx; comp: Compo
       {l.type === "path" && (
         <Section title="Path">
           <Row label="SVG d">
-            <TextField multiline value={l.d} onChange={(v) => ctx.edit((x) => setIn(x, "d", v))} />
+            {typeof l.d === "string" ? (
+              <TextField multiline value={l.d} onChange={(v) => ctx.edit((x) => setIn(x, "d", v))} />
+            ) : (
+              <span className="muted small">Shape morph · {l.d.keyframes.length} keyframes (edit in JSON)</span>
+            )}
           </Row>
           <PropRow ctx={ctx} label="Trim start" path="trim.start" kind="number" fallback={0} min={0} max={100} suffix="%" />
           <PropRow ctx={ctx} label="Trim end" path="trim.end" kind="number" fallback={100} min={0} max={100} suffix="%" />

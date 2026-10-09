@@ -4,10 +4,14 @@
   "type": "module",
   "private": true,
   "license": "MIT",
-  "scripts": { "build": "vite build", "dev": "vite" },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite"
+  },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",
     "@openeffects/engine": "workspace:*",
+    "@openeffects/lottie": "workspace:*",
     "@openeffects/schema": "workspace:*",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"

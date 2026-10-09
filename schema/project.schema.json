@@ -344,9 +344,15 @@
               "const": "path"
             },
             "d": {
-              "type": "string",
-              "minLength": 1,
-              "description": "SVG path data, in layer coordinates"
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/__schema66"
+                },
+                {
+                  "$ref": "#/$defs/__schema67"
+                }
+              ],
+              "description": "SVG path data, in layer coordinates. Keyframe it to morph between shapes: every keyframe needs the same commands and number of points"
             },
             "fill": {
               "$ref": "#/$defs/__schema64"
@@ -356,7 +362,7 @@
             },
             "trim": {
               "description": "Animate end 0→100 to draw a line on",
-              "$ref": "#/$defs/__schema66"
+              "$ref": "#/$defs/__schema69"
             }
           },
           "required": [
@@ -415,11 +421,11 @@
               "properties": {
                 "family": {
                   "description": "Default Inter",
-                  "$ref": "#/$defs/__schema67"
+                  "$ref": "#/$defs/__schema70"
                 },
                 "weight": {
                   "description": "100-900. Default 700",
-                  "$ref": "#/$defs/__schema68"
+                  "$ref": "#/$defs/__schema71"
                 },
                 "style": {
                   "type": "string",
@@ -444,7 +450,7 @@
             },
             "align": {
               "description": "Default center",
-              "$ref": "#/$defs/__schema69"
+              "$ref": "#/$defs/__schema72"
             },
             "letterSpacing": {
               "description": "px. Default 0",
@@ -452,31 +458,31 @@
             },
             "lineHeight": {
               "description": "Multiple of font size. Default 1.2",
-              "$ref": "#/$defs/__schema70"
+              "$ref": "#/$defs/__schema73"
             },
             "animator": {
               "type": "object",
               "properties": {
                 "by": {
-                  "$ref": "#/$defs/__schema71"
+                  "$ref": "#/$defs/__schema74"
                 },
                 "order": {
-                  "$ref": "#/$defs/__schema73"
+                  "$ref": "#/$defs/__schema76"
                 },
                 "delay": {
-                  "$ref": "#/$defs/__schema75"
+                  "$ref": "#/$defs/__schema78"
                 },
                 "stagger": {
-                  "$ref": "#/$defs/__schema77"
+                  "$ref": "#/$defs/__schema80"
                 },
                 "duration": {
-                  "$ref": "#/$defs/__schema79"
+                  "$ref": "#/$defs/__schema82"
                 },
                 "ease": {
-                  "$ref": "#/$defs/__schema81"
+                  "$ref": "#/$defs/__schema84"
                 },
                 "from": {
-                  "$ref": "#/$defs/__schema82"
+                  "$ref": "#/$defs/__schema85"
                 }
               },
               "required": [
@@ -599,19 +605,19 @@
             },
             "loop": {
               "description": "Loop the clip when it reaches its end",
-              "$ref": "#/$defs/__schema91"
-            },
-            "trimStart": {
-              "$ref": "#/$defs/__schema92"
-            },
-            "speed": {
               "$ref": "#/$defs/__schema94"
             },
+            "trimStart": {
+              "$ref": "#/$defs/__schema95"
+            },
+            "speed": {
+              "$ref": "#/$defs/__schema97"
+            },
             "volume": {
-              "$ref": "#/$defs/__schema96"
+              "$ref": "#/$defs/__schema99"
             },
             "muted": {
-              "$ref": "#/$defs/__schema97"
+              "$ref": "#/$defs/__schema100"
             }
           },
           "required": [
@@ -666,16 +672,16 @@
               "description": "Path relative to the project folder, e.g. assets/music.mp3"
             },
             "trimStart": {
-              "$ref": "#/$defs/__schema92"
+              "$ref": "#/$defs/__schema95"
             },
             "speed": {
-              "$ref": "#/$defs/__schema94"
+              "$ref": "#/$defs/__schema97"
             },
             "volume": {
-              "$ref": "#/$defs/__schema96"
+              "$ref": "#/$defs/__schema99"
             },
             "muted": {
-              "$ref": "#/$defs/__schema97"
+              "$ref": "#/$defs/__schema100"
             }
           },
           "required": [
@@ -778,7 +784,11 @@
             },
             "timeOffset": {
               "description": "Seconds. Nested time = time - in + timeOffset",
-              "$ref": "#/$defs/__schema98"
+              "$ref": "#/$defs/__schema101"
+            },
+            "timeRemap": {
+              "description": "Seconds of the nested composition to show (animatable: freeze frames, slow motion, reverse). Overrides timeOffset",
+              "$ref": "#/$defs/__schema31"
             }
           },
           "required": [
@@ -1692,6 +1702,49 @@
       "additionalProperties": false
     },
     "__schema66": {
+      "type": "string",
+      "minLength": 1
+    },
+    "__schema67": {
+      "type": "object",
+      "properties": {
+        "keyframes": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/__schema68"
+          },
+          "description": "Keyframes, sorted by t"
+        }
+      },
+      "required": [
+        "keyframes"
+      ],
+      "additionalProperties": false
+    },
+    "__schema68": {
+      "type": "object",
+      "properties": {
+        "t": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Time in seconds (composition time)"
+        },
+        "v": {
+          "$ref": "#/$defs/__schema66"
+        },
+        "ease": {
+          "description": "Easing used from this keyframe to the next. Default easeInOut",
+          "$ref": "#/$defs/__schema24"
+        }
+      },
+      "required": [
+        "t",
+        "v"
+      ],
+      "additionalProperties": false
+    },
+    "__schema69": {
       "type": "object",
       "properties": {
         "start": {
@@ -1705,13 +1758,13 @@
       },
       "additionalProperties": false
     },
-    "__schema67": {
+    "__schema70": {
       "type": "string"
     },
-    "__schema68": {
+    "__schema71": {
       "type": "number"
     },
-    "__schema69": {
+    "__schema72": {
       "type": "string",
       "enum": [
         "left",
@@ -1719,15 +1772,15 @@
         "right"
       ]
     },
-    "__schema70": {
+    "__schema73": {
       "type": "number",
       "exclusiveMinimum": 0
     },
-    "__schema71": {
+    "__schema74": {
       "description": "Default character",
-      "$ref": "#/$defs/__schema72"
+      "$ref": "#/$defs/__schema75"
     },
-    "__schema72": {
+    "__schema75": {
       "type": "string",
       "enum": [
         "character",
@@ -1735,11 +1788,11 @@
         "line"
       ]
     },
-    "__schema73": {
+    "__schema76": {
       "description": "Default forward",
-      "$ref": "#/$defs/__schema74"
+      "$ref": "#/$defs/__schema77"
     },
-    "__schema74": {
+    "__schema77": {
       "type": "string",
       "enum": [
         "forward",
@@ -1748,111 +1801,111 @@
         "random"
       ]
     },
-    "__schema75": {
+    "__schema78": {
       "description": "Seconds after the layer's in point. Default 0",
-      "$ref": "#/$defs/__schema76"
+      "$ref": "#/$defs/__schema79"
     },
-    "__schema76": {
+    "__schema79": {
       "type": "number"
     },
-    "__schema77": {
+    "__schema80": {
       "description": "Seconds between units. Default 0.04",
-      "$ref": "#/$defs/__schema78"
+      "$ref": "#/$defs/__schema81"
     },
-    "__schema78": {
+    "__schema81": {
       "type": "number",
       "minimum": 0
     },
-    "__schema79": {
+    "__schema82": {
       "description": "Seconds each unit takes. Default 0.6",
-      "$ref": "#/$defs/__schema80"
+      "$ref": "#/$defs/__schema83"
     },
-    "__schema80": {
+    "__schema83": {
       "type": "number",
       "exclusiveMinimum": 0
     },
-    "__schema81": {
+    "__schema84": {
       "description": "Default easeOutCubic",
       "$ref": "#/$defs/__schema24"
     },
-    "__schema82": {
+    "__schema85": {
       "type": "object",
       "properties": {
         "opacity": {
-          "$ref": "#/$defs/__schema83"
+          "$ref": "#/$defs/__schema86"
         },
         "offset": {
-          "$ref": "#/$defs/__schema84"
-        },
-        "scale": {
-          "$ref": "#/$defs/__schema85"
-        },
-        "rotation": {
           "$ref": "#/$defs/__schema87"
         },
+        "scale": {
+          "$ref": "#/$defs/__schema88"
+        },
+        "rotation": {
+          "$ref": "#/$defs/__schema90"
+        },
         "blur": {
-          "$ref": "#/$defs/__schema89"
+          "$ref": "#/$defs/__schema92"
         }
       },
       "additionalProperties": false,
       "description": "Start state of each unit; units animate to their normal state"
     },
-    "__schema83": {
-      "type": "number"
-    },
-    "__schema84": {
-      "description": "Pixels each unit starts away from its rest position",
-      "$ref": "#/$defs/__schema20"
-    },
-    "__schema85": {
-      "description": "Percent",
-      "$ref": "#/$defs/__schema86"
-    },
     "__schema86": {
       "type": "number"
     },
     "__schema87": {
-      "description": "Degrees",
-      "$ref": "#/$defs/__schema88"
+      "description": "Pixels each unit starts away from its rest position",
+      "$ref": "#/$defs/__schema20"
     },
     "__schema88": {
-      "type": "number"
+      "description": "Percent",
+      "$ref": "#/$defs/__schema89"
     },
     "__schema89": {
-      "description": "px",
-      "$ref": "#/$defs/__schema90"
-    },
-    "__schema90": {
       "type": "number"
     },
+    "__schema90": {
+      "description": "Degrees",
+      "$ref": "#/$defs/__schema91"
+    },
     "__schema91": {
-      "type": "boolean"
+      "type": "number"
     },
     "__schema92": {
-      "description": "Seconds into the media file where the layer starts playing. Default 0",
+      "description": "px",
       "$ref": "#/$defs/__schema93"
     },
     "__schema93": {
+      "type": "number"
+    },
+    "__schema94": {
+      "type": "boolean"
+    },
+    "__schema95": {
+      "description": "Seconds into the media file where the layer starts playing. Default 0",
+      "$ref": "#/$defs/__schema96"
+    },
+    "__schema96": {
       "type": "number",
       "minimum": 0
     },
-    "__schema94": {
+    "__schema97": {
       "description": "Playback speed. Default 1",
-      "$ref": "#/$defs/__schema95"
+      "$ref": "#/$defs/__schema98"
     },
-    "__schema95": {
+    "__schema98": {
       "type": "number",
       "exclusiveMinimum": 0,
       "maximum": 16
     },
-    "__schema96": {
+    "__schema99": {
       "description": "0-100 (animatable, e.g. for fades). Default 100",
       "$ref": "#/$defs/__schema31"
     },
-    "__schema97": {
+    "__schema100": {
       "type": "boolean"
     },
-    "__schema98": {
+    "__schema101": {
       "type": "number"
     }
   }

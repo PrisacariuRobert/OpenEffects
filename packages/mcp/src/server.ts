@@ -27,7 +27,9 @@ import {
 import {
   ProjectValidationError,
   detectBeats,
+  exportLottieFile,
   exportVideo,
+  importLottieFile,
   loadProject,
   missingAssets,
   renderContactSheet,
@@ -35,6 +37,7 @@ import {
   saveProject,
   type ExportFormat,
 } from "@openeffects/node";
+import { addAsPrecomp } from "@openeffects/lottie";
 
 const text = (t: string): CallToolResult => ({ content: [{ type: "text", text: t }] });
 const fail = (t: string): CallToolResult => ({ content: [{ type: "text", text: t }], isError: true });
@@ -339,10 +342,11 @@ export function createMcpServer(projectFile: string): McpServer {
   server.registerTool(
     "oe_export",
     {
-      title: "Export video",
-      description: "Render the composition to a file in renders/. Only export when the user asks for it.",
+      title: "Export video or Lottie",
+      description:
+        "Render the composition to a file in renders/. Only export when the user asks for it. 'lottie' writes a Lottie JSON (for web/iOS/Android apps); its notes list anything Lottie can't represent.",
       inputSchema: {
-        format: z.enum(["mp4", "webm", "gif", "mov"]).optional().describe("Default mp4. webm/mov keep transparency"),
+        format: z.enum(["mp4", "webm", "gif", "mov", "lottie"]).optional().describe("Default mp4. webm/mov keep transparency. lottie = vector JSON for apps"),
         scale: z.number().min(0.1).max(2).optional().describe("Resolution multiplier. Default 1 (0.5 for gif)"),
         compId,
       },
@@ -351,11 +355,51 @@ export function createMcpServer(projectFile: string): McpServer {
       try {
         const project = loadProject(projectFile);
         const comp = getComp(project, compId);
+        if (format === "lottie") {
+          const out = path.join(projectDir, "renders", `${comp.id}-${new Date().toISOString().replace(/[:.]/g, "-")}.json`);
+          const r = await exportLottieFile(project, projectDir, { compId, out });
+          return text(`Exported Lottie (${(r.bytes / 1024).toFixed(1)} KB) to ${path.relative(projectDir, r.out)}${r.warnings.length ? `\nNotes:\n- ${r.warnings.join("\n- ")}` : ""}`);
+        }
         const fmt: ExportFormat = format ?? "mp4";
         const out = path.join(projectDir, "renders", `${comp.id}-${new Date().toISOString().replace(/[:.]/g, "-")}.${fmt}`);
         fs.mkdirSync(path.dirname(out), { recursive: true });
         const r = await exportVideo(project, projectDir, { out, format: fmt, compId, scale: scale ?? (fmt === "gif" ? 0.5 : 1) });
         return text(`Exported ${r.frames} frames to ${path.relative(projectDir, r.file)}`);
+      } catch (e) {
+        return fail(describeError(e));
+      }
+    },
+  );
+
+  server.registerTool(
+    "oe_import_lottie",
+    {
+      title: "Import Lottie",
+      description:
+        "Import a Lottie JSON file (path relative to the project, e.g. assets/loader.json) as an editable precomp layer: shapes, text, images, keyframes and easing become normal OpenEffects layers. Use replace to make it the whole project.",
+      inputSchema: {
+        file: z.string().describe("Path of the .json file, relative to the project folder"),
+        replace: z.boolean().optional().describe("Replace the whole project instead of adding a precomp layer. Default false"),
+        compId,
+      },
+    },
+    async ({ file, replace, compId }) => {
+      try {
+        const src = path.resolve(projectDir, file);
+        if (!src.startsWith(projectDir + path.sep)) return fail("The file must be inside the project folder.");
+        if (!fs.existsSync(src)) return fail(`No file at ${file}`);
+        const { project: imported, warnings } = importLottieFile(src, projectDir);
+        const notes = warnings.length ? `\nNotes:\n- ${warnings.join("\n- ")}` : "";
+        if (replace) return edit(() => imported, (p) => `Imported ${file} as the project.${notes}\n${summarize(p)}`);
+        let added = "";
+        return edit(
+          (p) => {
+            const r = addAsPrecomp(p, imported, { compId, name: path.basename(file, path.extname(file)) });
+            added = `layer "${r.layerId}" (composition "${r.compId}")`;
+            return r.project;
+          },
+          (p) => `Imported ${file} as ${added}.${notes}\n${summarize(p)}`,
+        );
       } catch (e) {
         return fail(describeError(e));
       }

@@ -46,7 +46,7 @@ export interface Checkpoint {
   createdAt: number;
 }
 
-export type ExportState = { state: "progress" | "done" | "error"; progress?: number; url?: string; error?: string };
+export type ExportState = { state: "progress" | "done" | "error"; progress?: number; url?: string; error?: string; warnings?: string[] };
 
 /** Messages pushed to clients over the WebSocket at /ws. */
 export type ServerMessage =

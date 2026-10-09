@@ -11,8 +11,47 @@ function lerpValue<T>(a: T, b: T, p: number): T {
   if (Array.isArray(a) && Array.isArray(b)) return a.map((x, i) => lerpValue(x, b[i] ?? x, p)) as T;
   if (typeof a === "number" && Array.isArray(b)) return lerpValue(b.map(() => a) as T, b, p);
   if (Array.isArray(a) && typeof b === "number") return lerpValue(a, a.map(() => b) as T, p);
-  if (typeof a === "string" && typeof b === "string" && isColor(a) && isColor(b)) return lerpColor(a, b, p) as T;
+  if (typeof a === "string" && typeof b === "string") {
+    if (isColor(a) && isColor(b)) return lerpColor(a, b, p) as T;
+    const morph = lerpPath(a, b, p);
+    if (morph !== null) return morph as T;
+  }
   return p < 1 ? a : b;
+}
+
+const NUM = /-?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?/gi;
+const pathCache = new Map<string, { shape: string; nums: number[] } | null>();
+
+/** Splits path data into its command skeleton and numbers (null if it isn't path data). */
+function parsePath(d: string): { shape: string; nums: number[] } | null {
+  let r = pathCache.get(d);
+  if (r !== undefined) return r;
+  if (!/^\s*[Mm]/.test(d) || /[^MmLlHhVvCcSsQqTtAaZz0-9eE.,+\-\s]/.test(d)) r = null;
+  else {
+    const nums: number[] = [];
+    const shape = d.replace(NUM, (m) => {
+      nums.push(parseFloat(m));
+      return "#";
+    }).replace(/[\s,]+/g, " ").trim();
+    r = { shape, nums };
+  }
+  if (pathCache.size > 2000) pathCache.clear();
+  pathCache.set(d, r);
+  return r;
+}
+
+/** Morphs between two SVG paths with the same commands; null when they don't match. */
+export function lerpPath(a: string, b: string, p: number): string | null {
+  const pa = parsePath(a);
+  const pb = parsePath(b);
+  if (!pa || !pb || pa.shape !== pb.shape || pa.nums.length !== pb.nums.length) return null;
+  let i = 0;
+  // Arc flags stay as they are: only coordinates and radii morph.
+  return pa.shape.replace(/#/g, () => {
+    const v = pa.nums[i] + (pb.nums[i] - pa.nums[i]) * p;
+    i++;
+    return String(Math.round(v * 1000) / 1000);
+  });
 }
 
 /** Value of an animatable property at composition time `t`. */

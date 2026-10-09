@@ -2,8 +2,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import {
+  exportLottieFile,
   exportVideo,
+  importLottieFile,
   initProject,
+  saveProject,
   readProject,
   renderContactSheet,
   renderFramePng,
@@ -12,6 +15,7 @@ import {
 } from "@openeffects/node";
 import { mcpLaunch } from "./mcp-launch.ts";
 import { getComp } from "@openeffects/schema";
+import { addAsPrecomp } from "@openeffects/lottie";
 
 const HELP = `OpenEffects: open-source motion graphics, driven by your AI agent
 
@@ -23,7 +27,9 @@ Commands:
   ask [dir] "<prompt>"       Let an agent edit the project from the terminal
                              --agent claude|codex|opencode  --model <id> (Claude default: claude-haiku-5-5)
                              --new (start a fresh conversation)
-  render [dir]               Export video   --out file --format mp4|webm|gif|mov|png --comp id --scale 1
+  render [dir]               Export   --out file --format mp4|webm|gif|mov|png|lottie --comp id --scale 1
+  import <file.json> [dir]   Import a Lottie animation: a new project in [dir], or added as a
+                             precomp layer to an existing one (--replace to overwrite it)
   frame [dir]                Render one frame to PNG   --time 1.5 --out frame.png --width 1920
   sheet [dir]                Render a contact sheet PNG   --count 8 --out sheet.png
   validate [dir]             Check the project file and print errors
@@ -63,6 +69,7 @@ async function main(): Promise<void> {
       agent: { type: "string", short: "a" },
       model: { type: "string", short: "m" },
       new: { type: "boolean" },
+      replace: { type: "boolean" },
     },
   });
   const target = positionals[0];
@@ -125,7 +132,14 @@ async function main(): Promise<void> {
     case "render": {
       const { dir, project } = load(target);
       const comp = getComp(project, values.comp);
-      const format = (values.format ?? (values.out ? path.extname(values.out).slice(1) : "mp4")) as ExportFormat;
+      const requested = values.format ?? (values.out ? path.extname(values.out).slice(1) : "mp4");
+      if (requested === "lottie" || requested === "json") {
+        const r = await exportLottieFile(project, dir, { compId: comp.id, out: values.out ? path.resolve(values.out) : undefined });
+        console.log(`Wrote ${r.out} (Lottie, ${(r.bytes / 1024).toFixed(1)} KB)`);
+        for (const w of r.warnings) console.warn(`  note: ${w}`);
+        return;
+      }
+      const format = requested as ExportFormat;
       if (!["mp4", "webm", "gif", "mov", "png"].includes(format)) fail(`Unknown format "${format}"`);
       const out = path.resolve(values.out ?? path.join(dir, "renders", format === "png" ? comp.id : `${comp.id}.${format}`));
       const started = Date.now();
@@ -138,6 +152,30 @@ async function main(): Promise<void> {
       });
       process.stderr.write("\n");
       console.log(`Wrote ${r.file} (${r.frames} frames in ${((Date.now() - started) / 1000).toFixed(1)}s)`);
+      return;
+    }
+    case "import": {
+      const source = positionals[0];
+      if (!source || !fs.existsSync(source)) fail("Usage: oe import <file.json> [dir]");
+      const dir = path.resolve(positionals[1] ?? path.basename(source, path.extname(source)));
+      fs.mkdirSync(dir, { recursive: true });
+      const file = resolveProjectFile(dir);
+      const { project: imported, warnings } = importLottieFile(path.resolve(source), dir);
+      const exists = fs.existsSync(file);
+      if (!exists) {
+        initProject(dir, { project: imported });
+        console.log(`Created ${file} from ${path.basename(source)}`);
+      } else if (values.replace) {
+        saveProject(file, imported);
+        console.log(`Replaced ${file} with ${path.basename(source)}`);
+      } else {
+        const current = readProject(file);
+        if (!current.ok) fail(`${path.basename(file)} has errors:\n- ${current.errors.join("\n- ")}`);
+        const r = addAsPrecomp(current.project, imported, { compId: values.comp, name: path.basename(source, path.extname(source)) });
+        saveProject(file, r.project);
+        console.log(`Added ${path.basename(source)} to ${file} as layer "${r.layerId}" (composition "${r.compId}")`);
+      }
+      for (const w of warnings) console.warn(`  note: ${w}`);
       return;
     }
     case "frame": {

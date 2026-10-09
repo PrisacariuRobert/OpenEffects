@@ -419,7 +419,7 @@ export class NodeVideoSource {
     const comp: Composition = getComp(this.project, compId);
     for (const l of comp.layers) {
       if (!isActive(l, comp, t)) continue;
-      if (l.type === "comp") await this.prepare(t - (l.in ?? 0) + (l.timeOffset ?? 0), l.comp, depth + 1);
+      if (l.type === "comp") await this.prepare(l.timeRemap !== undefined ? sample(l.timeRemap, t, 0) : t - (l.in ?? 0) + (l.timeOffset ?? 0), l.comp, depth + 1);
       if (l.type !== "video") continue;
       const info = this.info.get(l.src);
       if (!info?.hasVideo) continue;

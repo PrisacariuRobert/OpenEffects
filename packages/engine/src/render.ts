@@ -219,7 +219,7 @@ function contentBounds(ctx: CanvasRenderingContext2D, frame: Frame, layer: Layer
       return inner ? box(inner.width, inner.height) : "empty";
     }
     case "path": {
-      const b = pathBounds(layer.d);
+      const b = pathBounds(sample(layer.d, t, "M0 0"));
       if (!b) return "unknown";
       const m = strokeMargin(layer.stroke ?? (layer.fill === undefined ? { color: "#fff" } : undefined)) * 2;
       return { x0: b.x0 - m, y0: b.y0 - m, x1: b.x1 + m, y1: b.y1 + m };
@@ -428,7 +428,8 @@ function drawContent(ctx: CanvasRenderingContext2D, frame: Frame, scene: Scene, 
       ctx.rect(0, 0, inner.width, inner.height);
       ctx.clip();
       frame.depth++;
-      renderComp(ctx, frame, inner, t - (layer.in ?? 0) + (layer.timeOffset ?? 0), m, viewW, viewH);
+      const innerT = layer.timeRemap !== undefined ? sample(layer.timeRemap, t, 0) : t - (layer.in ?? 0) + (layer.timeOffset ?? 0);
+      renderComp(ctx, frame, inner, innerT, m, viewW, viewH);
       frame.depth--;
       break;
     }
@@ -520,7 +521,8 @@ function pathLength(d: string): number {
 }
 
 function drawPath(ctx: CanvasRenderingContext2D, frame: Frame, layer: PathLayer, t: number): void {
-  const path = frame.env.createPath(layer.d);
+  const d = sample(layer.d, t, "M0 0");
+  const path = frame.env.createPath(d);
   const fill = layer.fill;
   if (fill !== undefined) {
     ctx.fillStyle = fillStyle(ctx, fill, t, 200, 200);
@@ -534,7 +536,7 @@ function drawPath(ctx: CanvasRenderingContext2D, frame: Frame, layer: PathLayer,
   const end = Math.min(100, Math.max(0, sample(layer.trim?.end, t, 100)));
   if (end <= start) return;
   if (start > 0 || end < 100) {
-    const total = pathLength(layer.d);
+    const total = pathLength(d);
     if (total <= 0) return;
     const visible = ((end - start) / 100) * total;
     ctx.setLineDash([visible, total * 2]);

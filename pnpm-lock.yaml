@@ -23,6 +23,9 @@ importers:
 
   apps/cli:
     dependencies:
+      '@openeffects/lottie':
+        specifier: workspace:*
+        version: link:../../packages/lottie
       '@openeffects/mcp':
         specifier: workspace:*
         version: link:../../packages/mcp
@@ -41,6 +44,9 @@ importers:
 
   apps/server:
     dependencies:
+      '@openeffects/lottie':
+        specifier: workspace:*
+        version: link:../../packages/lottie
       '@openeffects/node':
         specifier: workspace:*
         version: link:../../packages/node
@@ -69,6 +75,9 @@ importers:
       '@openeffects/engine':
         specifier: workspace:*
         version: link:../../packages/engine
+      '@openeffects/lottie':
+        specifier: workspace:*
+        version: link:../../packages/lottie
       '@openeffects/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -101,11 +110,23 @@ importers:
         specifier: ^2.1.0
         version: 2.1.0
 
+  packages/lottie:
+    dependencies:
+      '@openeffects/engine':
+        specifier: workspace:*
+        version: link:../engine
+      '@openeffects/schema':
+        specifier: workspace:*
+        version: link:../schema
+
   packages/mcp:
     dependencies:
       '@modelcontextprotocol/sdk':
         specifier: ^1.32.1
         version: 1.32.1(zod@4.6.5)
+      '@openeffects/lottie':
+        specifier: workspace:*
+        version: link:../lottie
       '@openeffects/node':
         specifier: workspace:*
         version: link:../node
@@ -127,6 +148,9 @@ importers:
       '@openeffects/engine':
         specifier: workspace:*
         version: link:../engine
+      '@openeffects/lottie':
+        specifier: workspace:*
+        version: link:../lottie
       '@openeffects/schema':
         specifier: workspace:*
         version: link:../schema

@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url";
 import { WebSocketServer, WebSocket } from "ws";
 import {
   ProjectValidationError,
+  exportLottieFile,
   exportVideo,
+  importLottieData,
   readProject,
   saveProject,
   writeAgentFiles,
@@ -111,11 +113,21 @@ export async function startServer(opts: ServerOptions): Promise<{ url: string; c
     }, 40);
   });
 
-  async function startExport(format: ExportFormat, compId?: string): Promise<void> {
+  async function startExport(format: ExportFormat | "lottie", compId?: string): Promise<void> {
     if (exporting) throw new HttpError(409, "An export is already running");
     if (!current.ok) throw new HttpError(422, "Fix the project errors before exporting");
     const project = current.project;
     const comp = getComp(project, compId);
+    if (format === "lottie") {
+      // Instant: no frames to render. Warnings list what Lottie can't represent.
+      const name = `${comp.id}-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+      exporting = new AbortController();
+      exportLottieFile(project, projectDir, { compId, out: path.join(projectDir, "renders", name) })
+        .then((r) => broadcast({ type: "export", state: "done", url: `/api/renders/${encodeURIComponent(name)}`, warnings: r.warnings }))
+        .catch((e: Error) => broadcast({ type: "export", state: "error", error: e.message }))
+        .finally(() => (exporting = undefined));
+      return;
+    }
     const name = `${comp.id}-${new Date().toISOString().replace(/[:.]/g, "-")}.${format}`;
     const out = path.join(projectDir, "renders", name);
     const controller = (exporting = new AbortController());
@@ -204,10 +216,22 @@ export async function startServer(opts: ServerOptions): Promise<{ url: string; c
       return sendJson(res, 200, { ok: true });
     }
     if (route === "POST /api/export") {
-      const { format = "mp4", compId } = (await readJson(req)) as { format?: ExportFormat; compId?: string };
-      if (!["mp4", "webm", "gif", "mov"].includes(format)) throw new HttpError(400, "Unsupported format");
+      const { format = "mp4", compId } = (await readJson(req)) as { format?: ExportFormat | "lottie"; compId?: string };
+      if (!["mp4", "webm", "gif", "mov", "lottie"].includes(format)) throw new HttpError(400, "Unsupported format");
       await startExport(format, compId);
       return sendJson(res, 202, { ok: true });
+    }
+    if (route === "POST /api/import/lottie") {
+      // Converts a Lottie file and stores its images in assets/. The editor merges the result
+      // into the project itself, so the import is one undoable step.
+      const name = (url.searchParams.get("name") ?? "lottie").replace(/\.[^.]+$/, "");
+      const json = await readJson(req);
+      try {
+        const { project, warnings } = importLottieData(json, projectDir, { name });
+        return sendJson(res, 200, { project, warnings });
+      } catch (e) {
+        throw new HttpError(422, (e as Error).message);
+      }
     }
     if (route === "POST /api/assets") {
       // Raw file upload (the editor's drag & drop), streamed to assets/ under a safe name.
