@@ -123,3 +123,12 @@ describe("layerGeometry", () => {
     expect(pointInQuad(g.quad, 59, 50)).toBe(false);
   });
 });
+
+describe("behaviors in the renderer", () => {
+  it("drift moves a layer over time without keyframes", async () => {
+    const p = project([{ id: "box", type: "rect", size: [10, 10], fill: "#ff0000", transform: { position: [20, 50] }, behaviors: [{ type: "drift", property: "transform.position", speed: [60, 0] }] }]);
+    const px = await pixels(p, 0.5); // 20 + 60 * 0.5 = 50
+    expect(px(50, 50)).toEqual([255, 0, 0, 255]);
+    expect(px(20, 50)).toEqual([0, 0, 0, 255]);
+  });
+});

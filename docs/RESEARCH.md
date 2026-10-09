@@ -42,8 +42,10 @@ Built in this round:
 5. **Viewer aids**: motion path overlay, align buttons, title/action-safe guides.
 6. **Preview range** (loop region) on the timeline ruler.
 
-Next (not built yet): procedural behaviours (wiggle/noise/loop as properties), markers with audio, preset sharing,
-Lottie import/export, Figma import, a guided first-run tour.
+Built next: **behaviors** (wiggle, oscillate, drift, loop, follow) as procedural properties, and a **first-run welcome
+screen + spotlight tour** (three ways to start, agent setup check, replay from `?`).
+
+Still open: markers with audio, preset sharing, Lottie import/export, Figma import.
 
 ## Sources
 

@@ -1,6 +1,6 @@
 import { sample } from "./animate.ts";
 import { getIn, insertKeyframes, setIn } from "./keyframes.ts";
-import type { Composition, Easing, Keyframe, Layer, Vec2 } from "./schema.ts";
+import type { Behavior, Composition, Easing, Keyframe, Layer, Vec2 } from "./schema.ts";
 
 /*
  * One-click animation presets (fade, slide, pop, …). Each writes ordinary keyframes or a
@@ -35,10 +35,10 @@ export const ANIMATION_PRESETS: AnimationPreset[] = [
   { id: "slide-out-down", name: "Slide out", kind: "out", description: "Sink and fade away" },
   { id: "pop-out", name: "Pop out", kind: "out", description: "Shrink with anticipation" },
   { id: "zoom-out", name: "Zoom out", kind: "out", description: "Grow and fade away" },
-  { id: "pulse", name: "Pulse", kind: "loop", description: "Gentle scale pulse every second" },
-  { id: "float", name: "Float", kind: "loop", description: "Bob up and down" },
-  { id: "wiggle", name: "Wiggle", kind: "loop", description: "Nervous jitter" },
-  { id: "spin", name: "Spin", kind: "loop", description: "Rotate continuously" },
+  { id: "pulse", name: "Pulse", kind: "loop", description: "Gentle scale pulse (oscillate behavior)" },
+  { id: "float", name: "Float", kind: "loop", description: "Bob up and down (oscillate behavior)" },
+  { id: "wiggle", name: "Wiggle", kind: "loop", description: "Organic jitter (wiggle behavior)" },
+  { id: "spin", name: "Spin", kind: "loop", description: "Rotate continuously (drift behavior)" },
 ];
 
 export interface PresetOptions {
@@ -146,21 +146,16 @@ export function applyPreset(layer: Layer, presetId: string, opts: PresetOptions)
     case "float":
     case "wiggle":
     case "spin": {
-      const end = comp.duration;
-      const kfs: Keyframe<unknown>[] = [];
-      if (presetId === "spin") {
-        anim("transform.rotation", [kf(t0, rotation, "linear"), kf(round(end), round(rotation + ((end - t0) / 3) * 360))]);
-        break;
-      }
-      const period = presetId === "wiggle" ? 1 / 8 : presetId === "pulse" ? 0.5 : 1;
-      let seed = 12345;
-      const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647) * 2 - 1;
-      for (let i = 0, t = t0; t <= end + 1e-6; i++, t = round(t0 + i * period)) {
-        if (presetId === "pulse") kfs.push(kf(t, i % 2 === 0 ? scaleNow : scaled(1.08), "easeInOutSine"));
-        if (presetId === "float") kfs.push(kf(t, [pos[0], pos[1] + (i % 2 === 0 ? 0 : -dist * 0.25)], "easeInOutSine"));
-        if (presetId === "wiggle") kfs.push(kf(t, i === 0 ? pos : [round(pos[0] + rand() * dist * 0.08), round(pos[1] + rand() * dist * 0.08)], "easeInOutSine"));
-      }
-      anim(presetId === "pulse" ? "transform.scale" : "transform.position", kfs);
+      // Loops are behaviors: procedural, endless, and one line in the file instead of many keyframes.
+      const behavior: Behavior =
+        presetId === "pulse"
+          ? { type: "oscillate", property: "transform.scale", amplitude: Math.round((typeof scaleNow === "number" ? scaleNow : scaleNow[0]) * 0.05), frequency: 1, start: t0 }
+          : presetId === "float"
+            ? { type: "oscillate", property: "transform.position", amplitude: [0, Math.round(dist * 0.25)], frequency: 0.5, start: t0 }
+            : presetId === "wiggle"
+              ? { type: "wiggle", property: "transform.position", amount: Math.max(2, Math.round(dist * 0.1)), frequency: 4, start: t0 }
+              : { type: "drift", property: "transform.rotation", speed: 120, start: t0 };
+      l = { ...l, behaviors: [...(l.behaviors ?? []), behavior] };
       break;
     }
     default:

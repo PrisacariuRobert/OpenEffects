@@ -53,6 +53,14 @@ describe("OpenEffects MCP server", () => {
     expect(read().compositions[0].layers[0].transform.scale.keyframes[0]).toMatchObject({ t: 0.5, v: 0, ease: "easeOutBack" });
   });
 
+  it("adds behaviors", async () => {
+    const r = await client.callTool({ name: "oe_add_behavior", arguments: { layerId: "hello", behavior: { type: "wiggle", property: "transform.rotation", amount: 5 } } });
+    expect(r.isError).toBeFalsy();
+    expect(read().compositions[0].layers[0].behaviors).toEqual([{ type: "wiggle", property: "transform.rotation", amount: 5 }]);
+    const bad = await client.callTool({ name: "oe_add_behavior", arguments: { layerId: "hello", behavior: { type: "wobble", property: "x" } } });
+    expect(bad.isError).toBe(true);
+  });
+
   it("rejects invalid edits with a precise error and leaves the file untouched", async () => {
     const before = fs.readFileSync(file, "utf8");
     const r = await client.callTool({ name: "oe_update_layer", arguments: { id: "hello", patch: { fill: "blurple" } } });

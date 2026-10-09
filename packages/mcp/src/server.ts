@@ -208,6 +208,29 @@ export function createMcpServer(projectFile: string): McpServer {
   );
 
   server.registerTool(
+    "oe_add_behavior",
+    {
+      title: "Add behavior",
+      description:
+        "Attach procedural motion to a layer property instead of keyframing it. Types: " +
+        "wiggle {amount, frequency?, seed?, octaves?} organic noise; oscillate {amplitude, frequency?, phase?, wave?: sine|triangle|square|saw}; " +
+        "drift {speed} constant change per second (spin, pan); loop {mode?: cycle|pingpong} repeats the property's keyframes; " +
+        "follow {layer, delay?, offset?} copies another layer's same property with a delay. " +
+        "Common: property (e.g. transform.position), start?, end?, fadeIn?. Amounts are in the property's units; use [x, y] for per-axis values.",
+      inputSchema: {
+        layerId: z.string(),
+        behavior: z.record(z.string(), z.unknown()).describe('e.g. { "type": "wiggle", "property": "transform.position", "amount": 8, "frequency": 3 }'),
+        compId,
+      },
+    },
+    async ({ layerId, behavior, compId }) =>
+      edit(
+        (p) => editLayer(p, layerId, (l) => ({ ...l, behaviors: [...(l.behaviors ?? []), behavior as never] }), { compId }),
+        () => `Added ${String(behavior.type)} behavior to ${layerId}.${String(behavior.property)}.`,
+      ),
+  );
+
+  server.registerTool(
     "oe_update_composition",
     {
       title: "Update composition",

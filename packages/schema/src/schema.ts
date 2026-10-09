@@ -97,6 +97,54 @@ export const ColorAdjustEffect = z.strictObject({
 });
 export const Effect = z.discriminatedUnion("type", [BlurEffect, GlowEffect, DropShadowEffect, ColorAdjustEffect]);
 
+// ---------- behaviors ----------
+/*
+ * Procedural motion attached to a property (like Cavalry behaviours / AE expressions):
+ * evaluated every frame on top of the property's static or keyframed value.
+ */
+const NumOrVec2 = z.union([z.number(), Vec2]).describe("A number (all dimensions) or [x, y]");
+const behaviorBase = {
+  property: z.string().min(1).describe('Dotted property path, e.g. "transform.position", "transform.rotation", "effects.0.radius"'),
+  start: z.number().min(0).optional().describe("Seconds when the behavior starts. Default: layer in point"),
+  end: z.number().min(0).optional().describe("Seconds when it stops. Default: layer end"),
+  fadeIn: z.number().min(0).optional().describe("Seconds to ramp the behavior in from its start. Default 0"),
+  enabled: z.boolean().optional().describe("false switches the behavior off without deleting it"),
+};
+export const WiggleBehavior = z.strictObject({
+  ...behaviorBase,
+  type: z.literal("wiggle"),
+  amount: NumOrVec2.describe("Maximum offset in the property's units (px, degrees, percent…)"),
+  frequency: z.number().positive().optional().describe("Wiggles per second. Default 2"),
+  seed: z.number().int().optional().describe("Change for a different random pattern. Default 1"),
+  octaves: z.number().int().min(1).max(4).optional().describe("Detail layers of noise. Default 1"),
+});
+export const OscillateBehavior = z.strictObject({
+  ...behaviorBase,
+  type: z.literal("oscillate"),
+  amplitude: NumOrVec2.describe("Peak offset in the property's units"),
+  frequency: z.number().positive().optional().describe("Cycles per second. Default 1"),
+  phase: z.number().optional().describe("Degrees. Default 0"),
+  wave: z.enum(["sine", "triangle", "square", "saw"]).optional().describe("Default sine"),
+});
+export const DriftBehavior = z.strictObject({
+  ...behaviorBase,
+  type: z.literal("drift"),
+  speed: NumOrVec2.describe("Units per second added continuously (e.g. 90 on rotation = a quarter turn per second)"),
+});
+export const LoopBehavior = z.strictObject({
+  ...behaviorBase,
+  type: z.literal("loop"),
+  mode: z.enum(["cycle", "pingpong"]).optional().describe("Repeat the keyframes after the last one. Default cycle"),
+});
+export const FollowBehavior = z.strictObject({
+  ...behaviorBase,
+  type: z.literal("follow"),
+  layer: z.string().describe("Id of the layer to follow (its same property)"),
+  delay: z.number().min(0).optional().describe("Seconds behind the leader. Default 0.1"),
+  offset: NumOrVec2.optional().describe("Added to the followed value. Default 0"),
+});
+export const Behavior = z.discriminatedUnion("type", [WiggleBehavior, OscillateBehavior, DriftBehavior, LoopBehavior, FollowBehavior]);
+
 // ---------- layers ----------
 const LayerId = z
   .string()
@@ -112,6 +160,7 @@ const layerBase = {
   parent: z.string().optional().describe("Id of a layer whose transform this layer inherits"),
   transform: Transform.optional(),
   effects: z.array(Effect).optional(),
+  behaviors: z.array(Behavior).optional().describe("Procedural motion: wiggle, oscillate, drift, loop, follow"),
   blend: z
     .enum(["normal", "add", "screen", "multiply", "overlay", "lighten", "darken", "difference"])
     .optional(),
@@ -267,6 +316,10 @@ export const ProjectSchema = z
             p = comp.layers[ids.get(p)!].parent;
           }
         }
+        layer.behaviors?.forEach((b, bi) => {
+          if (b.type === "follow" && !ids.has(b.layer)) ctx.addIssue({ code: "custom", path: [...at, "behaviors", bi, "layer"], message: `Layer "${b.layer}" does not exist` });
+          if (b.type === "follow" && b.layer === layer.id) ctx.addIssue({ code: "custom", path: [...at, "behaviors", bi, "layer"], message: "A layer cannot follow itself" });
+        });
         if (layer.matte && !ids.has(layer.matte.layer)) ctx.addIssue({ code: "custom", path: [...at, "matte", "layer"], message: `Matte layer "${layer.matte.layer}" does not exist` });
         if (layer.matte?.layer === layer.id) ctx.addIssue({ code: "custom", path: [...at, "matte", "layer"], message: "A layer cannot be its own matte" });
         if (layer.type === "comp" && !compIds.has(layer.comp)) ctx.addIssue({ code: "custom", path: [...at, "comp"], message: `Composition "${layer.comp}" does not exist` });
@@ -285,6 +338,7 @@ export type Gradient = z.infer<typeof Gradient>;
 export type Fill = z.infer<typeof Fill>;
 export type Stroke = z.infer<typeof Stroke>;
 export type Effect = z.infer<typeof Effect>;
+export type Behavior = z.infer<typeof Behavior>;
 export type TextAnimator = z.infer<typeof TextAnimator>;
 export type Layer = z.infer<typeof Layer>;
 export type LayerType = Layer["type"];

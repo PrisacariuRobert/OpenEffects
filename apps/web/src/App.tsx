@@ -8,6 +8,23 @@ import { AgentPanel } from "./components/AgentPanel.tsx";
 import { Inspector } from "./components/Inspector.tsx";
 import { History } from "./components/History.tsx";
 import { Templates } from "./components/Templates.tsx";
+import { Tour, Welcome, type TourStep } from "./components/Tour.tsx";
+
+const WELCOMED_KEY = "oe.welcomed";
+const readFlag = (k: string) => {
+  try {
+    return localStorage.getItem(k) === "1";
+  } catch {
+    return true; // storage blocked: don't nag on every load
+  }
+};
+const writeFlag = (k: string) => {
+  try {
+    localStorage.setItem(k, "1");
+  } catch {
+    // ignore
+  }
+};
 
 type Tab = "agent" | "inspector" | "history";
 
@@ -43,6 +60,8 @@ export function App() {
   const [toast, setToast] = useState<string | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(() => !readFlag(WELCOMED_KEY));
+  const [touring, setTouring] = useState(false);
   const [assets, setAssets] = useState<string[]>([]);
   const project = editor.project;
   const comp = project ? (project.compositions.find((c) => c.id === compId) ?? getComp(project)) : null;
@@ -182,6 +201,65 @@ export function App() {
     }
   };
 
+  const closeWelcome = () => {
+    writeFlag(WELCOMED_KEY);
+    setShowWelcome(false);
+  };
+  const topLayer = comp?.layers[comp.layers.length - 1];
+  const tourSteps: TourStep[] = [
+    {
+      target: ".stage-wrap",
+      title: "Your canvas",
+      body: "Click a layer to select it. Drag to move it, drag a corner to scale, the top handle to rotate. Shift snaps; layers snap to the center lines. Drop images here to add them.",
+    },
+    {
+      target: ".side",
+      title: "Your AI motion designer",
+      body: "Describe what you want and your own agent (Claude Code, Codex or OpenCode) builds it while you watch. Pick the model up top; Haiku 5.5 makes animations for about a cent. With a layer selected, requests apply only to it.",
+      before: () => setTab("agent"),
+    },
+    {
+      target: ".timeline",
+      title: "Timeline",
+      body: "Every layer and keyframe. Drag bars to move or trim layers, twirl ▸ to see keyframes, drag them to retime, Shift-click to select several. B / N set a preview loop.",
+      before: () => setTab("agent"),
+    },
+    {
+      target: ".graph-toggle",
+      title: "Graph editor",
+      body: "See the motion as curves. Drag keyframes and bezier handles to shape the easing; click the curve in the keyframe bar for presets like Overshoot, Spring and Bounce.",
+    },
+    {
+      target: ".side",
+      title: "Fine-tune everything",
+      body: "Properties has one-click Animate presets, ◷ to keyframe any property, and Behaviors for endless motion: wiggle, oscillate, spin, loop and follow, with no keyframes needed.",
+      before: () => {
+        if (!selected && topLayer) setSelected(topLayer.id);
+        setTab("inspector");
+      },
+    },
+    {
+      target: ".view-tools",
+      title: "Viewer tools",
+      body: "Show the motion path of the selected layer, title/action-safe guides, and align layers to the frame.",
+    },
+    {
+      target: ".tour-templates",
+      title: "Templates",
+      body: "Start from a ready-made animation and ask the agent to make it yours: “change the text to …, use our brand colors”.",
+    },
+    {
+      target: ".export",
+      title: "Export",
+      body: "MP4 for sharing, GIF for docs and chat, WebM or ProRes MOV with transparency for video editors.",
+    },
+    {
+      target: ".help-btn",
+      title: "You're set",
+      body: "Ctrl+Z undoes anything, including the agent's edits. Press ? for all shortcuts; you can replay this tour from there.",
+    },
+  ];
+
   const ex = state.exportState;
   const fileName = state.file.split(/[\\/]/).slice(-2).join("/");
   const selLayer = selected && comp ? comp.layers.find((l) => l.id === selected) : undefined;
@@ -212,10 +290,10 @@ export function App() {
             ↷
           </button>
         </div>
-        <button className="ghost small" onClick={() => setShowTemplates(true)}>
+        <button className="ghost small tour-templates" onClick={() => setShowTemplates(true)}>
           Templates
         </button>
-        <button className="ghost small" onClick={() => setShowHelp(true)} title="Keyboard shortcuts (?)">
+        <button className="ghost small help-btn" onClick={() => setShowHelp(true)} title="Keyboard shortcuts and tour (?)">
           ?
         </button>
         <div className="grow" />
@@ -330,6 +408,24 @@ export function App() {
           <div className="modal narrow" onClick={(e) => e.stopPropagation()}>
             <div className="modal-head">
               <strong className="grow">Shortcuts & tips</strong>
+              <button
+                className="ghost small"
+                onClick={() => {
+                  setShowHelp(false);
+                  setTouring(true);
+                }}
+              >
+                🧭 Take the tour
+              </button>
+              <button
+                className="ghost small"
+                onClick={() => {
+                  setShowHelp(false);
+                  setShowWelcome(true);
+                }}
+              >
+                Welcome screen
+              </button>
               <button className="ghost small" onClick={() => setShowHelp(false)}>
                 ✕
               </button>
@@ -349,6 +445,26 @@ export function App() {
           </div>
         </div>
       )}
+      {showWelcome && !touring && (
+        <Welcome
+          providers={state.providers}
+          onDescribe={() => {
+            closeWelcome();
+            setTab("agent");
+            setTimeout(() => document.querySelector<HTMLTextAreaElement>(".composer textarea")?.focus(), 50);
+          }}
+          onTemplates={() => {
+            closeWelcome();
+            setShowTemplates(true);
+          }}
+          onTour={() => {
+            closeWelcome();
+            setTouring(true);
+          }}
+          onSkip={closeWelcome}
+        />
+      )}
+      {touring && <Tour steps={tourSteps} onDone={() => setTouring(false)} />}
       {toast && <div className="toast">{toast}</div>}
     </div>
   );

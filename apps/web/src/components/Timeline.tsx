@@ -315,7 +315,7 @@ export function Timeline(props: Props) {
                 </div>
               )}
             </div>
-            <button className={`tiny ${graph ? "active" : ""}`} title="Graph editor: value curves and easing handles" onClick={() => setGraph(!graph)}>
+            <button className={`tiny graph-toggle ${graph ? "active" : ""}`} title="Graph editor: value curves and easing handles" onClick={() => setGraph(!graph)}>
               ∿ Graph
             </button>
             <button className="tiny" disabled={!selected} title="Duplicate (Ctrl+D)" onClick={() => selected && editor.update((p) => {
@@ -368,6 +368,11 @@ export function Timeline(props: Props) {
                   </button>
                   <span className="tl-icon">{TYPE_ICON[l.type] ?? "?"}</span>
                   <span className="tl-label">{l.name ?? l.id}</span>
+                  {!!l.behaviors?.length && (
+                    <span className="tl-tag behavior-tag" title={l.behaviors.map((b) => `${b.type} → ${b.property}`).join("\n")}>
+                      ∿ {l.behaviors.length}
+                    </span>
+                  )}
                   {l.matte && <span className="tl-tag">matte</span>}
                   {l.parent && <span className="tl-tag">↳ {l.parent}</span>}
                 </div>

@@ -1,5 +1,6 @@
 import { svgPathProperties } from "svg-path-properties";
 import {
+  applyBehaviors,
   getComp,
   sample,
   type Composition,
@@ -71,7 +72,8 @@ function renderComp(ctx: CanvasRenderingContext2D, frame: Frame, comp: Compositi
     ctx.fillRect(0, 0, comp.width, comp.height);
     ctx.restore();
   }
-  const byId = new Map(comp.layers.map((l) => [l.id, l]));
+  const layers = resolveLayers(comp, t);
+  const byId = new Map(layers.map((l) => [l.id, l]));
   const matrices = new Map<string, Mat>();
   const worldMatrix = (layer: Layer): Mat => {
     const cached = matrices.get(layer.id);
@@ -82,10 +84,17 @@ function renderComp(ctx: CanvasRenderingContext2D, frame: Frame, comp: Compositi
     return m;
   };
   const scene: Scene = { comp, t, base, byId, worldMatrix, viewW, viewH };
-  for (const layer of comp.layers) {
+  for (const layer of layers) {
     if (layer.visible === false || !isActive(layer, comp, t)) continue;
     compositeLayer(ctx, frame, scene, layer);
   }
+}
+
+/** The composition's layers at time t with behaviors evaluated (follow reads the raw leaders). */
+export function resolveLayers(comp: Composition, t: number): Layer[] {
+  if (!comp.layers.some((l) => l.behaviors?.length)) return comp.layers;
+  const raw = new Map(comp.layers.map((l) => [l.id, l]));
+  return comp.layers.map((l) => (l.behaviors?.length ? applyBehaviors(l, t, comp, (id) => raw.get(id)) : l));
 }
 
 interface Scene {
@@ -645,7 +654,7 @@ export function layerGeometry(
   layerId: string,
 ): LayerGeometry | null {
   const comp = getComp(project, opts.compId);
-  const byId = new Map(comp.layers.map((l) => [l.id, l]));
+  const byId = new Map(resolveLayers(comp, opts.time).map((l) => [l.id, l]));
   const layer = byId.get(layerId);
   if (!layer) return null;
   const chain = (l: Layer | undefined, depth = 0): Mat =>

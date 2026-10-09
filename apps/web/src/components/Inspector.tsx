@@ -1,6 +1,9 @@
 import { useState } from "react";
 import {
   ANIMATION_PRESETS,
+  animatedPaths,
+  behaviorTargets,
+  type Behavior,
   EASE_NAMES,
   applyPreset,
   editLayer,
@@ -118,7 +121,14 @@ function PropRow({
       >
         ◷
       </button>
-      <span className="prop-label">{label}</span>
+      <span className="prop-label">
+        {label}
+        {ctx.layer.behaviors?.some((b) => b.property === path && b.enabled !== false) && (
+          <span className="driven" title="Also driven by a behavior (see Behaviors)">
+            ∿
+          </span>
+        )}
+      </span>
       <span className="prop-value">{field}</span>
       {animated && (
         <span className="kf-nav">
@@ -343,6 +353,159 @@ function TextAnimatorEditor({ ctx }: { ctx: Ctx }) {
   );
 }
 
+const BEHAVIOR_INFO: Record<Behavior["type"], { icon: string; name: string; hint: string }> = {
+  wiggle: { icon: "∿", name: "Wiggle", hint: "Organic, random-looking motion" },
+  oscillate: { icon: "〜", name: "Oscillate", hint: "Regular back-and-forth: pulse, float, sway" },
+  drift: { icon: "↻", name: "Drift / spin", hint: "Constant change per second" },
+  loop: { icon: "⟲", name: "Loop keyframes", hint: "Repeat this property's keyframes forever" },
+  follow: { icon: "⇢", name: "Follow layer", hint: "Copy another layer's motion with a delay" },
+};
+
+const VEC_PATHS = new Set(["transform.position", "transform.anchor", "size"]);
+
+/** A number or an [x, y] pair, depending on the property. */
+function AmountField({ value, vec, onChange, step = 1 }: { value: number | [number, number] | undefined; vec: boolean; onChange(v: number | [number, number], transient?: boolean): void; step?: number }) {
+  const v = value ?? 0;
+  if (!vec) return <NumberField value={Array.isArray(v) ? v[0] : v} step={step} width={52} onChange={onChange} />;
+  const pair: [number, number] = Array.isArray(v) ? v : [v, v];
+  return (
+    <>
+      <NumberField label="X" value={pair[0]} step={step} width={44} onChange={(x, tr) => onChange([x, pair[1]], tr)} />
+      <NumberField label="Y" value={pair[1]} step={step} width={44} onChange={(y, tr) => onChange([pair[0], y], tr)} />
+    </>
+  );
+}
+
+function defaultBehavior(type: Behavior["type"], layer: Layer, comp: Composition): Behavior | null {
+  const other = comp.layers.find((l) => l.id !== layer.id);
+  switch (type) {
+    case "wiggle":
+      return { type, property: "transform.position", amount: 10, frequency: 2 };
+    case "oscillate":
+      return { type, property: "transform.position", amplitude: [0, 15], frequency: 0.5 };
+    case "drift":
+      return { type, property: "transform.rotation", speed: 90 };
+    case "loop": {
+      const path = animatedPaths(layer)[0];
+      return path ? { type, property: path, mode: "cycle" } : null;
+    }
+    case "follow":
+      return other ? { type, property: "transform.position", layer: other.id, delay: 0.15 } : null;
+  }
+}
+
+/** Procedural motion attached to properties (wiggle, oscillate, drift, loop, follow). */
+function BehaviorsEditor({ ctx }: { ctx: Ctx }) {
+  const list = ctx.layer.behaviors ?? [];
+  const [adding, setAdding] = useState("");
+  const set = (i: number, key: string, v: unknown, transient?: boolean) => ctx.edit((l) => setIn(l, `behaviors.${i}.${key}`, v), transient);
+  const targets = behaviorTargets(ctx.layer);
+  const animated = animatedPaths(ctx.layer);
+  return (
+    <>
+      {list.length === 0 && <p className="muted small hint-inline">Behaviors add endless, procedural motion to a property without keyframes.</p>}
+      {list.map((b, i) => {
+        const info = BEHAVIOR_INFO[b.type];
+        const options = (b.type === "loop" ? animated.map((p) => ({ path: p, label: p })) : targets).map((t) => ({ value: t.path, label: t.label }));
+        if (!options.some((o) => o.value === b.property)) options.unshift({ value: b.property, label: b.property });
+        const vec = VEC_PATHS.has(b.property) || (b.property === "transform.scale" && Array.isArray(getIn(ctx.layer, b.property)));
+        return (
+          <div className={`effect-card behavior ${b.enabled === false ? "disabled" : ""}`} key={i}>
+            <div className="effect-head">
+              <span className="behavior-icon">{info.icon}</span>
+              <strong title={info.hint}>{info.name}</strong>
+              <span className="grow" />
+              <Toggle value={b.enabled !== false} onChange={(on) => set(i, "enabled", on ? undefined : false)} />
+              <button className="tiny" title="Remove behavior" onClick={() => ctx.edit((l) => setIn(l, `behaviors.${i}`, undefined))}>
+                ×
+              </button>
+            </div>
+            <Row label="Property">
+              <SelectField value={b.property} options={options} onChange={(v) => set(i, "property", v)} />
+            </Row>
+            {b.type === "wiggle" && (
+              <>
+                <Row label="Amount">
+                  <AmountField value={b.amount} vec={vec} onChange={(v, tr) => set(i, "amount", v, tr)} />
+                </Row>
+                <Row label="Speed">
+                  <NumberField value={b.frequency ?? 2} min={0.05} step={0.1} suffix="/s" width={44} onChange={(v, tr) => set(i, "frequency", v, tr)} />
+                  <NumberField label="Detail" value={b.octaves ?? 1} min={1} max={4} width={28} onChange={(v, tr) => set(i, "octaves", Math.round(v) === 1 ? undefined : Math.round(v), tr)} />
+                  <NumberField label="Seed" value={b.seed ?? 1} step={1} width={36} onChange={(v, tr) => set(i, "seed", Math.round(v), tr)} />
+                  <button className="tiny" title="New random pattern" onClick={() => set(i, "seed", Math.floor(Math.random() * 9999))}>
+                    🎲
+                  </button>
+                </Row>
+              </>
+            )}
+            {b.type === "oscillate" && (
+              <>
+                <Row label="Amplitude">
+                  <AmountField value={b.amplitude} vec={vec} onChange={(v, tr) => set(i, "amplitude", v, tr)} />
+                </Row>
+                <Row label="Wave">
+                  <SelectField value={b.wave ?? "sine"} options={["sine", "triangle", "square", "saw"]} onChange={(v) => set(i, "wave", v === "sine" ? undefined : v)} />
+                  <NumberField label="Freq" value={b.frequency ?? 1} min={0.05} step={0.05} suffix="Hz" width={40} onChange={(v, tr) => set(i, "frequency", v, tr)} />
+                  <NumberField label="Phase" value={b.phase ?? 0} step={5} suffix="°" width={36} onChange={(v, tr) => set(i, "phase", v || undefined, tr)} />
+                </Row>
+              </>
+            )}
+            {b.type === "drift" && (
+              <Row label="Per second">
+                <AmountField value={b.speed} vec={vec} onChange={(v, tr) => set(i, "speed", v, tr)} />
+              </Row>
+            )}
+            {b.type === "loop" && (
+              <Row label="Mode">
+                <SelectField value={b.mode ?? "cycle"} options={[{ value: "cycle", label: "Cycle (repeat)" }, { value: "pingpong", label: "Ping-pong (back and forth)" }]} onChange={(v) => set(i, "mode", v)} />
+              </Row>
+            )}
+            {b.type === "follow" && (
+              <>
+                <Row label="Leader">
+                  <SelectField value={b.layer} options={ctx.comp.layers.filter((l) => l.id !== ctx.layer.id).map((l) => ({ value: l.id, label: l.name ?? l.id }))} onChange={(v) => set(i, "layer", v)} />
+                  <NumberField label="Delay" value={b.delay ?? 0.1} min={0} step={0.02} suffix="s" width={40} onChange={(v, tr) => set(i, "delay", v, tr)} />
+                </Row>
+                <Row label="Offset">
+                  <AmountField value={b.offset} vec={vec} onChange={(v, tr) => set(i, "offset", v, tr)} />
+                </Row>
+              </>
+            )}
+            <Row label="When">
+              <NumberField label="From" value={b.start ?? ctx.layer.in ?? 0} min={0} step={0.1} suffix="s" width={36} onChange={(v, tr) => set(i, "start", v, tr)} />
+              <NumberField label="To" value={b.end ?? ctx.comp.duration} min={0} step={0.1} suffix="s" width={36} onChange={(v, tr) => set(i, "end", v >= ctx.comp.duration ? undefined : v, tr)} />
+              {b.type !== "loop" && b.type !== "follow" && (
+                <NumberField label="Fade in" value={b.fadeIn ?? 0} min={0} step={0.1} suffix="s" width={32} onChange={(v, tr) => set(i, "fadeIn", v || undefined, tr)} />
+              )}
+            </Row>
+          </div>
+        );
+      })}
+      <Row label="">
+        <select
+          className="field-select"
+          value={adding}
+          onChange={(e) => {
+            const type = e.target.value as Behavior["type"];
+            setAdding("");
+            if (!type) return;
+            const b = defaultBehavior(type, ctx.layer, ctx.comp);
+            if (b) ctx.edit((l) => ({ ...l, behaviors: [...(l.behaviors ?? []), b] }));
+          }}
+        >
+          <option value="">+ Add behavior…</option>
+          {(Object.keys(BEHAVIOR_INFO) as Behavior["type"][]).map((t) => (
+            <option key={t} value={t} disabled={!defaultBehavior(t, ctx.layer, ctx.comp)}>
+              {BEHAVIOR_INFO[t].icon} {BEHAVIOR_INFO[t].name}
+              {t === "loop" && animated.length === 0 ? " (animate something first)" : ""}
+            </option>
+          ))}
+        </select>
+      </Row>
+    </>
+  );
+}
+
 /** One-click animations applied at the playhead; they write normal, editable keyframes. */
 function AnimatePresets({ ctx }: { ctx: Ctx }) {
   const [duration, setDuration] = useState(0.6);
@@ -502,6 +665,10 @@ function LayerInspector({ ctx, comp, onSelect }: { ctx: Ctx; comp: Composition; 
           <TextAnimatorEditor ctx={ctx} />
         </Section>
       )}
+
+      <Section title="Behaviors" defaultOpen={!!l.behaviors?.length}>
+        <BehaviorsEditor ctx={ctx} />
+      </Section>
 
       <Section title="Effects" defaultOpen={!!l.effects?.length}>
         <EffectsEditor ctx={ctx} />

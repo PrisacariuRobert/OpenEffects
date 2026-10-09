@@ -130,11 +130,14 @@
             "effects": {
               "$ref": "#/$defs/__schema33"
             },
-            "blend": {
+            "behaviors": {
               "$ref": "#/$defs/__schema36"
             },
+            "blend": {
+              "$ref": "#/$defs/__schema57"
+            },
             "matte": {
-              "$ref": "#/$defs/__schema37"
+              "$ref": "#/$defs/__schema58"
             },
             "type": {
               "type": "string",
@@ -142,7 +145,7 @@
             },
             "color": {
               "description": "A color or a gradient",
-              "$ref": "#/$defs/__schema42"
+              "$ref": "#/$defs/__schema63"
             },
             "size": {
               "description": "Default: composition size",
@@ -183,11 +186,14 @@
             "effects": {
               "$ref": "#/$defs/__schema33"
             },
-            "blend": {
+            "behaviors": {
               "$ref": "#/$defs/__schema36"
             },
+            "blend": {
+              "$ref": "#/$defs/__schema57"
+            },
             "matte": {
-              "$ref": "#/$defs/__schema37"
+              "$ref": "#/$defs/__schema58"
             },
             "type": {
               "type": "string",
@@ -200,10 +206,10 @@
               "$ref": "#/$defs/__schema30"
             },
             "fill": {
-              "$ref": "#/$defs/__schema42"
+              "$ref": "#/$defs/__schema63"
             },
             "stroke": {
-              "$ref": "#/$defs/__schema43"
+              "$ref": "#/$defs/__schema64"
             }
           },
           "required": [
@@ -240,11 +246,14 @@
             "effects": {
               "$ref": "#/$defs/__schema33"
             },
-            "blend": {
+            "behaviors": {
               "$ref": "#/$defs/__schema36"
             },
+            "blend": {
+              "$ref": "#/$defs/__schema57"
+            },
             "matte": {
-              "$ref": "#/$defs/__schema37"
+              "$ref": "#/$defs/__schema58"
             },
             "type": {
               "type": "string",
@@ -254,10 +263,10 @@
               "$ref": "#/$defs/__schema18"
             },
             "fill": {
-              "$ref": "#/$defs/__schema42"
+              "$ref": "#/$defs/__schema63"
             },
             "stroke": {
-              "$ref": "#/$defs/__schema43"
+              "$ref": "#/$defs/__schema64"
             }
           },
           "required": [
@@ -294,11 +303,14 @@
             "effects": {
               "$ref": "#/$defs/__schema33"
             },
-            "blend": {
+            "behaviors": {
               "$ref": "#/$defs/__schema36"
             },
+            "blend": {
+              "$ref": "#/$defs/__schema57"
+            },
             "matte": {
-              "$ref": "#/$defs/__schema37"
+              "$ref": "#/$defs/__schema58"
             },
             "type": {
               "type": "string",
@@ -310,14 +322,14 @@
               "description": "SVG path data, in layer coordinates"
             },
             "fill": {
-              "$ref": "#/$defs/__schema42"
+              "$ref": "#/$defs/__schema63"
             },
             "stroke": {
-              "$ref": "#/$defs/__schema43"
+              "$ref": "#/$defs/__schema64"
             },
             "trim": {
               "description": "Animate end 0→100 to draw a line on",
-              "$ref": "#/$defs/__schema44"
+              "$ref": "#/$defs/__schema65"
             }
           },
           "required": [
@@ -354,11 +366,14 @@
             "effects": {
               "$ref": "#/$defs/__schema33"
             },
-            "blend": {
+            "behaviors": {
               "$ref": "#/$defs/__schema36"
             },
+            "blend": {
+              "$ref": "#/$defs/__schema57"
+            },
             "matte": {
-              "$ref": "#/$defs/__schema37"
+              "$ref": "#/$defs/__schema58"
             },
             "type": {
               "type": "string",
@@ -373,11 +388,11 @@
               "properties": {
                 "family": {
                   "description": "Default Inter",
-                  "$ref": "#/$defs/__schema45"
+                  "$ref": "#/$defs/__schema66"
                 },
                 "weight": {
                   "description": "100-900. Default 700",
-                  "$ref": "#/$defs/__schema46"
+                  "$ref": "#/$defs/__schema67"
                 },
                 "style": {
                   "type": "string",
@@ -395,14 +410,14 @@
             },
             "fill": {
               "description": "Default white",
-              "$ref": "#/$defs/__schema42"
+              "$ref": "#/$defs/__schema63"
             },
             "stroke": {
-              "$ref": "#/$defs/__schema43"
+              "$ref": "#/$defs/__schema64"
             },
             "align": {
               "description": "Default center",
-              "$ref": "#/$defs/__schema47"
+              "$ref": "#/$defs/__schema68"
             },
             "letterSpacing": {
               "description": "px. Default 0",
@@ -410,31 +425,31 @@
             },
             "lineHeight": {
               "description": "Multiple of font size. Default 1.2",
-              "$ref": "#/$defs/__schema48"
+              "$ref": "#/$defs/__schema69"
             },
             "animator": {
               "type": "object",
               "properties": {
                 "by": {
-                  "$ref": "#/$defs/__schema49"
+                  "$ref": "#/$defs/__schema70"
                 },
                 "order": {
-                  "$ref": "#/$defs/__schema51"
+                  "$ref": "#/$defs/__schema72"
                 },
                 "delay": {
-                  "$ref": "#/$defs/__schema53"
+                  "$ref": "#/$defs/__schema74"
                 },
                 "stagger": {
-                  "$ref": "#/$defs/__schema55"
+                  "$ref": "#/$defs/__schema76"
                 },
                 "duration": {
-                  "$ref": "#/$defs/__schema57"
+                  "$ref": "#/$defs/__schema78"
                 },
                 "ease": {
-                  "$ref": "#/$defs/__schema59"
+                  "$ref": "#/$defs/__schema80"
                 },
                 "from": {
-                  "$ref": "#/$defs/__schema60"
+                  "$ref": "#/$defs/__schema81"
                 }
               },
               "required": [
@@ -478,11 +493,14 @@
             "effects": {
               "$ref": "#/$defs/__schema33"
             },
-            "blend": {
+            "behaviors": {
               "$ref": "#/$defs/__schema36"
             },
+            "blend": {
+              "$ref": "#/$defs/__schema57"
+            },
             "matte": {
-              "$ref": "#/$defs/__schema37"
+              "$ref": "#/$defs/__schema58"
             },
             "type": {
               "type": "string",
@@ -531,11 +549,14 @@
             "effects": {
               "$ref": "#/$defs/__schema33"
             },
-            "blend": {
+            "behaviors": {
               "$ref": "#/$defs/__schema36"
             },
+            "blend": {
+              "$ref": "#/$defs/__schema57"
+            },
             "matte": {
-              "$ref": "#/$defs/__schema37"
+              "$ref": "#/$defs/__schema58"
             },
             "type": {
               "type": "string",
@@ -575,11 +596,14 @@
             "effects": {
               "$ref": "#/$defs/__schema33"
             },
-            "blend": {
+            "behaviors": {
               "$ref": "#/$defs/__schema36"
             },
+            "blend": {
+              "$ref": "#/$defs/__schema57"
+            },
             "matte": {
-              "$ref": "#/$defs/__schema37"
+              "$ref": "#/$defs/__schema58"
             },
             "type": {
               "type": "string",
@@ -591,7 +615,7 @@
             },
             "timeOffset": {
               "description": "Seconds. Nested time = time - in + timeOffset",
-              "$ref": "#/$defs/__schema69"
+              "$ref": "#/$defs/__schema90"
             }
           },
           "required": [
@@ -1063,6 +1087,309 @@
       "additionalProperties": false
     },
     "__schema36": {
+      "description": "Procedural motion: wiggle, oscillate, drift, loop, follow",
+      "$ref": "#/$defs/__schema37"
+    },
+    "__schema37": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "property": {
+                "$ref": "#/$defs/__schema38"
+              },
+              "start": {
+                "$ref": "#/$defs/__schema39"
+              },
+              "end": {
+                "$ref": "#/$defs/__schema41"
+              },
+              "fadeIn": {
+                "$ref": "#/$defs/__schema43"
+              },
+              "enabled": {
+                "$ref": "#/$defs/__schema45"
+              },
+              "type": {
+                "type": "string",
+                "const": "wiggle"
+              },
+              "amount": {
+                "description": "Maximum offset in the property's units (px, degrees, percent…)",
+                "$ref": "#/$defs/__schema48"
+              },
+              "frequency": {
+                "description": "Wiggles per second. Default 2",
+                "$ref": "#/$defs/__schema49"
+              },
+              "seed": {
+                "description": "Change for a different random pattern. Default 1",
+                "$ref": "#/$defs/__schema50"
+              },
+              "octaves": {
+                "description": "Detail layers of noise. Default 1",
+                "$ref": "#/$defs/__schema51"
+              }
+            },
+            "required": [
+              "property",
+              "type",
+              "amount"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "property": {
+                "$ref": "#/$defs/__schema38"
+              },
+              "start": {
+                "$ref": "#/$defs/__schema39"
+              },
+              "end": {
+                "$ref": "#/$defs/__schema41"
+              },
+              "fadeIn": {
+                "$ref": "#/$defs/__schema43"
+              },
+              "enabled": {
+                "$ref": "#/$defs/__schema45"
+              },
+              "type": {
+                "type": "string",
+                "const": "oscillate"
+              },
+              "amplitude": {
+                "description": "Peak offset in the property's units",
+                "$ref": "#/$defs/__schema48"
+              },
+              "frequency": {
+                "description": "Cycles per second. Default 1",
+                "$ref": "#/$defs/__schema52"
+              },
+              "phase": {
+                "description": "Degrees. Default 0",
+                "$ref": "#/$defs/__schema53"
+              },
+              "wave": {
+                "description": "Default sine",
+                "$ref": "#/$defs/__schema54"
+              }
+            },
+            "required": [
+              "property",
+              "type",
+              "amplitude"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "property": {
+                "$ref": "#/$defs/__schema38"
+              },
+              "start": {
+                "$ref": "#/$defs/__schema39"
+              },
+              "end": {
+                "$ref": "#/$defs/__schema41"
+              },
+              "fadeIn": {
+                "$ref": "#/$defs/__schema43"
+              },
+              "enabled": {
+                "$ref": "#/$defs/__schema45"
+              },
+              "type": {
+                "type": "string",
+                "const": "drift"
+              },
+              "speed": {
+                "description": "Units per second added continuously (e.g. 90 on rotation = a quarter turn per second)",
+                "$ref": "#/$defs/__schema48"
+              }
+            },
+            "required": [
+              "property",
+              "type",
+              "speed"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "property": {
+                "$ref": "#/$defs/__schema38"
+              },
+              "start": {
+                "$ref": "#/$defs/__schema39"
+              },
+              "end": {
+                "$ref": "#/$defs/__schema41"
+              },
+              "fadeIn": {
+                "$ref": "#/$defs/__schema43"
+              },
+              "enabled": {
+                "$ref": "#/$defs/__schema45"
+              },
+              "type": {
+                "type": "string",
+                "const": "loop"
+              },
+              "mode": {
+                "description": "Repeat the keyframes after the last one. Default cycle",
+                "$ref": "#/$defs/__schema55"
+              }
+            },
+            "required": [
+              "property",
+              "type"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "property": {
+                "$ref": "#/$defs/__schema38"
+              },
+              "start": {
+                "$ref": "#/$defs/__schema39"
+              },
+              "end": {
+                "$ref": "#/$defs/__schema41"
+              },
+              "fadeIn": {
+                "$ref": "#/$defs/__schema43"
+              },
+              "enabled": {
+                "$ref": "#/$defs/__schema45"
+              },
+              "type": {
+                "type": "string",
+                "const": "follow"
+              },
+              "layer": {
+                "type": "string",
+                "description": "Id of the layer to follow (its same property)"
+              },
+              "delay": {
+                "description": "Seconds behind the leader. Default 0.1",
+                "$ref": "#/$defs/__schema56"
+              },
+              "offset": {
+                "description": "Added to the followed value. Default 0",
+                "$ref": "#/$defs/__schema48"
+              }
+            },
+            "required": [
+              "property",
+              "type",
+              "layer"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "__schema38": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Dotted property path, e.g. \"transform.position\", \"transform.rotation\", \"effects.0.radius\""
+    },
+    "__schema39": {
+      "description": "Seconds when the behavior starts. Default: layer in point",
+      "$ref": "#/$defs/__schema40"
+    },
+    "__schema40": {
+      "type": "number",
+      "minimum": 0
+    },
+    "__schema41": {
+      "description": "Seconds when it stops. Default: layer end",
+      "$ref": "#/$defs/__schema42"
+    },
+    "__schema42": {
+      "type": "number",
+      "minimum": 0
+    },
+    "__schema43": {
+      "description": "Seconds to ramp the behavior in from its start. Default 0",
+      "$ref": "#/$defs/__schema44"
+    },
+    "__schema44": {
+      "type": "number",
+      "minimum": 0
+    },
+    "__schema45": {
+      "description": "false switches the behavior off without deleting it",
+      "$ref": "#/$defs/__schema46"
+    },
+    "__schema46": {
+      "type": "boolean"
+    },
+    "__schema47": {
+      "type": "number"
+    },
+    "__schema48": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/__schema47"
+        },
+        {
+          "$ref": "#/$defs/__schema19"
+        }
+      ],
+      "description": "A number (all dimensions) or [x, y]"
+    },
+    "__schema49": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "__schema50": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    },
+    "__schema51": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4
+    },
+    "__schema52": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "__schema53": {
+      "type": "number"
+    },
+    "__schema54": {
+      "type": "string",
+      "enum": [
+        "sine",
+        "triangle",
+        "square",
+        "saw"
+      ]
+    },
+    "__schema55": {
+      "type": "string",
+      "enum": [
+        "cycle",
+        "pingpong"
+      ]
+    },
+    "__schema56": {
+      "type": "number",
+      "minimum": 0
+    },
+    "__schema57": {
       "type": "string",
       "enum": [
         "normal",
@@ -1075,11 +1402,11 @@
         "difference"
       ]
     },
-    "__schema37": {
+    "__schema58": {
       "description": "Track matte: only show this layer where the matte layer is opaque",
-      "$ref": "#/$defs/__schema38"
+      "$ref": "#/$defs/__schema59"
     },
-    "__schema38": {
+    "__schema59": {
       "type": "object",
       "properties": {
         "layer": {
@@ -1099,7 +1426,7 @@
       ],
       "additionalProperties": false
     },
-    "__schema39": {
+    "__schema60": {
       "type": "object",
       "properties": {
         "type": {
@@ -1113,7 +1440,7 @@
           "minItems": 2,
           "type": "array",
           "items": {
-            "$ref": "#/$defs/__schema40"
+            "$ref": "#/$defs/__schema61"
           }
         },
         "from": {
@@ -1130,7 +1457,7 @@
         },
         "radius": {
           "description": "radial: radius in px",
-          "$ref": "#/$defs/__schema41"
+          "$ref": "#/$defs/__schema62"
         }
       },
       "required": [
@@ -1139,7 +1466,7 @@
       ],
       "additionalProperties": false
     },
-    "__schema40": {
+    "__schema61": {
       "type": "array",
       "prefixItems": [
         {
@@ -1155,21 +1482,21 @@
       "minItems": 2,
       "maxItems": 2
     },
-    "__schema41": {
+    "__schema62": {
       "type": "number",
       "exclusiveMinimum": 0
     },
-    "__schema42": {
+    "__schema63": {
       "anyOf": [
         {
           "$ref": "#/$defs/__schema34"
         },
         {
-          "$ref": "#/$defs/__schema39"
+          "$ref": "#/$defs/__schema60"
         }
       ]
     },
-    "__schema43": {
+    "__schema64": {
       "type": "object",
       "properties": {
         "color": {
@@ -1201,7 +1528,7 @@
       ],
       "additionalProperties": false
     },
-    "__schema44": {
+    "__schema65": {
       "type": "object",
       "properties": {
         "start": {
@@ -1215,13 +1542,13 @@
       },
       "additionalProperties": false
     },
-    "__schema45": {
+    "__schema66": {
       "type": "string"
     },
-    "__schema46": {
+    "__schema67": {
       "type": "number"
     },
-    "__schema47": {
+    "__schema68": {
       "type": "string",
       "enum": [
         "left",
@@ -1229,15 +1556,15 @@
         "right"
       ]
     },
-    "__schema48": {
+    "__schema69": {
       "type": "number",
       "exclusiveMinimum": 0
     },
-    "__schema49": {
+    "__schema70": {
       "description": "Default character",
-      "$ref": "#/$defs/__schema50"
+      "$ref": "#/$defs/__schema71"
     },
-    "__schema50": {
+    "__schema71": {
       "type": "string",
       "enum": [
         "character",
@@ -1245,11 +1572,11 @@
         "line"
       ]
     },
-    "__schema51": {
+    "__schema72": {
       "description": "Default forward",
-      "$ref": "#/$defs/__schema52"
+      "$ref": "#/$defs/__schema73"
     },
-    "__schema52": {
+    "__schema73": {
       "type": "string",
       "enum": [
         "forward",
@@ -1258,84 +1585,84 @@
         "random"
       ]
     },
-    "__schema53": {
+    "__schema74": {
       "description": "Seconds after the layer's in point. Default 0",
-      "$ref": "#/$defs/__schema54"
+      "$ref": "#/$defs/__schema75"
     },
-    "__schema54": {
+    "__schema75": {
       "type": "number"
     },
-    "__schema55": {
+    "__schema76": {
       "description": "Seconds between units. Default 0.04",
-      "$ref": "#/$defs/__schema56"
+      "$ref": "#/$defs/__schema77"
     },
-    "__schema56": {
+    "__schema77": {
       "type": "number",
       "minimum": 0
     },
-    "__schema57": {
+    "__schema78": {
       "description": "Seconds each unit takes. Default 0.6",
-      "$ref": "#/$defs/__schema58"
+      "$ref": "#/$defs/__schema79"
     },
-    "__schema58": {
+    "__schema79": {
       "type": "number",
       "exclusiveMinimum": 0
     },
-    "__schema59": {
+    "__schema80": {
       "description": "Default easeOutCubic",
       "$ref": "#/$defs/__schema23"
     },
-    "__schema60": {
+    "__schema81": {
       "type": "object",
       "properties": {
         "opacity": {
-          "$ref": "#/$defs/__schema61"
+          "$ref": "#/$defs/__schema82"
         },
         "offset": {
-          "$ref": "#/$defs/__schema62"
+          "$ref": "#/$defs/__schema83"
         },
         "scale": {
-          "$ref": "#/$defs/__schema63"
+          "$ref": "#/$defs/__schema84"
         },
         "rotation": {
-          "$ref": "#/$defs/__schema65"
+          "$ref": "#/$defs/__schema86"
         },
         "blur": {
-          "$ref": "#/$defs/__schema67"
+          "$ref": "#/$defs/__schema88"
         }
       },
       "additionalProperties": false,
       "description": "Start state of each unit; units animate to their normal state"
     },
-    "__schema61": {
+    "__schema82": {
       "type": "number"
     },
-    "__schema62": {
+    "__schema83": {
       "description": "Pixels each unit starts away from its rest position",
       "$ref": "#/$defs/__schema19"
     },
-    "__schema63": {
+    "__schema84": {
       "description": "Percent",
-      "$ref": "#/$defs/__schema64"
+      "$ref": "#/$defs/__schema85"
     },
-    "__schema64": {
+    "__schema85": {
       "type": "number"
     },
-    "__schema65": {
+    "__schema86": {
       "description": "Degrees",
-      "$ref": "#/$defs/__schema66"
+      "$ref": "#/$defs/__schema87"
     },
-    "__schema66": {
+    "__schema87": {
       "type": "number"
     },
-    "__schema67": {
+    "__schema88": {
       "description": "px",
-      "$ref": "#/$defs/__schema68"
+      "$ref": "#/$defs/__schema89"
     },
-    "__schema68": {
+    "__schema89": {
       "type": "number"
     },
-    "__schema69": {
+    "__schema90": {
       "type": "number"
     }
   }

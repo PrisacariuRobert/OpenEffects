@@ -80,6 +80,16 @@ Track matte (reveal text from behind a moving shape): give the shape \`"visible"
 }
 \`\`\`
 
+## Behaviors (procedural motion)
+Instead of many keyframes, attach a behavior to a property (\`behaviors\` array on the layer, or \`oe_add_behavior\`).
+They add on top of the static/keyframed value every frame:
+- \`{ "type": "wiggle", "property": "transform.position", "amount": 8, "frequency": 3 }\`: organic jitter (seeded, smooth)
+- \`{ "type": "oscillate", "property": "transform.scale", "amplitude": 5, "frequency": 1, "wave": "sine" }\`: pulse / float / sway
+- \`{ "type": "drift", "property": "transform.rotation", "speed": 90 }\`: constant change per second (spin, slow pan)
+- \`{ "type": "loop", "property": "transform.position", "mode": "pingpong" }\`: repeat the keyframes forever
+- \`{ "type": "follow", "property": "transform.position", "layer": "leader", "delay": 0.15, "offset": [0, 40] }\`: trail another layer
+Optional on all: start, end (seconds), fadeIn (seconds), enabled. Use [x, y] amounts for per-axis motion (e.g. [0, 12] = vertical only).
+
 ## Animation presets
 \`oe_apply_preset\` adds a ready-made, editable animation to a layer at a time: fade-in, slide-up/down/left/right,
 pop-in, zoom-in, blur-in, spin-in, typewriter / words-up / letters-pop (text), fade-out, slide-out-down, pop-out,
