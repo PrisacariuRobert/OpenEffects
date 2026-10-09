@@ -45,6 +45,8 @@ in the user's preview immediately.
 | path | d (SVG path data), fill?, stroke?, trim { start?, end? } (percent; animate end 0→100 to draw lines on) |
 | text | text, font { family?, weight?, size? }, fill?, stroke?, align?, letterSpacing?, lineHeight?, animator? |
 | image | src (relative path, e.g. assets/logo.png), size? |
+| video | src (assets/clip.mp4), size?, trimStart?, speed?, loop?, volume? (animatable 0-100), muted? |
+| audio | src (assets/music.mp3), trimStart?, speed?, volume? (animatable), muted?; no picture, plays in preview and exports |
 | null | (invisible) used as a parent to move several layers together |
 | comp | comp (id of another composition), timeOffset? |
 
@@ -79,6 +81,11 @@ Track matte (reveal text from behind a moving shape): give the shape \`"visible"
   "effects": [{ "type": "glow", "radius": 30, "intensity": 0.8 }]
 }
 \`\`\`
+
+## Markers, music and timing
+Compositions can have \`markers: [{ "t": 1.5, "label": "drop" }]\`. With an audio layer, \`oe_detect_beats\` adds a
+marker on every beat (or on every hit); read them back with \`oe_get_project\` and put keyframes on those times to
+sync motion to the music. Media layers use \`in\`/\`out\` like any layer; \`trimStart\` skips into the file.
 
 ## Behaviors (procedural motion)
 Instead of many keyframes, attach a behavior to a property (\`behaviors\` array on the layer, or \`oe_add_behavior\`).

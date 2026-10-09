@@ -248,6 +248,26 @@ export const ImageLayer = z.strictObject({
   src: z.string().describe("Path relative to the project folder, e.g. assets/logo.png"),
   size: AnimVec2.optional().describe("Default: natural image size"),
 });
+const mediaTiming = {
+  trimStart: z.number().min(0).optional().describe("Seconds into the media file where the layer starts playing. Default 0"),
+  speed: z.number().positive().max(16).optional().describe("Playback speed. Default 1"),
+  volume: Num.optional().describe("0-100 (animatable, e.g. for fades). Default 100"),
+  muted: z.boolean().optional(),
+};
+export const VideoLayer = z.strictObject({
+  ...layerBase,
+  type: z.literal("video"),
+  src: z.string().describe("Path relative to the project folder, e.g. assets/clip.mp4"),
+  size: AnimVec2.optional().describe("Default: the video's own size"),
+  loop: z.boolean().optional().describe("Loop the clip when it reaches its end"),
+  ...mediaTiming,
+});
+export const AudioLayer = z.strictObject({
+  ...layerBase,
+  type: z.literal("audio"),
+  src: z.string().describe("Path relative to the project folder, e.g. assets/music.mp3"),
+  ...mediaTiming,
+});
 export const NullLayer = z.strictObject({
   ...layerBase,
   type: z.literal("null"),
@@ -266,9 +286,17 @@ export const Layer = z.discriminatedUnion("type", [
   PathLayer,
   TextLayer,
   ImageLayer,
+  VideoLayer,
+  AudioLayer,
   NullLayer,
   CompLayer,
 ]);
+
+export const Marker = z.strictObject({
+  t: z.number().min(0).describe("Seconds"),
+  label: z.string().optional(),
+  color: Color.optional(),
+});
 
 export const Composition = z.strictObject({
   id: LayerId.describe("Composition id"),
@@ -278,6 +306,7 @@ export const Composition = z.strictObject({
   fps: z.number().positive().max(240),
   duration: z.number().positive().describe("Seconds"),
   background: Color.optional().describe("Default: transparent (black in video exports)"),
+  markers: z.array(Marker).optional().describe("Timeline markers (e.g. beats, cues) to time animation to"),
   layers: z.array(Layer).describe("Rendered in order: the LAST layer is drawn on top"),
 });
 
@@ -339,6 +368,7 @@ export type Fill = z.infer<typeof Fill>;
 export type Stroke = z.infer<typeof Stroke>;
 export type Effect = z.infer<typeof Effect>;
 export type Behavior = z.infer<typeof Behavior>;
+export type Marker = z.infer<typeof Marker>;
 export type TextAnimator = z.infer<typeof TextAnimator>;
 export type Layer = z.infer<typeof Layer>;
 export type LayerType = Layer["type"];

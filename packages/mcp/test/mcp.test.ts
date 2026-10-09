@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -61,6 +62,12 @@ describe("OpenEffects MCP server", () => {
     expect(bad.isError).toBe(true);
   });
 
+  it("refuses beat detection on non-media layers", async () => {
+    const r = await client.callTool({ name: "oe_detect_beats", arguments: { layerId: "hello" } });
+    expect(r.isError).toBe(true);
+    expect(textOf(r)).toMatch(/not an audio or video layer/);
+  });
+
   it("rejects invalid edits with a precise error and leaves the file untouched", async () => {
     const before = fs.readFileSync(file, "utf8");
     const r = await client.callTool({ name: "oe_update_layer", arguments: { id: "hello", patch: { fill: "blurple" } } });
@@ -73,5 +80,25 @@ describe("OpenEffects MCP server", () => {
     const r = await client.callTool({ name: "oe_render_frame", arguments: { time: 1, width: 320 } });
     const img = (r.content as { type: string; mimeType?: string }[]).find((c) => c.type === "image");
     expect(img?.mimeType).toBe("image/png");
+  });
+});
+
+describe("oe_detect_beats with real audio", () => {
+  it("adds a marker on every beat of a 120 BPM track", async () => {
+    try {
+      execFileSync("ffmpeg", ["-version"], { stdio: "ignore" });
+    } catch {
+      return; // ffmpeg not installed
+    }
+    const dir = path.dirname(file);
+    fs.mkdirSync(path.join(dir, "assets"), { recursive: true });
+    execFileSync("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", "aevalsrc=if(lt(mod(t\\,0.5)\\,0.04)\\,0.9*sin(2*PI*880*t)*exp(-60*mod(t\\,0.5))\\,0):s=44100:d=6", path.join(dir, "assets", "beat.wav")]);
+    await client.callTool({ name: "oe_add_layer", arguments: { layer: { id: "music", type: "audio", src: "assets/beat.wav" } } });
+    const r = await client.callTool({ name: "oe_detect_beats", arguments: { layerId: "music" } });
+    expect(r.isError).toBeFalsy();
+    expect(textOf(r)).toMatch(/Tempo ≈ 1(19|20|21)/);
+    const markers = read().compositions[0].markers as { t: number }[];
+    expect(markers.length).toBe(11); // composition is 5 s long: beats at 0, 0.5 … 5.0
+    for (const m of markers) expect(Math.min(m.t % 0.5, 0.5 - (m.t % 0.5))).toBeLessThan(0.005);
   });
 });

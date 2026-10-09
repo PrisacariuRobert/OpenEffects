@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   EASE_NAMES,
   addLayer,
@@ -8,22 +8,31 @@ import {
   duplicateLayer,
   editLayer,
   easeKind,
+  getComp,
   getIn,
   moveKeyframe,
   moveLayer,
   removeKeyframe,
   resolveEase,
   setIn,
+  sample,
   setKeyframeEase,
   shiftLayerTime,
   uniqueLayerId,
+  updateComposition,
+  mediaSourceTime,
+  isMediaLayer,
   type Composition,
   type Easing,
   type Keyframe,
   type Layer,
+  type Marker,
+  type MediaLayer,
   type Project,
 } from "@openeffects/schema";
 import type { Editor } from "../editor.ts";
+import { getMediaInfo } from "../browserEnv.ts";
+import { loadWaveform } from "../mediaPlayback.ts";
 import { CurveIcon, EaseEditor } from "./EaseEditor.tsx";
 import { GraphEditor } from "./GraphEditor.tsx";
 
@@ -41,7 +50,9 @@ interface Props {
   playing: boolean;
   selected: string | null;
   selectedKeyframes: KeyframeRef[];
-  assets: string[];
+  assets: { src: string; kind: "image" | "video" | "audio" }[];
+  muted: boolean;
+  onToggleMute(): void;
   workArea: { start: number; end: number } | null;
   onWorkArea(w: { start: number; end: number } | null): void;
   onSeek(t: number): void;
@@ -50,7 +61,38 @@ interface Props {
   onSelectKeyframes(k: KeyframeRef[]): void;
 }
 
-const TYPE_ICON: Record<string, string> = { solid: "■", rect: "▭", ellipse: "●", path: "✎", text: "T", image: "▣", null: "✛", comp: "❒" };
+const TYPE_ICON: Record<string, string> = { solid: "■", rect: "▭", ellipse: "●", path: "✎", text: "T", image: "▣", video: "▶", audio: "♪", null: "✛", comp: "❒" };
+const KIND_ICON = { image: "▣", video: "▶", audio: "♪" } as const;
+
+/** Waveform of a media layer, drawn inside its timeline bar for the part that plays. */
+function Waveform({ layer, duration }: { layer: MediaLayer; duration: number }) {
+  const [wave, setWave] = useState<{ perSecond: number; peaks: number[] } | null>(null);
+  useEffect(() => {
+    let alive = true;
+    loadWaveform(layer.src).then((w) => alive && setWave(w));
+    return () => {
+      alive = false;
+    };
+  }, [layer.src]);
+  if (!wave) return null;
+  const start = layer.in ?? 0;
+  const end = layer.out ?? duration;
+  const info = getMediaInfo(layer.src);
+  const N = 160;
+  let d = "";
+  for (let i = 0; i < N; i++) {
+    const ft = mediaSourceTime(layer, start + ((i + 0.5) / N) * (end - start), info?.duration);
+    const past = info && !(layer.type === "video" && layer.loop) && ft >= info.duration - 0.01;
+    const peak = past ? 0 : (wave.peaks[Math.floor(ft * wave.perSecond)] ?? 0) * Math.min(1, sample(layer.volume, start, 100) / 100);
+    const h = Math.max(0.5, peak * 44);
+    d += `M${i + 0.5} ${50 - h}V${50 + h}`;
+  }
+  return (
+    <svg className="waveform" viewBox={`0 0 ${N} 100`} preserveAspectRatio="none">
+      <path d={d} />
+    </svg>
+  );
+}
 
 function formatTime(t: number, fps: number): string {
   const s = Math.floor(t + 1e-6);
@@ -98,13 +140,17 @@ function newLayer(kind: string, comp: Composition, id: string, src?: string): La
       };
     case "image":
       return { id, type: "image", src: src ?? "" };
+    case "video":
+      return { id, type: "video", src: src ?? "" };
+    case "audio":
+      return { id, type: "audio", src: src ?? "" };
     default:
       return { id, type: "null" };
   }
 }
 
 export function Timeline(props: Props) {
-  const { editor, comp, time, playing, selected, selectedKeyframes, assets, workArea, onWorkArea, onSeek, onTogglePlay, onSelect, onSelectKeyframes } = props;
+  const { editor, comp, time, playing, selected, selectedKeyframes, assets, workArea, onWorkArea, onSeek, onTogglePlay, onSelect, onSelectKeyframes, muted, onToggleMute } = props;
   const [graph, setGraph] = useState(false);
   const [graphPath, setGraphPath] = useState<string | null>(null);
   const [easeOpen, setEaseOpen] = useState(false);
@@ -114,7 +160,23 @@ export function Timeline(props: Props) {
   const [reorder, setReorder] = useState<{ id: string; over: number } | null>(null);
   const D = comp.duration;
   const pct = (t: number) => `${(Math.min(Math.max(t, 0), D) / D) * 100}%`;
-  const snap = (t: number) => Math.round(t * comp.fps) / comp.fps;
+  const markers = comp.markers ?? [];
+  /** Snap a time to a marker (within 6 px) or else to the nearest frame. */
+  const snap = (t: number) => {
+    const tol = 6 * secondsPerPx();
+    const m = markers.find((mk) => Math.abs(mk.t - t) <= tol);
+    return m ? m.t : Math.round(t * comp.fps) / comp.fps;
+  };
+  const setMarkers = (fn: (m: Marker[]) => Marker[], transient = false) =>
+    editor.update(
+      (p) => {
+        const next = fn(getComp(p, comp.id).markers ?? []).sort((a, b) => a.t - b.t);
+        return updateComposition(p, { markers: next.length ? next : null }, { compId: comp.id });
+      },
+      { transient },
+    );
+  const prevMarker = [...markers].reverse().find((m) => m.t < time - 1e-3);
+  const nextMarker = markers.find((m) => m.t > time + 1e-3);
   const timeAt = (clientX: number) => {
     const rect = trackRef.current!.getBoundingClientRect();
     return Math.min(1, Math.max(0, (clientX - rect.left) / rect.width)) * D;
@@ -122,14 +184,17 @@ export function Timeline(props: Props) {
   const secondsPerPx = () => D / (trackRef.current?.getBoundingClientRect().width || 1);
   const layersTopFirst = [...comp.layers].reverse(); // like After Effects: top of list = top of stack
 
-  /** Generic horizontal drag: calls onMove with the time delta, commits on release. */
-  const dragTime = (e: React.PointerEvent, onMove: (dt: number, transient: boolean) => void) => {
+  /**
+   * Generic horizontal drag: calls onMove with the time delta, commits on release. With
+   * `anchor` (the dragged item's own time), the result snaps to markers and frames.
+   */
+  const dragTime = (e: React.PointerEvent, onMove: (dt: number, transient: boolean) => void, anchor = 0) => {
     e.stopPropagation();
     e.preventDefault();
     const x0 = e.clientX;
     let last = 0;
     const move = (ev: PointerEvent) => {
-      last = snap((ev.clientX - x0) * secondsPerPx());
+      last = snap(anchor + (ev.clientX - x0) * secondsPerPx()) - anchor;
       onMove(last, true);
     };
     const up = () => {
@@ -156,13 +221,24 @@ export function Timeline(props: Props) {
 
   const editL = (id: string, fn: (l: Layer) => Layer, transient = false) => editor.update((p) => editLayer(p, id, fn, { compId: comp.id }), { transient });
 
-  const add = (kind: string, src?: string) => {
+  const add = async (kind: string, src?: string) => {
     setMenu(false);
+    let layerExtra: Partial<Layer> = {};
+    if ((kind === "video" || kind === "audio") && src) {
+      // Fit videos to the frame and end media layers where the file ends.
+      const info = await fetch(`/api/media?src=${encodeURIComponent(src)}`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      if (info?.duration && info.duration < D) layerExtra = { out: Math.round(info.duration * 1000) / 1000 };
+      if (kind === "video" && info?.width && info?.height) {
+        const s = Math.min(1, comp.width / info.width, comp.height / info.height);
+        layerExtra = { ...layerExtra, size: [Math.round(info.width * s), Math.round(info.height * s)] } as Partial<Layer>;
+      }
+    }
     editor.update((p) => {
-      const id = uniqueLayerId(p, kind === "image" && src ? src.split("/").pop()!.replace(/\.[^.]+$/, "") : kind, comp.id);
+      const base = src ? src.split("/").pop()!.replace(/\.[^.]+$/, "") : kind;
+      const id = uniqueLayerId(p, base, comp.id);
       setTimeout(() => onSelect(id));
-      // Solids go to the bottom (backgrounds); everything else on top.
-      return addLayer(p, newLayer(kind, comp, id, src), { compId: comp.id, index: kind === "solid" ? 0 : undefined });
+      // Solids and audio go to the bottom; everything else on top.
+      return addLayer(p, { ...newLayer(kind, comp, id, src), ...layerExtra } as Layer, { compId: comp.id, index: kind === "solid" || kind === "audio" ? 0 : undefined });
     });
   };
 
@@ -255,6 +331,20 @@ export function Timeline(props: Props) {
         <button className="icon-btn" onClick={() => onSeek(0)} title="Go to start (Home)">⏮</button>
         <button className="icon-btn play" onClick={onTogglePlay} title="Play/Pause (Space)">{playing ? "❚❚" : "▶"}</button>
         <span className="timecode">{formatTime(time, comp.fps)}</span>
+        <span className="marker-nav">
+          <button className="tiny" disabled={!prevMarker} title="Previous marker ( [ )" onClick={() => prevMarker && onSeek(prevMarker.t)}>
+            ◂◆
+          </button>
+          <button className="tiny" title="Add a marker at the playhead (M)" onClick={() => setMarkers((m) => [...m.filter((x) => Math.abs(x.t - time) > 1e-3), { t: Math.round(time * 1000) / 1000 }])}>
+            +◆
+          </button>
+          <button className="tiny" disabled={!nextMarker} title="Next marker ( ] )" onClick={() => nextMarker && onSeek(nextMarker.t)}>
+            ◆▸
+          </button>
+        </span>
+        <button className={`tiny ${muted ? "active" : ""}`} title={muted ? "Unmute preview audio" : "Mute preview audio"} onClick={onToggleMute}>
+          {muted ? "🔇" : "🔊"}
+        </button>
         <span className="muted small">/ {formatTime(D, comp.fps)} · {comp.width}×{comp.height} · {comp.fps} fps</span>
         <span className="grow" />
         {firstSel && (
@@ -305,13 +395,13 @@ export function Timeline(props: Props) {
                   <button onClick={() => add("line")}>✎  Line (draws on)</button>
                   <button onClick={() => add("solid")}>■  Background solid</button>
                   <button onClick={() => add("null")}>✛  Null (parent / camera)</button>
-                  {assets.length > 0 && <div className="menu-sep">Images in assets/</div>}
+                  {assets.length > 0 && <div className="menu-sep">Media in assets/</div>}
                   {assets.map((a) => (
-                    <button key={a} onClick={() => add("image", a)}>
-                      ▣  {a.replace(/^assets\//, "")}
+                    <button key={a.src} onClick={() => add(a.kind, a.src)}>
+                      {KIND_ICON[a.kind]}  {a.src.replace(/^assets\//, "")}
                     </button>
                   ))}
-                  <div className="menu-hint">Tip: drop images onto the viewer</div>
+                  <div className="menu-hint">Tip: drop images, video or audio onto the viewer</div>
                 </div>
               )}
             </div>
@@ -392,6 +482,58 @@ export function Timeline(props: Props) {
                 {Number.isInteger(t) ? `${t}s` : ""}
               </span>
             ))}
+            {markers.map((m, i) => (
+              <span
+                key={`${m.t}-${i}`}
+                className="marker"
+                style={{ left: pct(m.t), ...(m.color ? { ["--mk" as string]: m.color } : {}) }}
+                title={`${m.label ?? "Marker"} · ${m.t.toFixed(2)}s · drag to move · double-click to rename · Alt+click to delete`}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  if (e.altKey || e.button === 2) {
+                    e.preventDefault();
+                    setMarkers((ms) => ms.filter((_, j) => j !== i));
+                    return;
+                  }
+                  const x0 = e.clientX;
+                  let moved = false;
+                  let t = m.t;
+                  const move = (ev: PointerEvent) => {
+                    if (!moved && Math.abs(ev.clientX - x0) < 3) return;
+                    moved = true;
+                    t = Math.min(D, Math.max(0, Math.round((m.t + (ev.clientX - x0) * secondsPerPx()) * comp.fps) / comp.fps));
+                    setMarkers((ms) => ms.map((x, j) => (j === i ? { ...x, t } : x)), true);
+                  };
+                  const up = () => {
+                    window.removeEventListener("pointermove", move);
+                    window.removeEventListener("pointerup", up);
+                    if (moved) setMarkers((ms) => ms.map((x, j) => (j === i ? { ...x, t } : x)));
+                    else onSeek(m.t);
+                  };
+                  window.addEventListener("pointermove", move);
+                  window.addEventListener("pointerup", up);
+                }}
+                onContextMenu={(e) => e.preventDefault()}
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
+                  const label = prompt("Marker label", m.label ?? "");
+                  if (label !== null) setMarkers((ms) => ms.map((x, j) => (j === i ? { ...x, label: label || undefined } : x)));
+                }}
+              >
+              </span>
+            ))}
+            {markers.map((m, i) =>
+              m.label ? (
+                // Labels get the room up to the next marker and truncate beyond it.
+                <span
+                  key={`lb-${i}`}
+                  className="marker-label"
+                  style={{ left: `calc(${pct(m.t)} + 7px)`, maxWidth: `calc(${pct((markers[i + 1]?.t ?? D) - m.t)} - 10px)`, ...(m.color ? { color: m.color } : {}) }}
+                >
+                  {m.label}
+                </span>
+              ) : null,
+            )}
             {workArea && (
               <div className="work-area" style={{ left: pct(workArea.start), width: `calc(${pct(workArea.end)} - ${pct(workArea.start)})` }} onPointerDown={dragWorkArea("both")} title="Preview loop range (B / N set start / end, double-click to clear)" onDoubleClick={() => onWorkArea(null)}>
                 <span className="wa-handle left" onPointerDown={dragWorkArea("start")} />
@@ -429,14 +571,15 @@ export function Timeline(props: Props) {
                     onPointerDown={(e) => {
                       onSelect(l.id);
                       const base = l;
-                      dragTime(e, (dt, tr) => editL(l.id, () => shiftLayerTime(base, dt), tr));
+                      dragTime(e, (dt, tr) => editL(l.id, () => shiftLayerTime(base, dt), tr), start);
                     }}
                   >
+                    {isMediaLayer(l) && <Waveform layer={l} duration={D} />}
                     <span
                       className="trim left"
                       onPointerDown={(e) => {
                         onSelect(l.id);
-                        dragTime(e, (dt, tr) => editL(l.id, (x) => setIn(x, "in", Math.max(0, Math.min(end - 1 / comp.fps, start + dt)) || undefined), tr));
+                        dragTime(e, (dt, tr) => editL(l.id, (x) => setIn(x, "in", Math.max(0, Math.min(end - 1 / comp.fps, start + dt)) || undefined), tr), start);
                       }}
                     />
                     <span
@@ -446,7 +589,7 @@ export function Timeline(props: Props) {
                         dragTime(e, (dt, tr) => {
                           const out = Math.max(start + 1 / comp.fps, end + dt);
                           editL(l.id, (x) => setIn(x, "out", out >= D ? undefined : out), tr);
-                        });
+                        }, end);
                       }}
                     />
                   </div>
@@ -478,7 +621,7 @@ export function Timeline(props: Props) {
                                 // Keep the moved keyframe selected after re-sorting.
                                 const newIndex = ((getIn(next, path) as { keyframes: Keyframe<unknown>[] }).keyframes ?? []).findIndex((k) => Math.abs(k.t - snapT(t + dt)) < 1e-6);
                                 if (!tr && newIndex >= 0) onSelectKeyframes([{ layerId: l.id, path, index: newIndex }]);
-                              });
+                              }, t);
                             }}
                           />
                         );
@@ -489,6 +632,9 @@ export function Timeline(props: Props) {
               </div>
             );
           })}
+          {markers.map((m, i) => (
+            <div key={`ml-${i}`} className="marker-line" style={{ left: pct(m.t) }} />
+          ))}
           <div className="playhead" style={{ left: pct(time) }} />
         </div>
       </div>

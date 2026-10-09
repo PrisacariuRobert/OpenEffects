@@ -5,6 +5,7 @@ import { createCanvas } from "@napi-rs/canvas";
 import { renderFrame } from "@openeffects/engine";
 import { getComp, type Project } from "@openeffects/schema";
 import { createNodeEnv } from "./canvas.ts";
+import { mixAudio } from "./media.ts";
 
 export interface FrameOptions {
   time: number;
@@ -23,7 +24,13 @@ export async function renderFramePng(project: Project, projectDir: string, opts:
   const h = Math.max(1, Math.round(comp.height * scale));
   const canvas = createCanvas(w, h);
   const ctx = canvas.getContext("2d") as unknown as CanvasRenderingContext2D;
-  renderFrame(ctx, project, { compId: comp.id, time: clampTime(opts.time, comp.duration), scale }, env);
+  const time = clampTime(opts.time, comp.duration);
+  try {
+    await env.prepare(time, comp.id);
+    renderFrame(ctx, project, { compId: comp.id, time, scale }, env);
+  } finally {
+    env.dispose();
+  }
   if (opts.matte) {
     ctx.globalCompositeOperation = "destination-over";
     ctx.fillStyle = opts.matte;
@@ -65,7 +72,8 @@ export async function renderContactSheet(project: Project, projectDir: string, o
   const env = await createNodeEnv(project, projectDir);
   const cell = createCanvas(cellW, cellH);
   const cctx = cell.getContext("2d") as unknown as CanvasRenderingContext2D;
-  times.forEach((t, i) => {
+  for (const [i, t] of times.entries()) {
+    await env.prepare(clampTime(t, comp.duration), comp.id);
     renderFrame(cctx, project, { compId: comp.id, time: clampTime(t, comp.duration), scale }, env);
     const x = gap + (i % columns) * (cellW + gap);
     const y = gap + Math.floor(i / columns) * (cellH + label + gap);
@@ -74,7 +82,8 @@ export async function renderContactSheet(project: Project, projectDir: string, o
     sctx.fillStyle = "#c8ccd8";
     sctx.font = "600 14px Inter, sans-serif";
     sctx.fillText(`t = ${t.toFixed(2)}s`, x + 2, y + 16);
-  });
+  }
+  env.dispose();
   return sheet.encode("png");
 }
 
@@ -105,16 +114,18 @@ export function ffmpegPath(): string {
   return process.env.OE_FFMPEG || "ffmpeg";
 }
 
-function ffmpegArgs(format: Exclude<ExportFormat, "png">, w: number, h: number, fps: number, out: string): string[] {
-  const input = ["-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgba", "-s", `${w}x${h}`, "-r", String(fps), "-i", "-"];
+function ffmpegArgs(format: Exclude<ExportFormat, "png">, w: number, h: number, fps: number, out: string, audio: string | null): string[] {
+  const withAudio = audio && format !== "gif";
+  const input = ["-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgba", "-s", `${w}x${h}`, "-r", String(fps), "-i", "-", ...(withAudio ? ["-i", audio] : [])];
+  const a = (codec: string[]) => (withAudio ? ["-map", "0:v", "-map", "1:a", ...codec, "-shortest"] : []);
   const even = "pad=ceil(iw/2)*2:ceil(ih/2)*2";
   switch (format) {
     case "mp4":
-      return [...input, "-vf", even, "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "medium", "-crf", "18", "-movflags", "+faststart", out];
+      return [...input, "-vf", even, "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "medium", "-crf", "18", ...a(["-c:a", "aac", "-b:a", "192k"]), "-movflags", "+faststart", out];
     case "webm":
-      return [...input, "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", "-b:v", "0", "-crf", "30", "-row-mt", "1", out];
+      return [...input, "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", "-b:v", "0", "-crf", "30", "-row-mt", "1", ...a(["-c:a", "libopus", "-b:a", "160k"]), out];
     case "mov":
-      return [...input, "-c:v", "prores_ks", "-profile:v", "4444", "-pix_fmt", "yuva444p10le", out];
+      return [...input, "-c:v", "prores_ks", "-profile:v", "4444", "-pix_fmt", "yuva444p10le", ...a(["-c:a", "pcm_s16le"]), out];
     case "gif": {
       // 24 fps + one global palette + ordered dithering keeps GIFs small enough to share.
       const gifFps = Math.min(fps, 24);
@@ -143,7 +154,8 @@ export async function exportVideo(project: Project, projectDir: string, opts: Ex
   const flat = flatten ? createCanvas(w, h) : undefined;
   const fctx = flat?.getContext("2d");
 
-  const frameAt = (i: number) => {
+  const frameAt = async (i: number) => {
+    await env.prepare((first + i) / comp.fps, comp.id);
     renderFrame(ctx, project, { compId: comp.id, time: (first + i) / comp.fps, scale }, env);
     if (!fctx || !flat) return canvas;
     fctx.globalCompositeOperation = "source-over";
@@ -159,13 +171,16 @@ export async function exportVideo(project: Project, projectDir: string, opts: Ex
     fs.mkdirSync(opts.out, { recursive: true });
     for (let i = 0; i < total; i++) {
       if (opts.signal?.aborted) throw new Error("Export cancelled");
-      fs.writeFileSync(path.join(opts.out, `frame_${String(i).padStart(5, "0")}.png`), await frameAt(i).encode("png"));
+      fs.writeFileSync(path.join(opts.out, `frame_${String(i).padStart(5, "0")}.png`), await (await frameAt(i)).encode("png"));
       opts.onProgress?.(i + 1, total);
     }
+    env.dispose();
     return { file: opts.out, frames: total };
   }
 
-  const ff = spawn(ffmpegPath(), ffmpegArgs(format, w, h, comp.fps, opts.out), { stdio: ["pipe", "ignore", "pipe"] });
+  // Audio and video layers are mixed into one WAV that ffmpeg muxes with the frames.
+  const audio = format === "gif" ? null : await mixAudio(project, projectDir, { compId: comp.id, start: first / comp.fps, end: (first + total) / comp.fps }).catch(() => null);
+  const ff = spawn(ffmpegPath(), ffmpegArgs(format, w, h, comp.fps, opts.out, audio), { stdio: ["pipe", "ignore", "pipe"] });
   let stderr = "";
   let closed = false;
   ff.stderr.on("data", (d) => (stderr += d));
@@ -209,19 +224,22 @@ export async function exportVideo(project: Project, projectDir: string, opts: Ex
       if (opts.signal?.aborted) throw new Error("Export cancelled");
       // canvas.data() is premultiplied RGBA; exact for flattened (opaque) output, and
       // un-premultiplied below for formats that keep transparency.
-      const data = Buffer.from(frameAt(i).data());
+      const data = Buffer.from((await frameAt(i)).data());
       if (!flatten) unpremultiply(data);
       await write(data);
       opts.onProgress?.(i + 1, total);
     }
   } catch (e) {
+    env.dispose();
+    if (audio) fs.rmSync(audio, { force: true });
     ff.kill();
     // Prefer the spawn error (e.g. "ffmpeg not found") over the generic write failure.
     const spawnError = await exited.then(() => undefined, (err: Error) => err);
     throw spawnError ?? e;
   }
   ff.stdin.end();
-  const code = await exited;
+  env.dispose();
+  const code = await exited.finally(() => audio && fs.rmSync(audio, { force: true }));
   if (code !== 0) throw new Error(`ffmpeg failed (${code}): ${stderr.trim()}`);
   return { file: opts.out, frames: total };
 }

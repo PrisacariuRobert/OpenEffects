@@ -2,6 +2,7 @@ import { svgPathProperties } from "svg-path-properties";
 import {
   applyBehaviors,
   getComp,
+  mediaSourceTime,
   sample,
   type Composition,
   type Effect,
@@ -205,6 +206,14 @@ function contentBounds(ctx: CanvasRenderingContext2D, frame: Frame, layer: Layer
       const [w, h] = sample(layer.size, t, [img.width, img.height] as Vec2);
       return box(w, h);
     }
+    case "video": {
+      const info = frame.env.video?.info(layer.src);
+      const natural: Vec2 = info?.width && info.height ? [info.width, info.height] : [0, 0];
+      const [w, h] = sample(layer.size, t, natural);
+      return w > 0 && h > 0 ? box(w, h) : "unknown";
+    }
+    case "audio":
+      return "empty";
     case "comp": {
       const inner = frame.project.compositions.find((c) => c.id === layer.comp);
       return inner ? box(inner.width, inner.height) : "empty";
@@ -423,6 +432,16 @@ function drawContent(ctx: CanvasRenderingContext2D, frame: Frame, scene: Scene, 
       frame.depth--;
       break;
     }
+    case "video": {
+      const info = frame.env.video?.info(layer.src);
+      const img = frame.env.video?.frame(layer.src, mediaSourceTime(layer, t, info?.duration));
+      if (!img) break;
+      const natural: Vec2 = info?.width && info.height ? [info.width, info.height] : [img.width, img.height];
+      const [w, h] = sample(layer.size, t, natural);
+      ctx.drawImage(img, -w / 2, -h / 2, w, h);
+      break;
+    }
+    case "audio":
     case "null":
       break;
   }
@@ -709,6 +728,13 @@ export function collectImages(project: Project): string[] {
   const srcs = new Set<string>();
   for (const c of project.compositions) for (const l of c.layers) if (l.type === "image") srcs.add(l.src);
   return [...srcs];
+}
+
+/** Video and audio sources referenced anywhere in the project. */
+export function collectMedia(project: Project): { src: string; type: "video" | "audio" }[] {
+  const seen = new Map<string, "video" | "audio">();
+  for (const c of project.compositions) for (const l of c.layers) if (l.type === "video" || l.type === "audio") if (!seen.has(l.src) || l.type === "video") seen.set(l.src, l.type);
+  return [...seen].map(([src, type]) => ({ src, type }));
 }
 
 /** Fonts referenced by text layers (for preloading in the browser). */

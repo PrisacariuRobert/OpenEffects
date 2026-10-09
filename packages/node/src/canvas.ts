@@ -2,7 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { createCanvas, GlobalFonts, loadImage, Path2D, type Image } from "@napi-rs/canvas";
-import { collectImages, type RenderEnv, type Surface } from "@openeffects/engine";
+import { collectImages, collectMedia, type RenderEnv, type Surface } from "@openeffects/engine";
+import { NodeVideoSource } from "./media.ts";
 import type { Project } from "@openeffects/schema";
 
 const require = createRequire(import.meta.url);
@@ -40,6 +41,10 @@ export function createSurface(width: number, height: number): Surface {
 
 export interface NodeEnv extends RenderEnv {
   projectDir: string;
+  /** Decode the video frames needed at composition time t. Call before renderFrame. */
+  prepare(t: number, compId?: string): Promise<void>;
+  /** Stop video decoders. */
+  dispose(): void;
 }
 
 const imageCache = new Map<string, { mtime: number; image: Image }>();
@@ -61,14 +66,23 @@ export async function createNodeEnv(project: Project, projectDir: string): Promi
       // Missing images render as nothing; validation of assets is reported elsewhere.
     }
   }
+  const hasVideo = project.compositions.some((c) => c.layers.some((l) => l.type === "video"));
+  const videos = hasVideo ? new NodeVideoSource(project, projectDir) : undefined;
+  await videos?.init();
   return {
     projectDir,
     createSurface,
     createPath: (d) => new Path2D(d) as unknown as globalThis.Path2D,
     images: images as unknown as RenderEnv["images"],
+    video: videos ? { frame: videos.frame, info: videos.infoOf } : undefined,
+    prepare: async (t, compId) => {
+      await videos?.prepare(t, compId);
+    },
+    dispose: () => videos?.dispose(),
   };
 }
 
 export function missingAssets(project: Project, projectDir: string): string[] {
-  return collectImages(project).filter((src) => !fs.existsSync(path.resolve(projectDir, src)));
+  const srcs = [...collectImages(project), ...collectMedia(project).map((m) => m.src)];
+  return [...new Set(srcs)].filter((src) => !fs.existsSync(path.resolve(projectDir, src)));
 }

@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { invert, isActive, layerGeometry, pointInQuad, renderFrame, type LayerGeometry } from "@openeffects/engine";
-import { addLayer, editLayer, getIn, isKeyframed, sample, setValueAtTime, uniqueLayerId, type Composition, type Layer, type Project } from "@openeffects/schema";
-import { browserEnv, preload } from "../browserEnv.ts";
+import { addLayer, editLayer, getIn, isKeyframed, mediaKind, sample, setValueAtTime, uniqueLayerId, type Composition, type Layer, type Project } from "@openeffects/schema";
+import { browserEnv, onMediaFrame, preload } from "../browserEnv.ts";
 import type { Editor } from "../editor.ts";
 
 interface Props {
@@ -55,6 +55,9 @@ export function Viewport({ editor, project, comp, time, errors, selected, onSele
     };
   }, [project]);
 
+  // Redraw when a video element lands on the requested frame.
+  useEffect(() => onMediaFrame(() => setReady((n) => n + 1)), []);
+
   const pad = 32;
   const fit = Math.min((box.w - pad * 2) / comp.width, (box.h - pad * 2) / comp.height);
   const displayW = Math.max(1, Math.floor(comp.width * fit));
@@ -98,7 +101,7 @@ export function Viewport({ editor, project, comp, time, errors, selected, onSele
   const hitTest = (p: Pt): string | null => {
     for (let i = comp.layers.length - 1; i >= 0; i--) {
       const l = comp.layers[i];
-      if (l.visible === false || l.type === "null" || !isActive(l, comp, t)) continue;
+      if (l.visible === false || l.type === "null" || l.type === "audio" || !isActive(l, comp, t)) continue;
       if (l.type === "solid" && !l.size) continue; // full-frame backgrounds: select from the timeline
       const g = geometry(l.id);
       if (g && pointInQuad(g.quad, p[0], p[1])) return l.id;
@@ -195,18 +198,36 @@ export function Viewport({ editor, project, comp, time, errors, selected, onSele
     edit(d.id, path, sample(getIn(l, path) as never, t, fallback as never), false);
   };
 
-  // Drop images from the desktop: upload into assets/ and add an image layer where dropped.
+  // Drop media from the desktop: upload into assets/ and add a layer. Images land where dropped,
+  // videos fill the frame, audio goes to the bottom of the stack.
   const onDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setDropping(false);
-    const files = [...e.dataTransfer.files].filter((f) => f.type.startsWith("image/"));
-    if (!files.length) return onError("Drop image files (PNG, JPG, WebP, GIF, SVG) to add them.");
+    const files = [...e.dataTransfer.files].filter((f) => mediaKind(f.name));
+    if (!files.length) return onError("Drop images (PNG, JPG, WebP, GIF, SVG), video (MP4, WebM, MOV) or audio (MP3, WAV, M4A, OGG, FLAC) to add them.");
     const at = toComp(e);
     for (const file of files) {
       try {
         const res = await fetch(`/api/assets?name=${encodeURIComponent(file.name)}`, { method: "POST", headers: { "content-type": "application/octet-stream" }, body: file });
-        const data = (await res.json()) as { src?: string; error?: string };
+        const data = (await res.json()) as { src?: string; kind?: string; error?: string };
         if (!res.ok || !data.src) throw new Error(data.error ?? "Upload failed");
+        const kind = mediaKind(file.name);
+        if (kind === "video" || kind === "audio") {
+          const info = (await fetch(`/api/media?src=${encodeURIComponent(data.src)}`).then((r) => (r.ok ? r.json() : null))) as { width?: number; height?: number; duration?: number } | null;
+          editor.update((p) => {
+            const id = uniqueLayerId(p, file.name.replace(/\.[^.]+$/, ""), comp.id);
+            const out = info?.duration && info.duration < comp.duration ? Math.round(info.duration * 1000) / 1000 : undefined;
+            let layer: Layer;
+            if (kind === "audio") layer = { id, type: "audio", src: data.src!, ...(out ? { out } : {}) };
+            else {
+              const s = info?.width && info.height ? Math.min(1, comp.width / info.width, comp.height / info.height) : 1;
+              layer = { id, type: "video", src: data.src!, ...(out ? { out } : {}), ...(info?.width && info.height ? { size: [Math.round(info.width * s), Math.round(info.height * s)] as [number, number] } : {}) };
+            }
+            setTimeout(() => onSelect(id));
+            return addLayer(p, layer, { compId: comp.id, index: kind === "audio" ? 0 : undefined });
+          });
+          continue;
+        }
         const size = await imageSize(file);
         const s = Math.min(1, (comp.width * 0.6) / size[0], (comp.height * 0.6) / size[1]);
         editor.update((p) => {
@@ -221,7 +242,7 @@ export function Viewport({ editor, project, comp, time, errors, selected, onSele
     }
   };
 
-  const sel = geometry(selected);
+  const sel = selected && layerById(selected)?.type !== "audio" ? geometry(selected) : null;
 
   /** Align the selected layer's bounding box to the composition (sets position at the playhead). */
   const align = (h: "left" | "center" | "right" | null, v: "top" | "middle" | "bottom" | null) => {
@@ -361,7 +382,7 @@ export function Viewport({ editor, project, comp, time, errors, selected, onSele
           </span>
         )}
       </div>
-      {dropping && <div className="drop-hint">Drop images to add them as layers</div>}
+      {dropping && <div className="drop-hint">Drop images, video or audio to add them as layers</div>}
       {errors.length > 0 && (
         <div className="error-banner">
           <strong>project.oe.json has errors</strong> (showing the last valid version)

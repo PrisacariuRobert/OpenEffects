@@ -127,3 +127,15 @@ describe("generated JSON Schema", () => {
     expect(JSON.parse(fs.readFileSync(file, "utf8"))).toEqual(JSON.parse(JSON.stringify(expected)));
   });
 });
+
+describe("media timing", async () => {
+  const { mediaSourceTime, compTimeOfSource, beatMarkers } = await import("../src/index.ts");
+  it("maps composition time to file time and back", () => {
+    const v = { id: "v", type: "video" as const, src: "a.mp4", in: 2, trimStart: 1, speed: 2 };
+    expect(mediaSourceTime(v, 3)).toBe(3); // (3-2)*2+1
+    expect(compTimeOfSource(v, 3)).toBe(3);
+    expect(mediaSourceTime({ ...v, loop: true }, 4, 3)).toBe(1); // 5 → loops within [1, 3)
+    const markers = beatMarkers({ id: "a", type: "audio", src: "m.mp3", in: 1, out: 3 }, [0, 0.5, 1, 1.5, 2, 2.5], { duration: 10 });
+    expect(markers.map((m) => m.t)).toEqual([1, 1.5, 2, 2.5, 3]);
+  });
+});

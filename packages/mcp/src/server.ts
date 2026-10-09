@@ -7,6 +7,8 @@ import { z } from "zod";
 import {
   AGENT_GUIDE,
   ANIMATION_PRESETS,
+  beatMarkers,
+  isMediaLayer,
   applyPreset,
   editLayer,
   EditError,
@@ -24,6 +26,7 @@ import {
 } from "@openeffects/schema";
 import {
   ProjectValidationError,
+  detectBeats,
   exportVideo,
   loadProject,
   missingAssets,
@@ -228,6 +231,39 @@ export function createMcpServer(projectFile: string): McpServer {
         (p) => editLayer(p, layerId, (l) => ({ ...l, behaviors: [...(l.behaviors ?? []), behavior as never] }), { compId }),
         () => `Added ${String(behavior.type)} behavior to ${layerId}.${String(behavior.property)}.`,
       ),
+  );
+
+  server.registerTool(
+    "oe_detect_beats",
+    {
+      title: "Detect beats → markers",
+      description:
+        "Analyze an audio or video layer's sound and add composition markers on every beat (mode 'beats', a regular grid at the detected tempo) or every hit (mode 'onsets'). Returns the tempo and marker times so you can keyframe to the music.",
+      inputSchema: {
+        layerId: z.string(),
+        mode: z.enum(["beats", "onsets"]).optional().describe("Default beats"),
+        replace: z.boolean().optional().describe("Remove existing markers first. Default true"),
+        compId,
+      },
+    },
+    async ({ layerId, mode, replace, compId }) => {
+      try {
+        const project = loadProject(projectFile);
+        const comp = getComp(project, compId);
+        const layer = comp.layers.find((l) => l.id === layerId);
+        if (!layer || !isMediaLayer(layer)) return fail(`Layer "${layerId}" is not an audio or video layer.`);
+        const info = await detectBeats(path.resolve(projectDir, layer.src));
+        const times = mode === "onsets" ? info.onsets : info.beats;
+        const markers = beatMarkers(layer, times, comp, mode === "onsets" ? "hit" : "beat");
+        const kept = replace === false ? (comp.markers ?? []) : [];
+        saveProject(projectFile, updateComposition(project, { markers: [...kept, ...markers].sort((a, b) => a.t - b.t) }, { compId }));
+        return text(
+          `${info.bpm ? `Tempo ≈ ${info.bpm} BPM. ` : "No steady tempo found; used individual hits. "}Added ${markers.length} markers at: ${markers.map((m) => m.t).join(", ")}`,
+        );
+      } catch (e) {
+        return fail(describeError(e));
+      }
+    },
   );
 
   server.registerTool(

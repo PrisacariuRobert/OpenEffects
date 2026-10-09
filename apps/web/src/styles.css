@@ -1735,3 +1735,96 @@ button.legend.off {
   align-items: center;
   gap: 6px;
 }
+
+/* Media layers: waveform inside the bar. */
+.tl-bar.type-video {
+  background: #2e4a3c;
+  border-color: #3f6b55;
+}
+.tl-bar.type-audio {
+  background: #233a4f;
+  border-color: #345a7a;
+}
+.tl-bar.type-video,
+.tl-bar.type-audio {
+  top: 3px;
+  bottom: 3px;
+  overflow: hidden;
+}
+.waveform {
+  position: absolute;
+  inset: 1px 0;
+  width: 100%;
+  height: calc(100% - 2px);
+  pointer-events: none;
+}
+.waveform path {
+  stroke: #8fd3ff;
+  stroke-width: 0.9;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.85;
+}
+.tl-bar.type-video .waveform path {
+  stroke: #9be8bf;
+}
+.tl-bar .trim {
+  z-index: 1;
+}
+
+/* Markers: flags on the ruler, faint lines through the tracks. */
+.marker {
+  --mk: #4fd1c5;
+  position: absolute;
+  bottom: 0;
+  width: 10px;
+  height: 12px;
+  margin-left: -5px;
+  background: var(--mk);
+  clip-path: polygon(0 0, 100% 0, 100% 60%, 50% 100%, 0 60%);
+  cursor: grab;
+  z-index: 4;
+}
+.marker:hover {
+  filter: brightness(1.25);
+}
+.marker-label {
+  position: absolute;
+  bottom: 0;
+  font-size: 10px;
+  line-height: 12px;
+  color: #4fd1c5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  pointer-events: none;
+}
+.marker-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px dashed #4fd1c566;
+  pointer-events: none;
+  z-index: 2;
+}
+.marker-nav {
+  display: inline-flex;
+  gap: 2px;
+}
+.marker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.marker-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.marker-item input {
+  flex: 1;
+  min-width: 0;
+}
+.media-info {
+  margin: 0 0 6px;
+}

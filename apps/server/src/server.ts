@@ -9,10 +9,14 @@ import {
   readProject,
   saveProject,
   writeAgentFiles,
+  detectBeats,
+  probeMedia,
+  waveform,
+  videoFrameJpeg,
   type ExportFormat,
   type McpLaunch,
 } from "@openeffects/node";
-import { getComp, type ServerMessage, type StateResponse } from "@openeffects/schema";
+import { getComp, mediaKind, type ServerMessage, type StateResponse } from "@openeffects/schema";
 import { AgentError, AgentSession } from "./agents/session.ts";
 import type { AgentProvider } from "./agents/types.ts";
 
@@ -45,12 +49,26 @@ const MIME: Record<string, string> = {
   ".webm": "video/webm",
   ".mov": "video/quicktime",
   ".woff2": "font/woff2",
+  ".m4v": "video/mp4",
+  ".mp3": "audio/mpeg",
+  ".wav": "audio/wav",
+  ".m4a": "audio/mp4",
+  ".aac": "audio/aac",
+  ".ogg": "audio/ogg",
+  ".oga": "audio/ogg",
+  ".flac": "audio/flac",
 };
 
 export async function startServer(opts: ServerOptions): Promise<{ url: string; close(): Promise<void> }> {
   const projectFile = path.resolve(opts.projectFile);
   const projectDir = path.dirname(projectFile);
   const webDir = opts.webDir ?? fileURLToPath(new URL("../../web", import.meta.url));
+  /** Resolve a project-relative media path, refusing anything outside the project folder. */
+  const projectPath = (rel: string) => {
+    const file = path.resolve(projectDir, rel);
+    if (!rel || !(file.startsWith(path.resolve(projectDir) + path.sep)) || !fs.existsSync(file)) throw new HttpError(404, "Media not found");
+    return file;
+  };
 
   // Refresh AGENTS.md/CLAUDE.md/.mcp.json so the folder also works with any agent started
   // from a terminal.
@@ -192,18 +210,31 @@ export async function startServer(opts: ServerOptions): Promise<{ url: string; c
       return sendJson(res, 202, { ok: true });
     }
     if (route === "POST /api/assets") {
-      // Raw file upload (the editor's drag & drop). Saved under assets/ with a safe name.
+      // Raw file upload (the editor's drag & drop), streamed to assets/ under a safe name.
       const original = url.searchParams.get("name") ?? "upload";
       const ext = path.extname(original).toLowerCase();
-      if (![".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"].includes(ext)) throw new HttpError(415, "Only PNG, JPG, WebP, GIF and SVG images are supported");
-      const base = path.basename(original, path.extname(original)).replace(/[^A-Za-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "image";
+      const kind = mediaKind(original);
+      if (!kind) throw new HttpError(415, "Supported files: images (PNG, JPG, WebP, GIF, SVG), video (MP4, WebM, MOV) and audio (MP3, WAV, M4A, AAC, OGG, FLAC)");
+      const base = path.basename(original, path.extname(original)).replace(/[^A-Za-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || kind;
       const dir = path.join(projectDir, "assets");
       fs.mkdirSync(dir, { recursive: true });
       let name = `${base}${ext}`;
       for (let n = 2; fs.existsSync(path.join(dir, name)); n++) name = `${base}-${n}${ext}`;
-      const body = await readBody(req, 50 * 1024 * 1024);
-      fs.writeFileSync(path.join(dir, name), body);
-      return sendJson(res, 201, { src: `assets/${name}` });
+      await saveUpload(req, path.join(dir, name), kind === "image" ? 50 * 1024 * 1024 : 2 * 1024 * 1024 * 1024);
+      return sendJson(res, 201, { src: `assets/${name}`, kind });
+    }
+    if (route === "GET /api/videoframe") {
+      const file = projectPath(url.searchParams.get("src") ?? "");
+      const jpeg = await videoFrameJpeg(file, Number(url.searchParams.get("t") ?? 0) || 0, Math.min(3840, Number(url.searchParams.get("w") ?? 1280) || 1280));
+      res.writeHead(200, { "content-type": "image/jpeg", "cache-control": "private, max-age=3600" });
+      res.end(jpeg);
+      return;
+    }
+    if (route === "GET /api/media" || route === "GET /api/waveform" || route === "GET /api/beats") {
+      const file = projectPath(url.searchParams.get("src") ?? "");
+      if (route === "GET /api/media") return sendJson(res, 200, await probeMedia(file));
+      if (route === "GET /api/waveform") return sendJson(res, 200, await waveform(file, 50));
+      return sendJson(res, 200, await detectBeats(file));
     }
     if (route === "GET /api/templates") {
       // Starting points: the bundled examples (each a complete project).
@@ -216,14 +247,14 @@ export async function startServer(opts: ServerOptions): Promise<{ url: string; c
     }
     if (route === "GET /api/assets") {
       const dir = path.join(projectDir, "assets");
-      const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => /\.(png|jpe?g|webp|gif|svg)$/i.test(f)) : [];
-      return sendJson(res, 200, { assets: files.map((f) => `assets/${f}`) });
+      const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => mediaKind(f)) : [];
+      return sendJson(res, 200, { assets: files.map((f) => ({ src: `assets/${f}`, kind: mediaKind(f) })) });
     }
     if (req.method === "GET" && url.pathname.startsWith("/api/assets/")) {
-      return serveStatic(res, projectDir, decodeURIComponent(url.pathname.slice("/api/assets/".length)));
+      return serveStatic(res, projectDir, decodeURIComponent(url.pathname.slice("/api/assets/".length)), undefined, req);
     }
     if (req.method === "GET" && url.pathname.startsWith("/api/renders/")) {
-      return serveStatic(res, path.join(projectDir, "renders"), decodeURIComponent(url.pathname.slice("/api/renders/".length)));
+      return serveStatic(res, path.join(projectDir, "renders"), decodeURIComponent(url.pathname.slice("/api/renders/".length)), undefined, req);
     }
     throw new HttpError(404, "Not found");
   }
@@ -327,12 +358,42 @@ async function readJson(req: http.IncomingMessage): Promise<unknown> {
   }
 }
 
-/** Serves a file from `root`, refusing paths that escape it. */
-function serveStatic(res: http.ServerResponse, root: string, rel: string, fallback?: string): void {
+/** Serves a file from `root`, refusing paths that escape it. Supports Range (needed to seek video/audio). */
+function serveStatic(res: http.ServerResponse, root: string, rel: string, fallback?: string, req?: http.IncomingMessage): void {
   const file = path.resolve(root, "." + path.posix.normalize("/" + rel));
   const inside = file === root || file.startsWith(path.resolve(root) + path.sep);
-  let target = inside && fs.existsSync(file) && fs.statSync(file).isFile() ? file : fallback;
+  const target = inside && fs.existsSync(file) && fs.statSync(file).isFile() ? file : fallback;
   if (!target) throw new HttpError(404, "Not found");
-  res.writeHead(200, { "content-type": MIME[path.extname(target).toLowerCase()] ?? "application/octet-stream", "cache-control": "no-cache" });
+  const size = fs.statSync(target).size;
+  const type = MIME[path.extname(target).toLowerCase()] ?? "application/octet-stream";
+  const range = /^bytes=(\d*)-(\d*)$/.exec(String(req?.headers.range ?? ""));
+  if (range && (range[1] || range[2])) {
+    let start = range[1] ? Number(range[1]) : Math.max(0, size - Number(range[2]));
+    let end = range[1] && range[2] ? Number(range[2]) : size - 1;
+    end = Math.min(end, size - 1);
+    start = Math.min(start, end);
+    res.writeHead(206, { "content-type": type, "content-range": `bytes ${start}-${end}/${size}`, "accept-ranges": "bytes", "content-length": end - start + 1, "cache-control": "no-cache" });
+    fs.createReadStream(target, { start, end }).pipe(res);
+    return;
+  }
+  res.writeHead(200, { "content-type": type, "content-length": size, "accept-ranges": "bytes", "cache-control": "no-cache" });
   fs.createReadStream(target).pipe(res);
+}
+
+/** Stream a request body to a file, enforcing a size limit. */
+async function saveUpload(req: http.IncomingMessage, file: string, limit: number): Promise<void> {
+  const out = fs.createWriteStream(file);
+  let size = 0;
+  try {
+    for await (const chunk of req) {
+      size += chunk.length;
+      if (size > limit) throw new HttpError(413, "File too large");
+      if (!out.write(chunk)) await new Promise<void>((r) => out.once("drain", () => r()));
+    }
+    await new Promise<void>((resolve, reject) => out.end((err?: Error | null) => (err ? reject(err) : resolve())));
+  } catch (e) {
+    out.destroy();
+    fs.rmSync(file, { force: true });
+    throw e;
+  }
 }

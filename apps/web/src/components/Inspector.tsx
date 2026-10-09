@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ANIMATION_PRESETS,
   animatedPaths,
@@ -6,10 +6,12 @@ import {
   type Behavior,
   EASE_NAMES,
   applyPreset,
+  beatMarkers,
   editLayer,
   getComp,
   getIn,
   isKeyframed,
+  isMediaLayer,
   keyframeIndexAt,
   removeKeyframe,
   sample,
@@ -21,8 +23,11 @@ import {
   type Effect,
   type Gradient,
   type Layer,
+  type Marker,
+  type MediaLayer,
   type Project,
 } from "@openeffects/schema";
+import { getMediaInfo } from "../browserEnv.ts";
 import type { Editor } from "../editor.ts";
 import { ColorField, NumberField, Section, SelectField, TextField, Toggle } from "./fields.tsx";
 import { JsonEditor } from "./JsonEditor.tsx";
@@ -541,15 +546,116 @@ function AnimatePresets({ ctx }: { ctx: Ctx }) {
   );
 }
 
-function LayerInspector({ ctx, comp, onSelect }: { ctx: Ctx; comp: Composition; onSelect(id: string | null): void }) {
+type MediaMeta = { duration: number; width?: number; height?: number; hasAudio?: boolean; hasVideo?: boolean };
+
+/** Source, timing and sound of a video/audio layer, plus beat detection into markers. */
+function MediaEditor({ ctx, layer, editor }: { ctx: Ctx; layer: MediaLayer; editor: Editor }) {
+  const [info, setInfo] = useState<MediaMeta | null>((getMediaInfo(layer.src) as MediaMeta | undefined) ?? null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/media?src=${encodeURIComponent(layer.src)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((m) => alive && setInfo(m))
+      .catch(() => alive && setInfo(null));
+    return () => {
+      alive = false;
+    };
+  }, [layer.src]);
+  const comp = ctx.comp;
+  const speed = layer.speed ?? 1;
+  const start = layer.in ?? 0;
+  /** Composition time at which the media runs out (or the comp ends). */
+  const mediaEnd = info ? start + (info.duration - (layer.trimStart ?? 0)) / speed : null;
+
+  const detect = async (mode: "beats" | "onsets") => {
+    setBusy(mode);
+    setNote(null);
+    try {
+      const r = await fetch(`/api/beats?src=${encodeURIComponent(layer.src)}`);
+      const data = (await r.json()) as { bpm?: number; beats?: number[]; onsets?: number[]; error?: string };
+      if (!r.ok) throw new Error(data.error ?? "Beat detection failed");
+      const label = mode === "beats" ? "beat" : "hit";
+      const found = beatMarkers(layer, (mode === "beats" ? data.beats : data.onsets) ?? [], comp, label);
+      editor.update((p) => {
+        // Replace earlier markers of the same kind; keep the user's own markers.
+        const keep = (comp.markers ?? []).filter((m) => !m.label?.startsWith(`${label} `));
+        const markers = [...keep, ...found].sort((a, b) => a.t - b.t);
+        return updateComposition(p, { markers: markers.length ? markers : null }, { compId: comp.id });
+      });
+      setNote(`${found.length} ${mode === "beats" ? "beat" : "hit"} markers${data.bpm ? ` · ~${Math.round(data.bpm)} BPM` : ""}`);
+    } catch (e) {
+      setNote((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <>
+      <Row label="Source">
+        <TextField value={layer.src} onChange={(v) => ctx.edit((x) => setIn(x, "src", v))} />
+      </Row>
+      <p className="muted small media-info">
+        {info
+          ? [
+              `${info.duration.toFixed(2)}s`,
+              info.width && info.height ? `${info.width}×${info.height}` : null,
+              info.hasAudio ? "sound" : layer.type === "video" ? "no sound" : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")
+          : "Media not found in the project folder"}
+      </p>
+      <Row label="Play">
+        <NumberField label="From" value={layer.trimStart ?? 0} min={0} step={0.05} suffix="s" width={46} onChange={(v, tr) => ctx.edit((x) => setIn(x, "trimStart", v > 0 ? v : undefined), tr)} />
+        <NumberField label="Speed" value={speed} min={0.1} max={16} step={0.05} suffix="×" width={40} onChange={(v, tr) => ctx.edit((x) => setIn(x, "speed", v === 1 ? undefined : v), tr)} />
+      </Row>
+      <Row label="Length">
+        <button
+          className="ghost small"
+          disabled={!mediaEnd}
+          title="End the layer where the media ends"
+          onClick={() => mediaEnd && ctx.edit((x) => setIn(x, "out", mediaEnd >= comp.duration ? undefined : Math.round(mediaEnd * 1000) / 1000))}
+        >
+          Fit to media
+        </button>
+        {layer.type === "video" && <Toggle value={!!layer.loop} label="Loop" onChange={(v) => ctx.edit((x) => setIn(x, "loop", v || undefined))} />}
+      </Row>
+      {(layer.type === "audio" || info?.hasAudio) && (
+        <>
+          <PropRow ctx={ctx} label="Volume" path="volume" kind="number" fallback={100} min={0} max={200} suffix="%" />
+          <Row label="Mute">
+            <Toggle value={!!layer.muted} onChange={(v) => ctx.edit((x) => setIn(x, "muted", v || undefined))} />
+            <span className="muted small">Muted layers are left out of exports</span>
+          </Row>
+          <Row label="Markers">
+            <button className="ghost small" disabled={!!busy} title="Add a marker on every beat (steady tempo)" onClick={() => detect("beats")}>
+              {busy === "beats" ? "Listening…" : "◆ Beats"}
+            </button>
+            <button className="ghost small" disabled={!!busy} title="Add a marker on every hit (drums, accents)" onClick={() => detect("onsets")}>
+              {busy === "onsets" ? "Listening…" : "◆ Hits"}
+            </button>
+          </Row>
+          {note && <p className="muted small media-info">{note}. Keyframes and layers snap to markers when dragged.</p>}
+        </>
+      )}
+    </>
+  );
+}
+
+function LayerInspector({ ctx, comp, editor, onSelect }: { ctx: Ctx; comp: Composition; editor: Editor; onSelect(id: string | null): void }) {
   const l = ctx.layer;
   const others = comp.layers.filter((o) => o.id !== l.id);
   const center: Vec2 = l.type === "path" ? [0, 0] : [comp.width / 2, comp.height / 2];
   return (
     <>
-      <Section title="Animate">
-        <AnimatePresets ctx={ctx} />
-      </Section>
+      {l.type !== "audio" && (
+        <Section title="Animate">
+          <AnimatePresets ctx={ctx} />
+        </Section>
+      )}
       <Section title="Layer">
         <Row label="Name">
           <TextField value={l.name ?? l.id} onChange={(v) => ctx.edit((x) => setIn(x, "name", v.trim() && v !== x.id ? v : undefined))} />
@@ -616,9 +722,21 @@ function LayerInspector({ ctx, comp, onSelect }: { ctx: Ctx; comp: Composition; 
         </Section>
       )}
 
-      {(l.type === "rect" || l.type === "ellipse" || l.type === "solid" || l.type === "image") && (
+      {isMediaLayer(l) && (
+        <Section title={l.type === "video" ? "Video" : "Audio"}>
+          <MediaEditor ctx={ctx} layer={l} editor={editor} />
+        </Section>
+      )}
+
+      {(l.type === "rect" || l.type === "ellipse" || l.type === "solid" || l.type === "image" || l.type === "video") && (
         <Section title="Shape">
-          <PropRow ctx={ctx} label="Size" path="size" kind="vec2" fallback={l.type === "solid" ? [comp.width, comp.height] : [100, 100]} />
+          <PropRow
+            ctx={ctx}
+            label="Size"
+            path="size"
+            kind="vec2"
+            fallback={l.type === "solid" ? [comp.width, comp.height] : l.type === "video" ? [getMediaInfo(l.src)?.width ?? comp.width, getMediaInfo(l.src)?.height ?? comp.height] : [100, 100]}
+          />
           {l.type === "rect" && <PropRow ctx={ctx} label="Corners" path="radius" kind="number" fallback={0} min={0} />}
         </Section>
       )}
@@ -652,13 +770,15 @@ function LayerInspector({ ctx, comp, onSelect }: { ctx: Ctx; comp: Composition; 
         </Section>
       )}
 
-      <Section title="Transform">
-        <PropRow ctx={ctx} label="Position" path="transform.position" kind="vec2" fallback={center} />
-        <PropRow ctx={ctx} label="Scale" path="transform.scale" kind="scale" fallback={100} />
-        <PropRow ctx={ctx} label="Rotation" path="transform.rotation" kind="number" fallback={0} suffix="°" />
-        <PropRow ctx={ctx} label="Opacity" path="transform.opacity" kind="number" fallback={100} min={0} max={100} suffix="%" />
-        <PropRow ctx={ctx} label="Anchor" path="transform.anchor" kind="vec2" fallback={[0, 0]} />
-      </Section>
+      {l.type !== "audio" && (
+        <Section title="Transform">
+          <PropRow ctx={ctx} label="Position" path="transform.position" kind="vec2" fallback={center} />
+          <PropRow ctx={ctx} label="Scale" path="transform.scale" kind="scale" fallback={100} />
+          <PropRow ctx={ctx} label="Rotation" path="transform.rotation" kind="number" fallback={0} suffix="°" />
+          <PropRow ctx={ctx} label="Opacity" path="transform.opacity" kind="number" fallback={100} min={0} max={100} suffix="%" />
+          <PropRow ctx={ctx} label="Anchor" path="transform.anchor" kind="vec2" fallback={[0, 0]} />
+        </Section>
+      )}
 
       {l.type === "text" && (
         <Section title="Text animation" defaultOpen={!!l.animator}>
@@ -670,10 +790,42 @@ function LayerInspector({ ctx, comp, onSelect }: { ctx: Ctx; comp: Composition; 
         <BehaviorsEditor ctx={ctx} />
       </Section>
 
-      <Section title="Effects" defaultOpen={!!l.effects?.length}>
-        <EffectsEditor ctx={ctx} />
-      </Section>
+      {l.type !== "audio" && (
+        <Section title="Effects" defaultOpen={!!l.effects?.length}>
+          <EffectsEditor ctx={ctx} />
+        </Section>
+      )}
     </>
+  );
+}
+
+/** The composition's markers: jump to, rename, recolor or delete them. */
+function MarkersEditor({ editor, comp, onSeek }: { editor: Editor; comp: Composition; onSeek(t: number): void }) {
+  const markers = comp.markers ?? [];
+  const set = (next: Marker[]) => editor.update((p) => updateComposition(p, { markers: next.length ? next : null }, { compId: comp.id }));
+  return (
+    <Section title={`Markers${markers.length ? ` (${markers.length})` : ""}`} defaultOpen={markers.length > 0} actions={
+      markers.length > 1 ? (
+        <button className="tiny" title="Delete all markers" onClick={() => set([])}>
+          Clear
+        </button>
+      ) : undefined
+    }>
+      {markers.length === 0 && <p className="muted small hint">Press M to drop a marker at the playhead, or use ◆ Beats on an audio layer. Drags snap to markers.</p>}
+      <div className="marker-list">
+        {markers.map((m, i) => (
+          <div key={i} className="marker-item">
+            <button className="tiny" title="Go to marker" onClick={() => onSeek(m.t)}>
+              {m.t.toFixed(2)}s
+            </button>
+            <TextField value={m.label ?? ""} onChange={(v) => set(markers.map((x, j) => (j === i ? { ...x, label: v.trim() || undefined } : x)))} />
+            <button className="tiny" title="Delete marker" onClick={() => set(markers.filter((_, j) => j !== i))}>
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
+    </Section>
   );
 }
 
@@ -762,10 +914,11 @@ export function Inspector({ editor, project, compId, selected, time, onSeek, onS
         {mode === "json" ? (
           <JsonEditor editor={editor} project={project} compId={compId} selected={selected} />
         ) : ctx ? (
-          <LayerInspector ctx={ctx} comp={comp} onSelect={onSelect} />
+          <LayerInspector ctx={ctx} comp={comp} editor={editor} onSelect={onSelect} />
         ) : (
           <>
             <CompInspector editor={editor} comp={comp} />
+            <MarkersEditor editor={editor} comp={comp} onSeek={onSeek} />
             <p className="muted small hint">Select a layer in the viewer or the timeline to edit it. Tip: ◷ animates a property, ◆ adds a keyframe at the playhead.</p>
           </>
         )}

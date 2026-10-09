@@ -47,13 +47,18 @@ The agent does the heavy lifting; you direct and fine-tune it like in any motion
   **oscillate** (sine/triangle/square/saw for pulse, float, sway), **drift** (spin, slow pans), **loop** (repeat keyframes,
   cycle or ping-pong) and **follow** (trail another layer with a delay). Each has a time window and fade-in, and agents
   can add them too (`oe_add_behavior`).
+- **Video, audio and markers:** drop video (MP4, WebM, MOV) and audio (MP3, WAV, M4A, OGG, FLAC) onto the viewer.
+  Media layers have trim, speed, loop, keyframable volume and mute, waveforms in the timeline and sound in the preview;
+  exports mix every audio track in. Press **M** for a marker at the playhead (drag, rename, `[` / `]` to jump), or
+  **◆ Beats / ◆ Hits** on a music layer to drop a marker on every beat; layer, trim and keyframe drags snap to markers,
+  so cutting to the music is drag-and-drop. Agents can do the same (`oe_detect_beats`) and time animations to the beat.
 - **Viewer aids:** motion paths for animated positions, align to frame (left/center/right/top/middle/bottom),
   title/action-safe guides.
 - **Ask the AI about the selection:** with a layer selected, requests apply to it ("make it bouncier") and one-click
   quick asks are offered. The agent only touches what you pointed at.
 - **Undo everything:** Ctrl+Z / Ctrl+Shift+Z for your edits *and* the agent's; per-turn checkpoints in History.
 - **Start fast:** a welcome screen on first launch (describe an animation, pick a template, or take a 1-minute spotlight
-  tour of the editor; it also checks your AI agent is set up), a template gallery with live previews, drag & drop images,
+  tour of the editor; it also checks your AI agent is set up), a template gallery with live previews, drag & drop media,
   `?` for all shortcuts and to replay the tour.
 
 | Graph editor | Ease editor |
@@ -61,6 +66,8 @@ The agent does the heavy lifting; you direct and fine-tune it like in any motion
 | ![Graph editor](docs/media/graph-editor.png) | ![Ease editor](docs/media/ease-editor.png) |
 | **Behaviors** | **First run** |
 | ![Behaviors](docs/media/behaviors.png) | ![Welcome screen](docs/media/welcome.png) |
+
+![Video and audio layers with waveforms and beat markers](docs/media/markers-audio.png)
 
 What to build was decided by a short [UX research study](docs/RESEARCH.md) of Jitter, Cavalry, Lottie Creator, After
 Effects and AI motion tools.
@@ -168,10 +175,11 @@ Any MCP client can drive OpenEffects. Point it at `oe mcp <project-dir>`, e.g. f
 
 ### What the engine supports today
 
-Layers: solid, rect, ellipse, SVG path (with trim paths), text, image, null (parenting), nested compositions.
+Layers: solid, rect, ellipse, SVG path (with trim paths), text, image, video, audio, null (parenting), nested compositions.
+Media: trim, speed, loop, keyframed volume, mute; composition markers; beat/onset detection.
 Animation: keyframes on any property with 30+ easings or cubic-bezier, per-character/word/line text animators.
 Compositing: blend modes, track mattes, parenting. Effects: blur, glow, drop shadow, color adjust.
-Export: MP4 (H.264), WebM (VP9 with alpha), MOV (ProRes 4444 with alpha), GIF, PNG sequence.
+Export: MP4 (H.264 + AAC), WebM (VP9 with alpha + Opus), MOV (ProRes 4444 with alpha + PCM), GIF, PNG sequence.
 
 The format is documented for agents in [`AGENTS.md`](packages/schema/src/guide.ts), and as a JSON Schema in
 [`schema/project.schema.json`](schema/project.schema.json) for editor autocomplete.
@@ -186,7 +194,8 @@ This is an early prototype (Phase 0 of the [plan](docs/PLAN.md)). Next up:
 - [x] Direct manipulation, visual properties panel, keyframe/easing editing, undo/redo, templates, image drop
 - [x] Graph editor, ease editor with saved easings, animate presets, keyframe multi-select/copy/paste, motion paths, align, safe guides, loop range ([research](docs/RESEARCH.md))
 - [x] Behaviors (wiggle, oscillate, drift, loop, follow) and a first-run welcome + guided tour
-- [ ] Markers and audio, video layers, Lottie import/export, Figma import
+- [x] Video and audio layers, waveforms, audio in previews and exports, markers with beat detection and snapping
+- [ ] Lottie import/export, Figma import
 - [ ] WebGPU renderer, shader effect plugins, Lottie import/export
 - [ ] Template gallery
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { deleteLayer, duplicateLayer, editLayer, getComp, getIn, insertKeyframes, removeKeyframe, type Keyframe } from "@openeffects/schema";
+import { deleteLayer, duplicateLayer, editLayer, getComp, getIn, insertKeyframes, removeKeyframe, updateComposition, type Keyframe } from "@openeffects/schema";
 import { api, useServer } from "./api.ts";
 import { useEditor } from "./editor.ts";
 import { Viewport } from "./components/Viewport.tsx";
@@ -9,6 +9,7 @@ import { Inspector } from "./components/Inspector.tsx";
 import { History } from "./components/History.tsx";
 import { Templates } from "./components/Templates.tsx";
 import { Tour, Welcome, type TourStep } from "./components/Tour.tsx";
+import { useMediaPlayback } from "./mediaPlayback.ts";
 
 const WELCOMED_KEY = "oe.welcomed";
 const readFlag = (k: string) => {
@@ -36,6 +37,8 @@ const SHORTCUTS: [string, string][] = [
   ["Del", "Delete the selected keyframes, or the selected layer"],
   ["Shift+click keyframes", "Select several keyframes (then set easing or delete them together)"],
   ["Ctrl+C / Ctrl+V", "Copy keyframes / paste them at the playhead onto the selected layer"],
+  ["M", "Add a marker at the playhead (drag markers to move, double-click to rename, Alt+click to delete)"],
+  ["[ / ]", "Jump to the previous / next marker"],
   ["B / N", "Set the preview loop start / end at the playhead (double-click the range to clear)"],
   ["∿ Graph", "Value curves: drag keyframes and bezier handles to shape the motion"],
   ["Ctrl+D", "Duplicate the selected layer"],
@@ -43,7 +46,7 @@ const SHORTCUTS: [string, string][] = [
   ["Drag in viewer", "Move · corners scale · top handle rotates · Shift constrains/snaps · Alt disables center snapping"],
   ["Drag number labels", "Scrub values (Shift ×10, Alt ×0.1)"],
   ["◷ / ◆", "Animate a property / add or remove a keyframe at the playhead"],
-  ["Drop images", "Onto the viewer to add them as layers"],
+  ["Drop media", "Images, video or audio onto the viewer to add them as layers"],
 ];
 
 export function App() {
@@ -62,7 +65,8 @@ export function App() {
   const [showHelp, setShowHelp] = useState(false);
   const [showWelcome, setShowWelcome] = useState(() => !readFlag(WELCOMED_KEY));
   const [touring, setTouring] = useState(false);
-  const [assets, setAssets] = useState<string[]>([]);
+  const [assets, setAssets] = useState<{ src: string; kind: "image" | "video" | "audio" }[]>([]);
+  const [muted, setMuted] = useState(false);
   const project = editor.project;
   const comp = project ? (project.compositions.find((c) => c.id === compId) ?? getComp(project)) : null;
 
@@ -72,10 +76,12 @@ export function App() {
   }, [comp, selected]);
 
   useEffect(() => {
-    api<{ assets: string[] }>("/api/assets")
+    api<{ assets: { src: string; kind: "image" | "video" | "audio" }[] }>("/api/assets")
       .then((r) => setAssets(r.assets))
       .catch(() => {});
   }, [project]);
+
+  useMediaPlayback(comp, time, playing, muted);
 
   // Playback loop.
   const last = useRef<number | null>(null);
@@ -156,6 +162,18 @@ export function App() {
         editor.update((p) =>
           editLayer(p, selected, (l) => [...byPath].reduce((acc, [path, kfs]) => insertKeyframes(acc, path, kfs, comp.fps), l), { compId: comp.id }),
         );
+        return;
+      }
+      if (!mod && (e.key === "m" || e.key === "M")) {
+        const t = Math.round(time * 1000) / 1000;
+        const ms = (comp.markers ?? []).filter((m) => Math.abs(m.t - t) > 1e-3);
+        editor.update((p) => updateComposition(p, { markers: [...ms, { t }].sort((a, b) => a.t - b.t) }, { compId: comp.id }));
+        return;
+      }
+      if (e.key === "[" || e.key === "]") {
+        const ms = comp.markers ?? [];
+        const m = e.key === "[" ? [...ms].reverse().find((x) => x.t < time - 1e-3) : ms.find((x) => x.t > time + 1e-3);
+        if (m) setTime(m.t);
         return;
       }
       if (e.key === "b" || e.key === "B") return setWorkArea((w) => ({ start: Math.min(time, (w?.end ?? comp.duration) - 2 / comp.fps), end: w?.end ?? comp.duration }));
@@ -342,6 +360,8 @@ export function App() {
                 selected={selected}
                 selectedKeyframes={selectedKeyframes}
                 assets={assets}
+                muted={muted}
+                onToggleMute={() => setMuted((m) => !m)}
                 workArea={workArea}
                 onWorkArea={setWorkArea}
                 onSeek={(t) => setTime(t)}

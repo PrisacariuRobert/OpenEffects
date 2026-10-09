@@ -45,7 +45,11 @@ Built in this round:
 Built next: **behaviors** (wiggle, oscillate, drift, loop, follow) as procedural properties, and a **first-run welcome
 screen + spotlight tour** (three ways to start, agent setup check, replay from `?`).
 
-Still open: markers with audio, preset sharing, Lottie import/export, Figma import.
+Then: **video and audio layers with markers** (waveforms in the timeline, M / `[` `]` markers, one-click beat and
+hit detection, snapping to markers, audio mixed into exports), so motion can be cut to music, the most common
+request for social video.
+
+Still open: preset sharing, Lottie import/export, Figma import.
 
 ## Sources
 

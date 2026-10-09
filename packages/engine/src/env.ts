@@ -15,6 +15,20 @@ export interface RenderEnv {
   createPath(d: string): Path2D;
   /** Preloaded images keyed by the layer `src` string. */
   images: Map<string, CanvasImageSource & ImageLike>;
+  /** Video frames and media info (optional: hosts without it skip video layers). */
+  video?: VideoSource;
+}
+
+export interface MediaInfo {
+  width?: number;
+  height?: number;
+  duration: number;
+}
+
+export interface VideoSource {
+  /** A drawable frame of `src` at `sourceTime` seconds into the file, if available now. */
+  frame(src: string, sourceTime: number): (CanvasImageSource & ImageLike) | undefined;
+  info(src: string): MediaInfo | undefined;
 }
 
 /** Reuses offscreen surfaces between layers and frames. */
