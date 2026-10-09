@@ -49,7 +49,12 @@ Then: **video and audio layers with markers** (waveforms in the timeline, M / `[
 hit detection, snapping to markers, audio mixed into exports), so motion can be cut to music, the most common
 request for social video.
 
-Still open: preset sharing, Lottie import/export, Figma import.
+Then: **Lottie import and export** (the format product teams ship, and the one Lottie Creator and Jitter
+users ask for), and a **calmer interface**: graphite surfaces, one accent color, system type, line icons
+instead of glyphs, one Export menu instead of four buttons, and progressive disclosure (presets and effects
+collapsed until needed, suggestions only once a conversation starts).
+
+Still open: preset sharing, Figma import.
 
 ## Sources
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   EASE_NAMES,
   addLayer,
@@ -31,10 +31,30 @@ import {
   type Project,
 } from "@openeffects/schema";
 import type { Editor } from "../editor.ts";
+import { useDismiss } from "../useDismiss.ts";
 import { getMediaInfo } from "../browserEnv.ts";
 import { loadWaveform } from "../mediaPlayback.ts";
 import { CurveIcon, EaseEditor } from "./EaseEditor.tsx";
 import { GraphEditor } from "./GraphEditor.tsx";
+import {
+  IconAddMarker,
+  IconChevronDown,
+  IconChevronRight,
+  IconDuplicate,
+  IconEye,
+  IconEyeOff,
+  IconGraph,
+  IconImport,
+  IconMuted,
+  IconNextMarker,
+  IconPause,
+  IconPlay,
+  IconPlus,
+  IconPrevMarker,
+  IconSpeaker,
+  IconToStart,
+  IconTrash,
+} from "./Icons.tsx";
 
 export interface KeyframeRef {
   layerId: string;
@@ -59,6 +79,7 @@ interface Props {
   onTogglePlay(): void;
   onSelect(id: string | null): void;
   onSelectKeyframes(k: KeyframeRef[]): void;
+  onImportLottie(): void;
 }
 
 const TYPE_ICON: Record<string, string> = { solid: "■", rect: "▭", ellipse: "●", path: "✎", text: "T", image: "▣", video: "▶", audio: "♪", null: "✛", comp: "❒" };
@@ -150,16 +171,19 @@ function newLayer(kind: string, comp: Composition, id: string, src?: string): La
 }
 
 export function Timeline(props: Props) {
-  const { editor, comp, time, playing, selected, selectedKeyframes, assets, workArea, onWorkArea, onSeek, onTogglePlay, onSelect, onSelectKeyframes, muted, onToggleMute } = props;
+  const { editor, comp, time, playing, selected, selectedKeyframes, assets, workArea, onWorkArea, onSeek, onTogglePlay, onSelect, onSelectKeyframes, muted, onToggleMute, onImportLottie } = props;
   const [graph, setGraph] = useState(false);
   const [graphPath, setGraphPath] = useState<string | null>(null);
   const [easeOpen, setEaseOpen] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [menu, setMenu] = useState(false);
+  const [menuAt, setMenuAt] = useState<{ left: number; bottom: number }>({ left: 0, bottom: 0 });
   const [reorder, setReorder] = useState<{ id: string; over: number } | null>(null);
   const D = comp.duration;
   const pct = (t: number) => `${(Math.min(Math.max(t, 0), D) / D) * 100}%`;
+  const closeMenu = useCallback(() => setMenu(false), []);
+  const addMenuRef = useDismiss<HTMLDivElement>(menu, closeMenu);
   const markers = comp.markers ?? [];
   /** Snap a time to a marker (within 6 px) or else to the nearest frame. */
   const snap = (t: number) => {
@@ -328,24 +352,30 @@ export function Timeline(props: Props) {
   return (
     <div className={`timeline ${graph ? "graph-mode" : ""}`}>
       <div className="transport">
-        <button className="icon-btn" onClick={() => onSeek(0)} title="Go to start (Home)">⏮</button>
-        <button className="icon-btn play" onClick={onTogglePlay} title="Play/Pause (Space)">{playing ? "❚❚" : "▶"}</button>
+        <button className="icon-only" onClick={() => onSeek(0)} title="Go to start (Home)" aria-label="Go to start">
+          <IconToStart />
+        </button>
+        <button className="play-btn" onClick={onTogglePlay} title="Play/Pause (Space)" aria-label={playing ? "Pause" : "Play"}>
+          {playing ? <IconPause size={14} /> : <IconPlay size={14} />}
+        </button>
         <span className="timecode">{formatTime(time, comp.fps)}</span>
         <span className="marker-nav">
-          <button className="tiny" disabled={!prevMarker} title="Previous marker ( [ )" onClick={() => prevMarker && onSeek(prevMarker.t)}>
-            ◂◆
+          <button className="icon-only" disabled={!prevMarker} title="Previous marker ( [ )" aria-label="Previous marker" onClick={() => prevMarker && onSeek(prevMarker.t)}>
+            <IconPrevMarker />
           </button>
-          <button className="tiny" title="Add a marker at the playhead (M)" onClick={() => setMarkers((m) => [...m.filter((x) => Math.abs(x.t - time) > 1e-3), { t: Math.round(time * 1000) / 1000 }])}>
-            +◆
+          <button className="icon-only" title="Add a marker at the playhead (M)" aria-label="Add marker" onClick={() => setMarkers((m) => [...m.filter((x) => Math.abs(x.t - time) > 1e-3), { t: Math.round(time * 1000) / 1000 }])}>
+            <IconAddMarker />
           </button>
-          <button className="tiny" disabled={!nextMarker} title="Next marker ( ] )" onClick={() => nextMarker && onSeek(nextMarker.t)}>
-            ◆▸
+          <button className="icon-only" disabled={!nextMarker} title="Next marker ( ] )" aria-label="Next marker" onClick={() => nextMarker && onSeek(nextMarker.t)}>
+            <IconNextMarker />
           </button>
         </span>
-        <button className={`tiny ${muted ? "active" : ""}`} title={muted ? "Unmute preview audio" : "Mute preview audio"} onClick={onToggleMute}>
-          {muted ? "🔇" : "🔊"}
+        <button className={`icon-only ${muted ? "active" : ""}`} title={muted ? "Unmute preview audio" : "Mute preview audio"} aria-label="Mute" onClick={onToggleMute}>
+          {muted ? <IconMuted /> : <IconSpeaker />}
         </button>
-        <span className="muted small">/ {formatTime(D, comp.fps)} · {comp.width}×{comp.height} · {comp.fps} fps</span>
+        <span className="comp-meta">
+          {formatTime(D, comp.fps)} · {comp.width}×{comp.height} · {comp.fps} fps
+        </span>
         <span className="grow" />
         {firstSel && (
           <span className="kf-bar">
@@ -370,7 +400,7 @@ export function Timeline(props: Props) {
               <CurveIcon ease={firstSel.kf.ease} size={30} />
             </button>
             <button className="tiny" title="Delete keyframes (Del)" onClick={deleteSelected}>
-              🗑
+              <IconTrash size={15} />
             </button>
             {easeOpen && (
               <div className="ease-pop">
@@ -383,12 +413,21 @@ export function Timeline(props: Props) {
       <div className="tl-grid">
         <div className="tl-names">
           <div className="tl-toolbar">
-            <div className="menu-wrap">
-              <button className="small primary-ghost" onClick={() => setMenu(!menu)} title="Add a layer">
-                + Layer
+            <div className="menu-wrap" ref={addMenuRef}>
+              <button
+                className="add-layer"
+                onClick={(e) => {
+                  // The timeline scrolls: anchor the popover to the window, opening upwards.
+                  const r = e.currentTarget.getBoundingClientRect();
+                  setMenuAt({ left: r.left, bottom: window.innerHeight - r.top + 6 });
+                  setMenu(!menu);
+                }}
+                title="Add a layer"
+              >
+                <IconPlus size={14} /> Layer
               </button>
               {menu && (
-                <div className="menu" onMouseLeave={() => setMenu(false)}>
+                <div className="menu menu-fixed" style={menuAt}>
                   <button onClick={() => add("text")}>T  Text</button>
                   <button onClick={() => add("rect")}>▭  Rectangle</button>
                   <button onClick={() => add("ellipse")}>●  Ellipse</button>
@@ -401,19 +440,28 @@ export function Timeline(props: Props) {
                       {KIND_ICON[a.kind]}  {a.src.replace(/^assets\//, "")}
                     </button>
                   ))}
-                  <div className="menu-hint">Tip: drop images, video or audio onto the viewer</div>
+                  <div className="menu-sep" />
+                  <button
+                    onClick={() => {
+                      setMenu(false);
+                      onImportLottie();
+                    }}
+                  >
+                    <IconImport size={14} />  Lottie file…
+                  </button>
+                  <div className="menu-hint">Tip: drop images, video, audio or Lottie files onto the viewer</div>
                 </div>
               )}
             </div>
             <button className={`tiny graph-toggle ${graph ? "active" : ""}`} title="Graph editor: value curves and easing handles" onClick={() => setGraph(!graph)}>
-              ∿ Graph
+              <IconGraph size={15} /> Graph
             </button>
             <button className="tiny" disabled={!selected} title="Duplicate (Ctrl+D)" onClick={() => selected && editor.update((p) => {
               const r = duplicateLayer(p, selected, { compId: comp.id });
               setTimeout(() => onSelect(r.id));
               return r.project;
             })}>
-              ⧉
+              <IconDuplicate size={15} />
             </button>
             <button className="tiny" disabled={!selected} title="Delete (Del)" onClick={() => {
               if (!selected) return;
@@ -446,7 +494,7 @@ export function Timeline(props: Props) {
                       setExpanded(next);
                     }}
                   >
-                    {expanded.has(l.id) ? "▾" : "▸"}
+                    {expanded.has(l.id) ? <IconChevronDown size={12} /> : <IconChevronRight size={12} />}
                   </button>
                   <button
                     className="eye"
@@ -454,7 +502,7 @@ export function Timeline(props: Props) {
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={() => editL(l.id, (x) => setIn(x, "visible", x.visible === false ? undefined : false))}
                   >
-                    {l.visible === false ? "◌" : "◉"}
+                    {l.visible === false ? <IconEyeOff size={14} /> : <IconEye size={14} />}
                   </button>
                   <span className="tl-icon">{TYPE_ICON[l.type] ?? "?"}</span>
                   <span className="tl-label">{l.name ?? l.id}</span>

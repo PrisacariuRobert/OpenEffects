@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { AgentEvent, ProviderStatus } from "@openeffects/schema";
+import { IconArrowUp, IconChevronRight, IconSparkles, IconStop } from "./Icons.tsx";
 import { api } from "../api.ts";
 import { Markdown } from "./Markdown.tsx";
 
@@ -30,10 +31,9 @@ function withContext(prompt: string, sel: Selection | null): string {
 }
 
 const EXAMPLES = [
-  "Make a 5-second logo reveal for “Nebula” with a glowing ring that draws on",
-  "Kinetic typography: “Ship faster. Sleep better.” word by word, bold and punchy",
-  "A lower third for “Ana Ruiz, Product Designer” that slides in and out",
-  "Make the background a slow-moving purple-to-blue gradient",
+  { title: "Logo reveal", prompt: "Make a 5-second logo reveal for “Nebula” with a glowing ring that draws on" },
+  { title: "Kinetic type", prompt: "Kinetic typography: “Ship faster. Sleep better.” word by word, bold and punchy" },
+  { title: "Lower third", prompt: "A lower third for “Ana Ruiz, Product Designer” that slides in and out" },
 ];
 
 function toolLabel(name: string): string {
@@ -170,13 +170,21 @@ export function AgentPanel({ events, running, providers, selection, onError }: P
 
       <div className="agent-log" ref={listRef}>
         {turns.length === 0 && (
-          <div className="empty">
-            <p>Describe the animation you want. Your agent edits the project and you watch it update live.</p>
-            {EXAMPLES.map((ex) => (
-              <button key={ex} className="example" onClick={() => send(ex)} disabled={running || !status?.available}>
-                {ex}
-              </button>
-            ))}
+          <div className="agent-empty">
+            <div className="agent-empty-icon">
+              <IconSparkles size={22} />
+            </div>
+            <h3>What should we make?</h3>
+            <p>Describe an animation. Your agent builds it here, and every change stays editable.</p>
+            <div className="examples">
+              {EXAMPLES.map((ex) => (
+                <button key={ex.title} className="example" onClick={() => send(ex.prompt)} disabled={running || !status?.available} title={ex.prompt}>
+                  <span className="example-title">{ex.title}</span>
+                  <span className="example-prompt">{ex.prompt}</span>
+                  <IconChevronRight size={14} />
+                </button>
+              ))}
+            </div>
           </div>
         )}
         {turns.map((turn, i) => (
@@ -236,7 +244,7 @@ export function AgentPanel({ events, running, providers, selection, onError }: P
         ))}
       </div>
 
-      <div className="quick-asks">
+      <div className={`quick-asks ${turns.length === 0 && !sel ? "hidden" : ""}`}>
         {sel && (
           <span className="ctx-chip" title="Your request applies to this layer">
             ◎ {sel.label} · {sel.time.toFixed(2)}s
@@ -245,16 +253,17 @@ export function AgentPanel({ events, running, providers, selection, onError }: P
             </button>
           </span>
         )}
-        {(sel ? LAYER_ASKS : SCENE_ASKS).map((q) => (
+        {(sel ? LAYER_ASKS : SCENE_ASKS).slice(0, 3).map((q) => (
           <button key={q} className="quick" disabled={running || !status?.available} onClick={() => send(q)}>
             {q}
           </button>
         ))}
       </div>
       <div className="composer">
+        <div className="composer-box">
         <textarea
           value={prompt}
-          placeholder={running ? "The agent is working…" : sel ? `Change ${sel.label}… (Enter to send)` : "Ask for an animation or a change… (Enter to send)"}
+          placeholder={running ? "The agent is working…" : sel ? `Change ${sel.label}…` : "Describe an animation or a change…"}
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
@@ -262,17 +271,18 @@ export function AgentPanel({ events, running, providers, selection, onError }: P
               send();
             }
           }}
-          rows={3}
+          rows={2}
         />
         {running ? (
-          <button className="danger" onClick={() => api("/api/agent/stop", {})}>
-            Stop
+          <button className="send-btn stop" onClick={() => api("/api/agent/stop", {})} title="Stop" aria-label="Stop">
+            <IconStop size={14} />
           </button>
         ) : (
-          <button className="primary" onClick={() => send()} disabled={!prompt.trim() || !status?.available}>
-            Send
+          <button className="send-btn" onClick={() => send()} disabled={!prompt.trim() || !status?.available} title="Send (Enter)" aria-label="Send">
+            <IconArrowUp size={16} />
           </button>
         )}
+        </div>
       </div>
     </div>
   );

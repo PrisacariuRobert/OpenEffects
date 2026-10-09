@@ -10,6 +10,17 @@ import { History } from "./components/History.tsx";
 import { Templates } from "./components/Templates.tsx";
 import { Tour, Welcome, type TourStep } from "./components/Tour.tsx";
 import { useMediaPlayback } from "./mediaPlayback.ts";
+import { importLottie, pickLottieFile } from "./lottieImport.ts";
+import { useDismiss } from "./useDismiss.ts";
+import { IconChevronDown, IconClock, IconClose, IconExport, IconGrid, IconHelp, IconImport, IconRedo, IconSliders, IconSparkles, IconUndo } from "./components/Icons.tsx";
+
+const EXPORTS: { format: string; label: string; hint: string }[] = [
+  { format: "mp4", label: "MP4 video", hint: "H.264 + AAC · plays everywhere" },
+  { format: "mov", label: "MOV (ProRes 4444)", hint: "Transparent · for editors" },
+  { format: "webm", label: "WebM", hint: "Transparent · for the web" },
+  { format: "gif", label: "GIF", hint: "For chats and docs" },
+  { format: "lottie", label: "Lottie JSON", hint: "Vector · websites and apps" },
+];
 
 const WELCOMED_KEY = "oe.welcomed";
 const readFlag = (k: string) => {
@@ -211,9 +222,33 @@ export function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, [comp, editor, selected, selectedKeyframes, time, showToast]);
 
+  const [exportMenu, setExportMenu] = useState(false);
+  const closeExportMenu = useCallback(() => setExportMenu(false), []);
+  const exportMenuRef = useDismiss<HTMLDivElement>(exportMenu, closeExportMenu);
   const exportAs = async (format: string) => {
+    setExportMenu(false);
     try {
       await api("/api/export", { format, compId: comp?.id });
+    } catch (e) {
+      showToast((e as Error).message);
+    }
+  };
+  // Lottie exports report what couldn't be carried over.
+  const lastExport = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    const ex = state.exportState;
+    if (ex?.state === "done" && ex.url !== lastExport.current) {
+      lastExport.current = ex.url;
+      if (ex.warnings?.length) showToast(`Lottie exported. Note: ${ex.warnings.join(" · ")}`);
+    }
+  }, [state.exportState, showToast]);
+
+  const importLottieFile = async (file: File | null) => {
+    if (!file || !comp) return;
+    try {
+      const r = await importLottie(file, editor, comp.id, time);
+      select(r.layerId);
+      showToast(r.warnings.length ? `Imported ${file.name}. Approximated: ${r.warnings.join(" · ")}` : `Imported ${file.name} as an editable layer`);
     } catch (e) {
       showToast((e as Error).message);
     }
@@ -267,7 +302,7 @@ export function App() {
       body: "Start from a ready-made animation and ask the agent to make it yours: “change the text to …, use our brand colors”.",
     },
     {
-      target: ".export",
+      target: ".export-btn",
       title: "Export",
       body: "MP4 for sharing, GIF for docs and chat, WebM or ProRes MOV with transparency for video editors.",
     },
@@ -286,13 +321,15 @@ export function App() {
     <div className="app">
       <header className="topbar">
         <div className="brand">
-          <span className="logo" /> OpenEffects
+          <span className="logo" />
+          <span className="brand-name">OpenEffects</span>
         </div>
-        <span className="muted small file" title={state.file}>
+        <span className="topbar-divider" />
+        <span className="file" title={state.file}>
           {project?.name ?? fileName}
         </span>
         {project && project.compositions.length > 1 && (
-          <select value={comp?.id} onChange={(e) => setCompId(e.target.value)}>
+          <select className="comp-select" value={comp?.id} onChange={(e) => setCompId(e.target.value)} title="Composition">
             {project.compositions.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name ?? c.id}
@@ -300,36 +337,60 @@ export function App() {
             ))}
           </select>
         )}
-        <div className="seg">
-          <button onClick={editor.undo} disabled={!editor.canUndo} title="Undo (Ctrl+Z)">
-            ↶
+        <div className="grow" />
+        <div className="toolbar-group">
+          <button className="icon-only" onClick={editor.undo} disabled={!editor.canUndo} title="Undo (Ctrl+Z)" aria-label="Undo">
+            <IconUndo />
           </button>
-          <button onClick={editor.redo} disabled={!editor.canRedo} title="Redo (Ctrl+Shift+Z)">
-            ↷
+          <button className="icon-only" onClick={editor.redo} disabled={!editor.canRedo} title="Redo (Ctrl+Shift+Z)" aria-label="Redo">
+            <IconRedo />
           </button>
         </div>
-        <button className="ghost small tour-templates" onClick={() => setShowTemplates(true)}>
-          Templates
-        </button>
-        <button className="ghost small help-btn" onClick={() => setShowHelp(true)} title="Keyboard shortcuts and tour (?)">
-          ?
-        </button>
         <div className="grow" />
-        {!state.connected && <span className="pill warn">reconnecting…</span>}
-        {ex?.state === "progress" && <span className="pill">Exporting {ex.progress ?? 0}%</span>}
+        {!state.connected && <span className="pill warn">Reconnecting…</span>}
+        {ex?.state === "progress" && (
+          <span className="pill progress" style={{ ["--p" as string]: `${ex.progress ?? 0}%` }}>
+            Exporting {ex.progress ?? 0}%
+          </span>
+        )}
         {ex?.state === "done" && ex.url && (
           <a className="pill ok" href={ex.url} target="_blank" rel="noreferrer">
-            Export ready ↗
+            Export ready
           </a>
         )}
         {ex?.state === "error" && <span className="pill bad" title={ex.error}>Export failed</span>}
-        <div className="export">
-          <span className="muted small">Export</span>
-          {["mp4", "gif", "webm", "mov"].map((f) => (
-            <button key={f} className="ghost small" disabled={!project || ex?.state === "progress"} onClick={() => exportAs(f)}>
-              {f.toUpperCase()}
-            </button>
-          ))}
+        <button className="ghost tour-templates" onClick={() => setShowTemplates(true)} title="Start from a template">
+          <IconGrid /> Templates
+        </button>
+        <button className="icon-only help-btn" onClick={() => setShowHelp(true)} title="Shortcuts and tour (?)" aria-label="Help">
+          <IconHelp />
+        </button>
+        <div className="menu-wrap" ref={exportMenuRef}>
+          <button className="primary export-btn" disabled={!project || ex?.state === "progress"} onClick={() => setExportMenu((m) => !m)}>
+            <IconExport /> Export <IconChevronDown size={14} />
+          </button>
+          {exportMenu && (
+            <div className="menu menu-right export-menu">
+              {EXPORTS.map((e) => (
+                <button key={e.format} onClick={() => exportAs(e.format)}>
+                  <span className="menu-label">{e.label}</span>
+                  <span className="menu-hint-inline">{e.hint}</span>
+                </button>
+              ))}
+              <div className="menu-sep" />
+              <button
+                onClick={async () => {
+                  setExportMenu(false);
+                  await importLottieFile(await pickLottieFile());
+                }}
+              >
+                <span className="menu-label">
+                  <IconImport size={14} /> Import Lottie…
+                </span>
+                <span className="menu-hint-inline">As an editable layer</span>
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -350,6 +411,7 @@ export function App() {
                 }}
                 onEditText={() => setTab("inspector")}
                 onError={showToast}
+                onImportLottie={importLottieFile}
               />
               <Timeline
                 editor={editor}
@@ -368,6 +430,7 @@ export function App() {
                 onTogglePlay={() => setPlaying((p) => !p)}
                 onSelect={select}
                 onSelectKeyframes={setSelectedKeyframes}
+                onImportLottie={async () => importLottieFile(await pickLottieFile())}
               />
             </>
           ) : (
@@ -390,7 +453,9 @@ export function App() {
           <nav className="tabs">
             {(["agent", "inspector", "history"] as Tab[]).map((t) => (
               <button key={t} className={tab === t ? "active" : ""} onClick={() => setTab(t)}>
-                {t === "agent" ? `Agent${state.running ? " •" : ""}` : t === "inspector" ? "Properties" : "History"}
+                {t === "agent" ? <IconSparkles size={15} /> : t === "inspector" ? <IconSliders size={15} /> : <IconClock size={15} />}
+                {t === "agent" ? "Agent" : t === "inspector" ? "Properties" : "History"}
+                {t === "agent" && state.running && <span className="live-dot" />}
               </button>
             ))}
           </nav>
@@ -435,7 +500,7 @@ export function App() {
                   setTouring(true);
                 }}
               >
-                🧭 Take the tour
+                Take the tour
               </button>
               <button
                 className="ghost small"
@@ -446,8 +511,8 @@ export function App() {
               >
                 Welcome screen
               </button>
-              <button className="ghost small" onClick={() => setShowHelp(false)}>
-                ✕
+              <button className="icon-only" onClick={() => setShowHelp(false)} aria-label="Close">
+                <IconClose />
               </button>
             </div>
             <table className="shortcuts">

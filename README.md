@@ -1,16 +1,39 @@
 # OpenEffects
 
-**Open-source motion graphics, driven by the AI agent you already use.**
+**The open-source alternative to Claude Motion. Motion graphics made by the AI agent you already use, finished by you.**
 
 Describe an animation, and your coding agent (Claude Code, Codex or OpenCode with any model, including
 free and local ones) builds it on a real timeline while you watch the preview update live. Then tweak any
-keyframe by hand, undo any AI turn, and export to MP4, GIF, WebM or ProRes.
+keyframe by hand, undo any AI turn, and export to MP4, ProRes, WebM, GIF or Lottie. Free, MIT-licensed,
+and it runs on your machine.
+
+Created and maintained by [@PrisacariuRobert](https://github.com/PrisacariuRobert).
 
 ![A logo reveal made by Claude Code in OpenEffects from one prompt](docs/media/nebula.gif)
 
 *The animation above was made by Claude Code in OpenEffects from a single prompt (29 seconds, $0.25), see [examples/nebula](examples/nebula).*
 
 ![The OpenEffects editor](docs/media/editor.png)
+
+## OpenEffects vs Claude Motion
+
+[Claude Motion](https://support.claude.com/en/articles/17454997-get-started-with-claude-motion) (Anthropic,
+beta since October 2026) showed that the right way to make motion graphics with AI is code, not
+generated video: every frame stays exact, and you can change one word without re-rolling the whole clip.
+OpenEffects agrees, and takes it to everyone, in the open:
+
+| | **OpenEffects** | **Claude Motion** |
+|---|---|---|
+| Price and plans | Free and open source (MIT) | Included in Claude Team and Enterprise plans (beta); not on Free, Pro or Max |
+| AI | Your choice: Claude Code, Codex, OpenCode (incl. free and local models), any MCP client | Claude |
+| Where it runs | On your machine; projects are plain JSON files in your own git repo | Inside Claude |
+| Editing | Prompts **and** a full editor: timeline, keyframes, graph and ease editors, direct manipulation | By asking Claude (each animation is code, so one detail can change without redoing the rest) |
+| Export | MP4, ProRes 4444 and WebM with transparency, GIF, PNG sequence, **Lottie** | MP4 |
+| Import | Lottie files become editable layers; images, video and audio | The content you share with Claude |
+| Extend it | Fork it, script it (`oe` CLI), drive it from any agent via MCP | Through Claude |
+
+*Claude Motion facts are from Anthropic's help center and pricing pages as of October 2026; check them for
+updates. Already pay for Claude? OpenEffects runs on your Claude Code login, so you can use both.*
 
 ## Gallery: one prompt each, on the cheapest model
 
@@ -52,6 +75,11 @@ The agent does the heavy lifting; you direct and fine-tune it like in any motion
   exports mix every audio track in. Press **M** for a marker at the playhead (drag, rename, `[` / `]` to jump), or
   **◆ Beats / ◆ Hits** on a music layer to drop a marker on every beat; layer, trim and keyframe drags snap to markers,
   so cutting to the music is drag-and-drop. Agents can do the same (`oe_detect_beats`) and time animations to the beat.
+- **Lottie in and out:** export any composition as a Lottie JSON for websites and iOS/Android apps
+  (keyframes and easing carry over; behaviors and text animators are baked), or drop a Lottie file onto the
+  viewer to get editable layers: shape layers become rects, ellipses and paths, with path morphing, curved
+  motion, masks, mattes, text and precomps with time remapping. Checked against lottie-web: exports render
+  the same as in OpenEffects, and real After Effects exports import within a few percent of lottie-web.
 - **Viewer aids:** motion paths for animated positions, align to frame (left/center/right/top/middle/bottom),
   title/action-safe guides.
 - **Ask the AI about the selection:** with a layer selected, requests apply to it ("make it bouncier") and one-click
@@ -126,7 +154,8 @@ a turn. Switching agents starts a fresh conversation; the project and its undo h
 | `oe init [dir]` | New project: `project.oe.json`, `AGENTS.md`, `.mcp.json`, git repo |
 | `oe dev [dir]` | Editor with live preview, timeline, agent panel, history (`--port`) |
 | `oe ask [dir] "<prompt>"` | Let an agent edit the project from the terminal (`--agent claude\|codex\|opencode --model <id> --new`) |
-| `oe render [dir]` | Export (`--format mp4\|webm\|gif\|mov\|png --out file --scale 0.5`) |
+| `oe render [dir]` | Export (`--format mp4\|webm\|gif\|mov\|png\|lottie --out file --scale 0.5`) |
+| `oe import <file.json> [dir]` | Import a Lottie file: a new project, or a precomp layer in an existing one (`--replace`) |
 | `oe frame [dir] --time 2` | Render one frame to PNG |
 | `oe sheet [dir]` | Contact sheet of the whole animation |
 | `oe validate [dir]` | Check the project file |
@@ -168,6 +197,7 @@ Any MCP client can drive OpenEffects. Point it at `oe mcp <project-dir>`, e.g. f
 | `packages/schema` | Project format (Zod), keyframe interpolation, easings, edit operations, agent guide, wire contracts |
 | `packages/engine` | Deterministic renderer: `renderFrame(ctx, project, { time })` on any Canvas 2D (browser or Node) |
 | `packages/node` | Headless rendering, contact sheets, ffmpeg export, project I/O |
+| `packages/lottie` | Lottie import and export (bodymovin 5.x JSON ⇄ projects) |
 | `packages/mcp` | The OpenEffects MCP server |
 | `apps/server` | Local server: hot reload, agent adapters, checkpoints, export jobs |
 | `apps/web` | The editor UI |
@@ -175,11 +205,13 @@ Any MCP client can drive OpenEffects. Point it at `oe mcp <project-dir>`, e.g. f
 
 ### What the engine supports today
 
-Layers: solid, rect, ellipse, SVG path (with trim paths), text, image, video, audio, null (parenting), nested compositions.
+Layers: solid, rect, ellipse, SVG path (with trim paths and shape morphing), text, image, video, audio, null (parenting),
+nested compositions (with time remapping).
 Media: trim, speed, loop, keyframed volume, mute; composition markers; beat/onset detection.
 Animation: keyframes on any property with 30+ easings or cubic-bezier, per-character/word/line text animators.
 Compositing: blend modes, track mattes, parenting. Effects: blur, glow, drop shadow, color adjust.
-Export: MP4 (H.264 + AAC), WebM (VP9 with alpha + Opus), MOV (ProRes 4444 with alpha + PCM), GIF, PNG sequence.
+Export: MP4 (H.264 + AAC), WebM (VP9 with alpha + Opus), MOV (ProRes 4444 with alpha + PCM), GIF, PNG sequence, Lottie JSON.
+Import: Lottie JSON (After Effects/bodymovin, LottieFiles), images, video, audio.
 
 The format is documented for agents in [`AGENTS.md`](packages/schema/src/guide.ts), and as a JSON Schema in
 [`schema/project.schema.json`](schema/project.schema.json) for editor autocomplete.
@@ -195,19 +227,27 @@ This is an early prototype (Phase 0 of the [plan](docs/PLAN.md)). Next up:
 - [x] Graph editor, ease editor with saved easings, animate presets, keyframe multi-select/copy/paste, motion paths, align, safe guides, loop range ([research](docs/RESEARCH.md))
 - [x] Behaviors (wiggle, oscillate, drift, loop, follow) and a first-run welcome + guided tour
 - [x] Video and audio layers, waveforms, audio in previews and exports, markers with beat detection and snapping
-- [ ] Lottie import/export, Figma import
-- [ ] WebGPU renderer, shader effect plugins, Lottie import/export
+- [x] Lottie import and export, path morphing, time remapping, calmer redesigned interface
+- [ ] Figma import, Lottie merge paths and repeaters, embedded Lottie fonts
+- [ ] WebGPU renderer, shader effect plugins
 - [ ] Template gallery
 
 ## Contributing
 
 Contributions are welcome, especially new effects, easings, templates and agent adapters. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Author
+
+OpenEffects is created and maintained by **[@PrisacariuRobert](https://github.com/PrisacariuRobert)**.
+Issues, ideas and pull requests are welcome.
+
 ## Credits
 
 The agent architecture is modeled on [T3 Code](https://github.com/pingdotgg/t3code) by Ping Labs (MIT): a local
 server that runs the user's own agent CLIs and turns their output into provider-neutral events, with
-per-turn git checkpoints. OpenEffects is not affiliated with Adobe; After Effects is a trademark of Adobe Inc.
+per-turn git checkpoints. OpenEffects is an independent project, not affiliated with Anthropic or Adobe. Claude and
+Claude Motion are trademarks of Anthropic; After Effects is a trademark of Adobe Inc.; Lottie is a format
+originally created by Airbnb.
 
 ## License
 

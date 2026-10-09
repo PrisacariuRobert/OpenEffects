@@ -3,6 +3,7 @@ import { invert, isActive, layerGeometry, pointInQuad, renderFrame, type LayerGe
 import { addLayer, editLayer, getIn, isKeyframed, mediaKind, sample, setValueAtTime, uniqueLayerId, type Composition, type Layer, type Project } from "@openeffects/schema";
 import { browserEnv, onMediaFrame, preload } from "../browserEnv.ts";
 import type { Editor } from "../editor.ts";
+import { IconAlignBottom, IconAlignHCenter, IconAlignLeft, IconAlignRight, IconAlignTop, IconAlignVCenter, IconCenter, IconPath, IconSafe } from "./Icons.tsx";
 
 interface Props {
   editor: Editor;
@@ -14,6 +15,7 @@ interface Props {
   onSelect(id: string | null): void;
   onEditText(): void;
   onError(message: string): void;
+  onImportLottie(file: File): void;
 }
 
 type Pt = [number, number];
@@ -25,7 +27,7 @@ type Drag =
 const SNAP_PX = 8;
 
 /** Live preview with direct manipulation: select, move, scale, rotate, drop images. */
-export function Viewport({ editor, project, comp, time, errors, selected, onSelect, onEditText, onError }: Props) {
+export function Viewport({ editor, project, comp, time, errors, selected, onSelect, onEditText, onError, onImportLottie }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [box, setBox] = useState({ w: 0, h: 0 });
@@ -203,7 +205,10 @@ export function Viewport({ editor, project, comp, time, errors, selected, onSele
   const onDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setDropping(false);
+    const lotties = [...e.dataTransfer.files].filter((f) => /\.json$/i.test(f.name));
+    for (const f of lotties) onImportLottie(f);
     const files = [...e.dataTransfer.files].filter((f) => mediaKind(f.name));
+    if (!files.length && lotties.length) return;
     if (!files.length) return onError("Drop images (PNG, JPG, WebP, GIF, SVG), video (MP4, WebM, MOV) or audio (MP3, WAV, M4A, OGG, FLAC) to add them.");
     const at = toComp(e);
     for (const file of files) {
@@ -364,25 +369,36 @@ export function Viewport({ editor, project, comp, time, errors, selected, onSele
         </div>
       )}
       <div className="view-tools" onPointerDown={(e) => e.stopPropagation()}>
-        <button className={`tiny ${showPath ? "active" : ""}`} title="Show the motion path of the selected layer" onClick={() => setShowPath(!showPath)}>
-          ⤳ Path
+        <button className={`seg-btn ${showPath ? "active" : ""}`} title="Motion path of the selected layer" onClick={() => setShowPath(!showPath)}>
+          <IconPath size={15} />
+          Path
         </button>
-        <button className={`tiny ${showSafe ? "active" : ""}`} title="Title / action safe guides" onClick={() => setShowSafe(!showSafe)}>
-          ⬚ Safe
+        <button className={`seg-btn ${showSafe ? "active" : ""}`} title="Title / action safe guides" onClick={() => setShowSafe(!showSafe)}>
+          <IconSafe size={15} />
+          Guides
         </button>
-        {selected && (
+        {selected && selLayer?.type !== "audio" && (
           <span className="align-tools" title="Align the selected layer to the frame">
-            <button className="tiny" title="Align left" onClick={() => align("left", null)}>⇤</button>
-            <button className="tiny" title="Center horizontally" onClick={() => align("center", null)}>↔</button>
-            <button className="tiny" title="Align right" onClick={() => align("right", null)}>⇥</button>
-            <button className="tiny" title="Align top" onClick={() => align(null, "top")}>⤒</button>
-            <button className="tiny" title="Center vertically" onClick={() => align(null, "middle")}>↕</button>
-            <button className="tiny" title="Align bottom" onClick={() => align(null, "bottom")}>⤓</button>
-            <button className="tiny" title="Center in frame" onClick={() => align("center", "middle")}>⊕</button>
+            <span className="view-tools-sep" />
+            {(
+              [
+                [IconAlignLeft, "Align left", "left", null],
+                [IconAlignHCenter, "Center horizontally", "center", null],
+                [IconAlignRight, "Align right", "right", null],
+                [IconAlignTop, "Align top", null, "top"],
+                [IconAlignVCenter, "Center vertically", null, "middle"],
+                [IconAlignBottom, "Align bottom", null, "bottom"],
+                [IconCenter, "Center in frame", "center", "middle"],
+              ] as const
+            ).map(([Icon, label, h, v]) => (
+              <button key={label} className="seg-btn icon" title={label} aria-label={label} onClick={() => align(h, v)}>
+                <Icon size={15} />
+              </button>
+            ))}
           </span>
         )}
       </div>
-      {dropping && <div className="drop-hint">Drop images, video or audio to add them as layers</div>}
+      {dropping && <div className="drop-hint">Drop images, video, audio or Lottie files</div>}
       {errors.length > 0 && (
         <div className="error-banner">
           <strong>project.oe.json has errors</strong> (showing the last valid version)

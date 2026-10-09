@@ -28,6 +28,7 @@ import {
   type Project,
 } from "@openeffects/schema";
 import { getMediaInfo } from "../browserEnv.ts";
+import { IconChevronLeft, IconChevronRight, IconClose, IconStopwatch } from "./Icons.tsx";
 import type { Editor } from "../editor.ts";
 import { ColorField, NumberField, Section, SelectField, TextField, Toggle } from "./fields.tsx";
 import { JsonEditor } from "./JsonEditor.tsx";
@@ -124,7 +125,7 @@ function PropRow({
         title={animated ? "Stop animating (keeps the current value)" : "Animate this property (adds a keyframe here)"}
         onClick={() => ctx.edit((l) => toggleAnimated(l, path, ctx.time, fallback))}
       >
-        ◷
+        <IconStopwatch size={14} />
       </button>
       <span className="prop-label">
         {label}
@@ -138,17 +139,17 @@ function PropRow({
       {animated && (
         <span className="kf-nav">
           <button className="tiny" disabled={prev === undefined} onClick={() => prev !== undefined && ctx.seek(prev)} title="Previous keyframe">
-            ‹
+            <IconChevronLeft size={12} />
           </button>
           <button
             className={`tiny kf-toggle ${kfIndex >= 0 ? "on" : ""}`}
             title={kfIndex >= 0 ? "Remove keyframe" : "Add keyframe"}
             onClick={() => ctx.edit((l) => (kfIndex >= 0 ? removeKeyframe(l, path, kfIndex) : setValueAtTime(l, path, ctx.time, value, ctx.fps)))}
           >
-            ◆
+            <span className="kf-diamond" />
           </button>
           <button className="tiny" disabled={next === undefined} onClick={() => next !== undefined && ctx.seek(next)} title="Next keyframe">
-            ›
+            <IconChevronRight size={12} />
           </button>
         </span>
       )}
@@ -190,7 +191,7 @@ function FillEditor({ ctx, path, fallback }: { ctx: Ctx; path: string; fallback:
             <NumberField value={Math.round(offset * 100)} min={0} max={100} suffix="%" width={36} onChange={(o, tr) => ctx.edit((l) => setIn(l, `${path}.stops.${i}`, [o / 100, color]), tr)} />
             {(fill as Gradient).stops.length > 2 && (
               <button className="tiny" title="Remove stop" onClick={() => ctx.edit((l) => setIn(l, `${path}.stops.${i}`, undefined))}>
-                ×
+                <IconClose size={12} />
               </button>
             )}
           </Row>
@@ -224,7 +225,7 @@ function StrokeEditor({ ctx }: { ctx: Ctx }) {
       <Row label="Caps">
         <SelectField value={(getIn(ctx.layer, "stroke.cap") as string) ?? "butt"} options={["butt", "round", "square"]} onChange={(v) => ctx.edit((l) => setIn(l, "stroke.cap", v))} />
         <button className="tiny" title="Remove stroke" onClick={() => ctx.edit((l) => setIn(l, "stroke", undefined))}>
-          ×
+          <IconClose size={12} />
         </button>
       </Row>
     </>
@@ -247,7 +248,7 @@ function EffectsEditor({ ctx }: { ctx: Ctx }) {
                 ↑
               </button>
               <button className="tiny" title="Remove effect" onClick={() => ctx.edit((l) => setIn(l, p, undefined))}>
-                ×
+                <IconClose size={12} />
               </button>
             </div>
             {fx.type === "blur" && <PropRow ctx={ctx} label="Radius" path={`${p}.radius`} kind="number" fallback={0} min={0} step={0.5} />}
@@ -422,7 +423,7 @@ function BehaviorsEditor({ ctx }: { ctx: Ctx }) {
               <span className="grow" />
               <Toggle value={b.enabled !== false} onChange={(on) => set(i, "enabled", on ? undefined : false)} />
               <button className="tiny" title="Remove behavior" onClick={() => ctx.edit((l) => setIn(l, `behaviors.${i}`, undefined))}>
-                ×
+                <IconClose size={12} />
               </button>
             </div>
             <Row label="Property">
@@ -632,10 +633,10 @@ function MediaEditor({ ctx, layer, editor }: { ctx: Ctx; layer: MediaLayer; edit
           </Row>
           <Row label="Markers">
             <button className="ghost small" disabled={!!busy} title="Add a marker on every beat (steady tempo)" onClick={() => detect("beats")}>
-              {busy === "beats" ? "Listening…" : "◆ Beats"}
+              {busy === "beats" ? "Listening…" : "Beats"}
             </button>
             <button className="ghost small" disabled={!!busy} title="Add a marker on every hit (drums, accents)" onClick={() => detect("onsets")}>
-              {busy === "onsets" ? "Listening…" : "◆ Hits"}
+              {busy === "onsets" ? "Listening…" : "Hits"}
             </button>
           </Row>
           {note && <p className="muted small media-info">{note}. Keyframes and layers snap to markers when dragged.</p>}
@@ -652,7 +653,7 @@ function LayerInspector({ ctx, comp, editor, onSelect }: { ctx: Ctx; comp: Compo
   return (
     <>
       {l.type !== "audio" && (
-        <Section title="Animate">
+        <Section title="Animate" defaultOpen={false}>
           <AnimatePresets ctx={ctx} />
         </Section>
       )}
@@ -815,7 +816,7 @@ function MarkersEditor({ editor, comp, onSeek }: { editor: Editor; comp: Composi
         </button>
       ) : undefined
     }>
-      {markers.length === 0 && <p className="muted small hint">Press M to drop a marker at the playhead, or use ◆ Beats on an audio layer. Drags snap to markers.</p>}
+      {markers.length === 0 && <p className="muted small hint">Press M to drop a marker at the playhead, or use Beats on an audio layer. Drags snap to markers.</p>}
       <div className="marker-list">
         {markers.map((m, i) => (
           <div key={i} className="marker-item">
@@ -824,7 +825,7 @@ function MarkersEditor({ editor, comp, onSeek }: { editor: Editor; comp: Composi
             </button>
             <TextField value={m.label ?? ""} onChange={(v) => set(markers.map((x, j) => (j === i ? { ...x, label: v.trim() || undefined } : x)))} />
             <button className="tiny" title="Delete marker" onClick={() => set(markers.filter((_, j) => j !== i))}>
-              ×
+              <IconClose size={12} />
             </button>
           </div>
         ))}
@@ -871,7 +872,7 @@ function CompInspector({ editor, comp }: { editor: Editor; comp: Composition }) 
           <>
             <ColorField value={comp.background} onChange={(v, tr) => set({ background: v }, tr)} />
             <button className="tiny" title="Transparent background" onClick={() => set({ background: null })}>
-              ×
+              <IconClose size={12} />
             </button>
           </>
         ) : (
@@ -923,7 +924,7 @@ export function Inspector({ editor, project, compId, selected, time, onSeek, onS
           <>
             <CompInspector editor={editor} comp={comp} />
             <MarkersEditor editor={editor} comp={comp} onSeek={onSeek} />
-            <p className="muted small hint">Select a layer in the viewer or the timeline to edit it. Tip: ◷ animates a property, ◆ adds a keyframe at the playhead.</p>
+            <p className="muted small hint">Select a layer in the viewer or the timeline to edit it. Tip: the stopwatch animates a property; the diamond adds a keyframe at the playhead.</p>
           </>
         )}
       </div>

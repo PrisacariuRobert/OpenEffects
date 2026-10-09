@@ -1,9 +1,13 @@
 {
   "name": "openeffects-monorepo",
+  "description": "OpenEffects: the open-source alternative to Claude Motion and After Effects. Motion graphics made by your own AI agent, with a real timeline, Lottie import/export and video export.",
+  "author": "PrisacariuRobert (https://github.com/PrisacariuRobert)",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.28.0",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "oe": "tsx apps/cli/src/index.ts",
     "dev": "tsx apps/cli/src/index.ts dev examples/logo-reveal",

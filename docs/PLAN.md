@@ -151,6 +151,20 @@ Rules: stable `id`s on everything (clean diffs, agents can refer to layers), tim
 
 The product produces its own marketing: **every feature is a 15-second video of a prompt turning into an animation.**
 
+### Positioning: the open-source Claude Motion
+
+Anthropic's Claude Motion (beta, October 2026, Team and Enterprise plans) validates the idea: motion
+graphics as code that an AI writes, not generated video. OpenEffects is the open alternative, and every
+message should say so in one line: **"The open-source alternative to Claude Motion: any agent, any plan,
+a real timeline, Lottie in and out."** Lead with what people can't get there: free and local, works with
+Codex/OpenCode/local models, hand-editing on a timeline, transparent ProRes/WebM and Lottie export. Stay
+factual and friendly in comparisons (link to Anthropic's own docs, never imply affiliation), and remind
+Claude users that OpenEffects runs on their existing Claude Code login.
+
+Launch hooks that ride the news: "I rebuilt Claude Motion as an open-source app", a side-by-side video of
+the same prompt in both, and a Show HN titled "Show HN: OpenEffects – an open-source Claude Motion
+alternative with a real timeline and Lottie export".
+
 ### Free infrastructure
 - GitHub (code, Issues, Discussions, Actions for builds, Releases for binaries). All free for public repos.
 - Website and docs: Cloudflare Pages or GitHub Pages. Domain is the only optional cost (~$10/yr). Until then, use `*.pages.dev`.

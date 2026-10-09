@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useState } from "react";
 import type { ProviderStatus } from "@openeffects/schema";
+import { IconGrid, IconPlay, IconSparkles } from "./Icons.tsx";
 
 export interface TourStep {
   /** CSS selector of the element to spotlight. */
@@ -133,17 +134,17 @@ export function Welcome({
         </div>
         <div className="welcome-choices">
           <button className="welcome-choice" onClick={onDescribe}>
-            <span className="wc-icon">✨</span>
+            <span className="wc-icon blue"><IconSparkles size={18} /></span>
             <strong>Describe an animation</strong>
             <span className="muted small">Type what you want; your agent builds it on the timeline while you watch.</span>
           </button>
           <button className="welcome-choice" onClick={onTemplates}>
-            <span className="wc-icon">🎞</span>
+            <span className="wc-icon purple"><IconGrid size={18} /></span>
             <strong>Start from a template</strong>
             <span className="muted small">Logo reveals, kinetic type, lower thirds, social ads, charts, loops.</span>
           </button>
           <button className="welcome-choice" onClick={onTour}>
-            <span className="wc-icon">🧭</span>
+            <span className="wc-icon orange"><IconPlay size={16} /></span>
             <strong>Take the 1-minute tour</strong>
             <span className="muted small">See where everything is: canvas, AI, timeline, graph, presets, export.</span>
           </button>
